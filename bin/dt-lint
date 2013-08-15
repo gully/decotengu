@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+#
+# DecoTengu - dive decompression library.
+#
+# Copyright (C) 2013 by Artur Wroblewski <wrobell@pld-linux.org>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+import argparse
+import logging
+import re
+
+
+parser = argparse.ArgumentParser(description='DecoTengu 0.1.0.')
+parser.add_argument('-v', '--verbose',
+        action='store_true', dest='verbose', default=False,
+        help='explain what is being done')
+parser.add_argument('--gf_low', '-gl', dest='gf_low', default=30,
+        type=int, help='GF Low, i.e. 30 [percentage]')
+parser.add_argument('--gf_high', '-gh', dest='gf_high', default=85,
+        type=int, help='GF High, i.e. 85 [percentage]')
+#parser.add_argument('--gas_list', '-l', dest='gas_list',
+#    help='gas list, i.e. "28,0@0" or "28,0@0 50,0@22"')
+#parser.add_argument('--pressure', '-p', dest='pressure', default=None,
+#        type=int, help='atmosphere pressure, i.e. 1013 [millibar]')
+#parser.add_argument('--altitude', '-a', dest='altitude', default=None,
+#        type=int, help='set altitude, i.e. 700m')
+parser.add_argument('--model', '-m', dest='model',
+        default='zh-l16b', choices=('zh-l16b', 'zh-l16c'),
+        help='decompression model')
+#parser.add_argument('--no-descent', '-nd', dest='descent',
+#        default=True, type=bool, help='decompression model')
+parser.add_argument('--tissue-file', '-f', dest='tissue_file',
+        default=None, type=str, help='tissue saturation data output file')
+parser.add_argument('depth', type=int, help='dive maximum depth [meter]')
+parser.add_argument('time', type=int, help='dive time [minute]')
+args = parser.parse_args()
+
+if args.verbose:
+    logging.basicConfig(level=logging.DEBUG)
+
+import decotengu
+from decotengu.routines import AscentJumper, DecoStopStepFinder, FirstStopTabFinder
+from decotengu.tab import TabTissueCalculator
+from decotengu.util import write_csv
+
+engine = decotengu.Engine()
+
+if args.model == 'zh-l16b':
+    engine.calc.config = decotengu.ZH_L16B()
+elif args.model == 'zh-l16c':
+    engine.calc.config = decotengu.ZH_L16C()
+else:
+    assert False, 'unknown decompression model'
+
+engine.gf_low = args.gf_low / 100
+engine.gf_high = args.gf_high / 100
+engine.time_delta = None
+engine.conveyor.time_delta = None
+
+#config = decotengu.ZH_L16C()
+#engine._find_first_stop = FirstStopTabFinder()
+#engine._free_ascent = AscentJumper()
+#engine._deco_ascent = DecoStopStepFinder()
+#engine.calc = TabTissueCalculator()
+
+data = engine.calculate(args.depth, args.time * 60)
+if args.tissue_file:
+    write_csv(args.tissue_file, data)
+else:
+    list(data)
+
+print('Dive profile:')
+print(' {:3}m for {}min'.format(args.depth, args.time))
+print()
+
+#print('Gas list:')
+#for m in deco.gas_list:
+#    print(' o2={}%, he={}% at {}m'.format(m.o2, m.he, m.depth))
+#print()
+
+if engine.deco_table:
+    print('Decompression stops ({}):'.format(engine.calc.config))
+    total = sum(stop.time for stop in engine.deco_table)
+    for stop in engine.deco_table:
+        print(' {:4.0f}m {:3}min'.format(stop.depth, stop.time))
+    print('-' * 13)
+    print('Sum: {:5}min'.format(total))
+else:
+    print('No decompression dive ({}).'.format(engine.calc.config))
+
+# vim: sw=4:et:ai

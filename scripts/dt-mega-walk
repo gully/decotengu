@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+#
+# DecoTengu - dive decompression library.
+#
+# Copyright (C) 2013 by Artur Wroblewski <wrobell@pld-linux.org>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+import decotengu
+from decotengu.ft import seq
+
+import time
+from functools import partial
+from multiprocessing import Pool
+
+
+def go_for_depth(engine, depth):
+    t1 = time.time()
+    for t in range(18 * 60, 51 * 60, 60):
+        data = engine.calculate(depth, t)
+        list(data)
+        if len(engine.deco_table) == 0:
+            raise ValueError('{}'.format(engine.deco_table))
+    t2 = time.time()
+    print('{:.1f}m processed, time={:.2f}s'.format(depth, t2 - t1))
+
+
+def go(engine):
+    #for depth in seq(40, 500, 0.1):
+    #for depth in seq(40, 160, 0.1):
+
+    #
+    # ### pool.map(f, seq(160, 40, -0.1))
+    # ###    for t in range(18 * 60, 51 * 60, 60):
+    # - single process:
+    #   - deco by 1min step: 280min
+    #   - deco bisect(740): 46min
+    #   - deco linear(64)+bisect(64): 39min
+    # - 2 processes (2 cores with ht)
+    #   - deco linear+bisect(64): 20min
+    # - 4 processes (2 cores with ht)
+    #   - deco linear+bisect(64): 18min
+    #
+    #
+    # ### pool.map(f, seq(350, 40, -0.1))
+    # ###    for t in range(18 * 60, 51 * 60, 60):
+    # - 2 processes (2 cores with ht)
+    #   - deco linear+bisect(64): 110min
+    #
+    pool = Pool(processes=2)
+    f = partial(go_for_depth, engine)
+    pool.map(f, seq(350.0, 40, -0.1))
+
+if __name__ == '__main__':
+    d = decotengu.Engine()
+    d.time_delta = None
+    d.conveyor.time_delta = None
+    go(d)
+
+
+# vim: sw=4:et:ai
