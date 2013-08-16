@@ -17,7 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from decotengu.ft import seq, bisect_find
+from decotengu.ft import seq, bisect_find, recurse_while
 
 import unittest
 
@@ -70,6 +70,31 @@ class SeqTestCase(unittest.TestCase):
 
         s = list(seq(42, 31, -10))
         self.assertEquals([42, 32], s)
+
+
+
+class RecurseWhileTestCase(unittest.TestCase):
+    """
+    The `recurse_while` function tests.
+    """
+    def test_recurse(self):
+        """
+        Test recurse function
+        """
+        f = lambda a: a + 1
+        p = lambda a: a < 5
+        v = recurse_while(p, f, 3)
+        self.assertEquals(4, v)
+
+
+    def test_recurse_start(self):
+        """
+        Test recurse function with no f execution
+        """
+        f = lambda a: a + 1
+        p = lambda a: a < 5
+        v = recurse_while(p, f, 5)
+        self.assertEquals(5, v)
 
 
 

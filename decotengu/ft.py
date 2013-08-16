@@ -34,6 +34,20 @@ def seq(start, stop, step=1):
 
 
 def recurse_while(predicate, f, start):
+    """
+    Execute function `f` while predicate function is true.
+
+    If `f` is never executed then `start` value is returned.
+
+    :Parameters:
+     predicate
+        Predicate function guarding execution.
+     f
+        Function to execute. Value returned by the function is passed as
+        argument for next invocation.
+     start
+        Value passed as argument during first execution of `f` function.
+    """
     x = None
     while predicate(start):
         x = start
