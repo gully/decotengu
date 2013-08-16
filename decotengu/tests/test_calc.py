@@ -21,7 +21,7 @@
 DecoTengu calculator tests.
 """
 
-from decotengu.calc import eq_schreiner
+from decotengu.calc import eq_schreiner, eq_gf_limit
 
 import unittest
 
@@ -45,6 +45,27 @@ class SchreinerEquationTestCase(unittest.TestCase):
         # rate == 1 bar/min
         v = eq_schreiner(4, 60, 1, 3, 5.0)
         self.assertAlmostEqual(3.06661, v, 4)
+
+
+
+class GradientFactorLimitTestCase(unittest.TestCase):
+    """
+    Gradient factor limit tests.
+    """
+    def test_gf_limit_n2_30(self):
+        """
+        Test 30% gradient factor limit for N2
+        """
+        v = eq_gf_limit(0.3, 3, 0, 1.1696, 0.5578)
+        self.assertAlmostEqual(2.14013, v, 4)
+
+
+    def test_gf_limit_n2_100(self):
+        """
+        Test 100% gradient factor limit for N2
+        """
+        v = eq_gf_limit(1.0, 3, 0, 1.1696, 0.5578)
+        self.assertAlmostEqual(1.02099, v, 4)
 
 
 # vim: sw=4:et:ai

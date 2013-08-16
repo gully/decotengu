@@ -23,6 +23,23 @@ from .const import WATER_VAPOUR_PRESSURE_DEFAULT, NUM_COMPARTMENTS
 
 
 def eq_schreiner(abs_p, time, rate, pressure, half_life, wvp=WATER_VAPOUR_PRESSURE_DEFAULT):
+    """
+    Calculate gas loading using Schreiner equation.
+
+    :Parameters:
+     abs_p
+        Absolute pressure [bar] (current depth).
+     time
+        Time of exposure [second] (time of ascent or descent).
+     rate
+        Pressure rate change [bar/min].
+     pressure
+        Current tissue pressure [bar].
+     half_life
+        Current tissue compartment half-life constant value.
+     wvp
+        Water vapour pressure.
+    """
     assert time > 0
     palv = 0.79 * (abs_p - wvp)
     t = time / 60.0
@@ -31,12 +48,27 @@ def eq_schreiner(abs_p, time, rate, pressure, half_life, wvp=WATER_VAPOUR_PRESSU
     return palv + r * (t - 1 / k) - (palv - pressure - r / k) * math.exp(-k * t)
 
 
-def eq_gf_limit(gf, pn2, phe, a_limit, b_limit):
+def eq_gf_limit(gf, pn2, phe, n2_a_limit, n2_b_limit): # fixme: include he
+    """
+    Calculate gradient pressure limit.
+
+    :Parameters:
+     gf
+        Gradient factor.
+     pn2
+        Current tissue pressure for N2.
+     phe
+        Current tissue pressure for He.
+     n2_a_limit
+        N2 A limit (Buhlmann_).
+     n2_b_limit
+        N2 B limit (Buhlmann_).
+
+    """
     assert gf > 0 and gf <= 1.5
-    # fixme: include he
     p = pn2 + phe
-    a = (a_limit * pn2 + a_limit * phe) / p
-    b = (b_limit * pn2 + b_limit * phe) / p
+    a = (n2_a_limit * pn2 + 0 * phe) / p
+    b = (n2_b_limit * pn2 + 0 * phe) / p
     return (p - a * gf) / (gf / b + 1.0 - gf)
 
 
