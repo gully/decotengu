@@ -30,7 +30,7 @@ def eq_schreiner(abs_p, time, rate, pressure, half_life, wvp=WATER_VAPOUR_PRESSU
      abs_p
         Absolute pressure [bar] (current depth).
      time
-        Time of exposure [second] (time of ascent or descent).
+        Time of exposure [s] (i.e. time of ascent).
      rate
         Pressure rate change [bar/min].
      pressure
@@ -132,20 +132,61 @@ class ZH_L16C(Config): # source: ostc firmware code
 
 
 class TissueCalculator(object):
+    """
+    Tissue calculator to calculate all tissues gas loading.
+    """
     def __init__(self):
+        """
+        Create tissue calcuator.
+        """
         self.config = ZH_L16B()
 
 
     def _load_tissue(self, abs_p, time, rate, pressure, tissue_no):
+        """
+        Change gas loading of a tissue.
+
+        :Parameters:
+         abs_p
+            Absolute pressure [bar] (current depth).
+         time
+            Time of exposure [second] (i.e. time of ascent).
+         rate
+            Pressure rate change [bar/min].
+         pressure
+            Current tissue pressure [bar].
+         tissue_no
+            Tissue number.
+        """
         hl = self.config.N2_HALF_LIFE[tissue_no]
         return eq_schreiner(abs_p, time, rate, pressure, hl)
 
 
     def init_tissues(self, surface_pressure):
+        """
+        Initialize pressure of all tissues.
+
+        :Parameters:
+         surface_pressure
+            Surface pressure [bar].
+        """
         return [0.7902 * (surface_pressure - self.config.water_vapour_pressure)] * NUM_COMPARTMENTS
 
 
     def load_tissues(self, abs_p, time, rate, tissue_pressure):
+        """
+        Change gas loading of all tissues.
+
+        :Parameters:
+         abs_p
+            Absolute pressure [bar] (current depth).
+         time
+            Time of exposure [second] (i.e. time of ascent).
+         rate
+            Pressure rate change [bar/min].
+         tissue_pressure
+            Pressure of each tissue [bar].
+        """
         tp = (self._load_tissue(abs_p, time, rate, tp, k)
                 for k, tp in enumerate(tissue_pressure))
         return tuple(tp)
