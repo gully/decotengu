@@ -52,7 +52,7 @@ def eq_schreiner(abs_p, time, rate, pressure, half_life, wvp=WATER_VAPOUR_PRESSU
     return palv + r * (t - 1 / k) - (palv - pressure - r / k) * math.exp(-k * t)
 
 
-def eq_gf_limit(gf, pn2, phe, n2_a_limit, n2_b_limit): # fixme: include he
+def eq_gf_limit(gf, pn2, phe, n2_a_limit, n2_b_limit): # FIXME: include he
     """
     Calculate gradient pressure limit.
 
@@ -197,11 +197,19 @@ class TissueCalculator(object):
 
 
     def gf_limit(self, gf, tissue_pressure):
+        """
+        Calculate gradient pressure limit.
+
+        :Parameters:
+         gf
+            Gradient factor.
+         tissue_pressure
+            Pressure of all tissues [bar].
+        """
         assert gf > 0 and gf <= 1.5
-        a = (av * tp / tp for tp, av in zip(tissue_pressure, self.config.N2_A))
-        b = (bv * tp / tp for tp, bv in zip(tissue_pressure, self.config.N2_B))
-        # fixme: include he
-        return tuple(eq_gf_limit(gf, tp, 0, av, bv) for tp, av, bv in zip(tissue_pressure, a, b))
+        # FIXME: include he
+        data = zip(tissue_pressure, self.config.N2_A, self.config.N2_B)
+        return tuple(eq_gf_limit(gf, tp, 0, av, bv) for tp, av, bv in data)
 
 
 # vim: sw=4:et:ai
