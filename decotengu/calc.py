@@ -17,6 +17,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+"""
+Tissue gas loading and pressure limits calculations.
+"""
+
 import math
 
 from .const import WATER_VAPOUR_PRESSURE_DEFAULT, NUM_COMPARTMENTS
