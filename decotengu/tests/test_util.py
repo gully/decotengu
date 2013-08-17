@@ -21,8 +21,42 @@
 DecoTengu various utilities tests.
 """
 
+import io
+
+from decotengu.engine import InfoSample, InfoTissue
+from decotengu.util import write_csv
+
 import unittest
 
 class WriteCSVTestCase(unittest.TestCase):
+    """
+    Tests for saving tissue saturation data in a CSV file.
+    """
+    def test_write_csv(self):
+        """
+        Test saving tissue saturation data in CSV file
+        """
+        f = io.StringIO()
+
+        data = [
+            InfoSample(0, 0, 2.1, [
+                InfoTissue(0, 1.2, 0.9, 0.3, 0.95),
+                InfoTissue(1, 1.3, 0.91, 0.3, 0.96),
+            ], 'descent'),
+            InfoSample(2, 5, 3.1, [
+                InfoTissue(0, 1.4, 0.95, 0.3, 0.98),
+                InfoTissue(1, 1.5, 0.96, 0.3, 0.99),
+            ], 'bottom'),
+        ]
+
+        write_csv(f, data)
+        st = f.getvalue().split('\n')
+
+        self.assertEquals(6, len(st))
+        self.assertEquals('', st[-1])
+        self.assertTrue(st[0].startswith('depth,time,pressure,'))
+        self.assertTrue(st[1].endswith('descent\r'), st[1])
+        self.assertTrue(st[4].endswith('bottom\r'), st[4])
+
 
 # vim: sw=4:et:ai

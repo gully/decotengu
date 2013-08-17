@@ -17,23 +17,35 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+"""
+DecoTengu various utilities.
+"""
+
 import csv
 
 
-def write_csv(fn, data):
+def write_csv(f, data):
+    """
+    Write tissue saturation data into a CSV file.
+
+    :Parameters:
+     f
+        File object.
+     data
+        Tissue saturation data.
+    """
     header = ['depth', 'time', 'pressure', 'tissue_no', 'tissue_pressure',
             'tissue_limit', 'gf', 'tissue_gf_limit', 'type']
 
-    with open(fn, 'w') as fx:
-        f = csv.writer(fx)
-        f.writerow(header)
+    fcsv = csv.writer(f)
+    fcsv.writerow(header)
 
-        for sample in data:
-            r1 = [sample.depth, sample.time, sample.pressure] 
-            for tissue in sample.tissues:
-                r2 = [tissue.no, tissue.pressure, tissue.limit, tissue.gf,
-                    tissue.gf_limit, sample.type]
-                f.writerow(r1 + r2)
+    for sample in data:
+        r1 = [sample.depth, sample.time, sample.pressure] 
+        for tissue in sample.tissues:
+            r2 = [tissue.no, tissue.pressure, tissue.limit, tissue.gf,
+                tissue.gf_limit, sample.type]
+            fcsv.writerow(r1 + r2)
 
 
 # vim: sw=4:et:ai

@@ -78,7 +78,8 @@ engine.conveyor.time_delta = None
 
 data = engine.calculate(args.depth, args.time * 60)
 if args.tissue_file:
-    write_csv(args.tissue_file, data)
+    with open(args.tissue_file, 'w') as f:
+        write_csv(f, data)
 else:
     list(data)
 
