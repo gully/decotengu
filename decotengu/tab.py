@@ -17,6 +17,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+"""
+Tabular tissue calculator to calculate tissues gas loading using
+precomputed values of exp and ln functions.
+"""
+
 import logging
 logger = logging.getLogger('decotengu.tab')
 
@@ -239,6 +244,26 @@ ZH_L16C_EXP_HALF_LIFE_10M = (
 
 
 def eq_schreiner_t(abs_p, time, rate, pressure, half_life, texp, wvp=WATER_VAPOUR_PRESSURE_DEFAULT):
+    """
+    Calculate gas loading using Schreiner equation and precomputed values
+    of exp and ln functions.
+
+    :Parameters:
+     abs_p
+        Absolute pressure [bar] (current depth).
+     time
+        Time of exposure [s] (i.e. time of ascent).
+     rate
+        Pressure rate change [bar/min].
+     pressure
+        Current tissue pressure [bar].
+     half_life
+        Current tissue compartment half-life constant value.
+     texp
+        Value of exp function for current tissue and time of exposure.
+     wvp
+        Water vapour pressure.
+    """
     palv = 0.79 * (abs_p - wvp)
     t = time / 60.0
     k = LOG_2 / half_life
