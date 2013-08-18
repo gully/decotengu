@@ -273,8 +273,29 @@ def eq_schreiner_t(abs_p, time, rate, pressure, half_life, texp, wvp=WATER_VAPOU
 
 class TabTissueCalculator(TissueCalculator):
     """
-    To be used when mathematical functions like exp, log or pow are not
-    available.
+    Tabular tissue calculator.
+
+    Calculate tissue gas loading using precomputed values for exp and ln
+    functions.
+
+    :Attributes:
+     _exp_time
+        Collection of precomputed values for exp function between 3m and
+        max depth change (every 3m, 6s at 10m/min) allowed by the
+        calculator.
+     _exp_1m
+        Precomputed values for exp function for 1m (6s at 10m/min) depth
+        change.
+     _exp_2m
+        Precomputed values for exp function for 2m (12s at 10m/min) depth
+        change.
+     _exp_10m
+        Precomputed values for exp function for 10m (1min at 10m/min) depth
+        change.
+     max_depth
+        Maximum depth change allowed by the calculator.
+     max_time
+        Maximum time change allowed by the calculator.
     """
     def __init__(self):
         self._config = None # allow parent class to set initial config
@@ -282,7 +303,12 @@ class TabTissueCalculator(TissueCalculator):
 
 
     def _set_config(self, config):
-        self._config = config
+        """
+        Set tabular tissue calculator configuration.
+
+        Beside the standard tissue configuration, the precomputed values of
+        exp function are set.
+        """
         if isinstance(config, ZH_L16B):
             self._exp_time = ZH_L16B_EXP_HALF_LIFE_TIME
             self._exp_1m = ZH_L16B_EXP_HALF_LIFE_1M
@@ -296,14 +322,31 @@ class TabTissueCalculator(TissueCalculator):
         else:
             raise ValueError('Uknown configuration')
 
-        self.max_depth = 24
-        self.max_time = 24 * 6
+        self._config = config
+
+        self.max_depth = len(self._exp_time) * 3
+        self.max_time = self.max_depth * 6
         logger.debug('config set to {}, max_time={}s'.format(self._config,
             self.max_time))
 
     config = property(lambda self: self._config, _set_config)
 
     def _load_tissue(self, abs_p, time, rate, pressure, tissue_no):
+        """
+        Calculate gas loading of a tissue.
+
+        :Parameters:
+         abs_p
+            Absolute pressure [bar] (current depth).
+         time
+            Time of exposure [second] (i.e. time of ascent).
+         rate
+            Pressure rate change [bar/min].
+         pressure
+            Current tissue pressure [bar].
+         tissue_no
+            Tissue number.
+        """
         hl = self.config.N2_HALF_LIFE[tissue_no]
         if time == 60:
             texp = self._exp_10m[tissue_no]
