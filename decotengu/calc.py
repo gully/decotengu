@@ -148,7 +148,7 @@ class TissueCalculator(object):
 
     def _load_tissue(self, abs_p, time, rate, pressure, tissue_no):
         """
-        Change gas loading of a tissue.
+        Calculate gas loading of a tissue.
 
         :Parameters:
          abs_p
