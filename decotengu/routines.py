@@ -25,6 +25,8 @@ The supported routines
 - ascent jump - go to next depth, then calculate tissue saturation for
   time, which would take to get from previous to next depth (can be used
   when trying to avoid Schreiner equation)
+- first stop tabular finder - search for first deco stop using tabular
+  tissue calculator
 
 """
 
