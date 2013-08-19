@@ -18,23 +18,32 @@
 #
 
 """
-Dec
+Tests for alternative implementations of various parts of DecoTengu's
+Engine class.
 """
 
-from decotengu import Engine
+from decotengu.engine import Engine, Step
 from decotengu.routines import AscentJumper
 
 import unittest
 
 class AscentJumperTestCase(unittest.TestCase):
     """
+    Ascent jumper tests.
     """
     def test_ascent_jumper(self):
         """
-        Test ascent jumper
+        Test ascent jumper between 30m and 5m
         """
         engine = Engine()
         engine._free_ascent = AscentJumper()
+
+        start = Step(30, 1200, 4, [3.2, 4.1], 0.3)
+        stop = Step(5, 1200 + 120, 2, [3.2, 4.1], 0.3)
+        steps = list(engine._free_ascent(start, stop))
+        self.assertEquals(2, len(steps))
+        self.assertEquals([20.0, 10.0], [s.depth for s in steps])
+        self.assertEquals([1200 + 60, 1200 + 120], [s.time for s in steps])
 
 
 # vim: sw=4:et:ai

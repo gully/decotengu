@@ -17,6 +17,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+"""
+Alternative implementations of various parts of DecoTengu's Engine class.
+
+The supported routines
+
+- ascent jump - go to next depth, then calculate tissue saturation for
+  time, which would take to get from previous to next depth (can be used
+  when trying to avoid Schreiner equation)
+
+"""
+
 from functools import partial
 import logging
 
@@ -29,7 +40,13 @@ class AscentJumper(DecoRoutine):
     """
     Ascent by jumping (teleporting).
     
-    Jump to 10m shallower depth and stay there for 1 minute.
+    Simulate ascent by jumping to shallower depth and stay there for
+    appropriate amount of time. The depth jump and time are determined by
+    ascent rate, i.e. for 10m/min the depth jump is 10m and time is 1 minute.
+
+    Such ascent simulation allows to avoid Schreiner equation, but is less
+    accurate. The longer depth jump, the less accuracy. Do not use for
+    ascents faster than 10m/min.
     """
     def __call__(self, start, stop):
         engine = self.engine
@@ -52,10 +69,11 @@ class AscentJumper(DecoRoutine):
 
 class FirstStopTabFinder(DecoRoutine):
     """
-    Find deco stop using Schreiner equation and restricted set of ascent
-    times.
+    Find deco stop using tabular tissue calculator.
 
-    Other mathematical functions like log or round are not used as well.
+    Using tabular tissue calculator allows to avoid usage of costly exp
+    function. Other mathematical functions like log or round are not used
+    as well.
 
     Ascent rate is assumed to be 10m/min and non-configurable.
     """
