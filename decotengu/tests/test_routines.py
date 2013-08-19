@@ -23,9 +23,11 @@ Engine class.
 """
 
 from decotengu.engine import Engine, Step
-from decotengu.routines import AscentJumper
+from decotengu.tab import TabTissueCalculator
+from decotengu.routines import AscentJumper, FirstStopTabFinder
 
 import unittest
+import mock
 
 class AscentJumperTestCase(unittest.TestCase):
     """
@@ -44,6 +46,125 @@ class AscentJumperTestCase(unittest.TestCase):
         self.assertEquals(2, len(steps))
         self.assertEquals([20.0, 10.0], [s.depth for s in steps])
         self.assertEquals([1200 + 60, 1200 + 120], [s.time for s in steps])
+
+
+
+
+@mock.patch('decotengu.routines.recurse_while')
+class FirstStopTabFinderTestCase(unittest.TestCase):
+    """
+    First stop tabular finder tests.
+    """
+    def setUp(self):
+        self.engine = engine = Engine()
+        engine.calc = TabTissueCalculator()
+        engine._find_first_stop = FirstStopTabFinder()
+
+
+    @mock.patch('decotengu.routines.bisect_find')
+    def test_level_from_30m(self, f_bf, f_rw):
+        """
+        Test first stop tabular finder levelling at multiply of 3m (from 30m)
+        """
+        self.engine._tissue_pressure_ascent = mock.MagicMock(return_value=[3.1, 4.0])
+        self.engine._step_next_ascent = mock.MagicMock()
+
+        start = Step(30, 1200, 4, [3.2, 3.1], 0.3)
+        step = Step(21, 1200, 4, [2.2, 2.1], 0.3)
+        first_stop = Step(16, 1200, 4, [2.2, 2.1], 0.3)
+
+        f_rw.return_value = step
+        f_bf.return_value = 2
+        self.engine._step_next_ascent.return_value = first_stop
+
+        stop = self.engine._find_first_stop(start)
+        self.assertIs(stop, first_stop)
+
+        self.assertTrue(f_rw.called)
+        self.assertTrue(f_bf.called)
+        self.assertFalse(self.engine._tissue_pressure_ascent.called,
+                '{}'.format(self.engine._tissue_pressure_ascent.call_args_list))
+
+        # from `step` to `first_stop` -> 6m, 36s
+        self.engine._step_next_ascent.assert_called_once_with(step, 36)
+
+
+    @mock.patch('decotengu.routines.bisect_find')
+    def test_level_from_29m(self, f_bf, f_rw):
+        """
+        Test first stop tabular finder levelling at multiply of 3m (from 29m)
+        """
+        self.engine._tissue_pressure_ascent = mock.MagicMock(return_value=[3.1, 4.0])
+        self.engine._step_next_ascent = mock.MagicMock()
+
+        start = Step(29, 1200, 4, [3.2, 3.1], 0.3)
+        step = Step(21, 1200, 4, [2.2, 2.1], 0.3)
+        first_stop = Step(16, 1200, 4, [2.2, 2.1], 0.3)
+
+        f_rw.return_value = step
+        f_bf.return_value = 2
+        self.engine._step_next_ascent.return_value = first_stop
+
+        stop = self.engine._find_first_stop(start)
+        self.assertIs(stop, first_stop)
+
+        self.assertTrue(f_rw.called)
+        self.assertTrue(f_bf.called)
+        self.engine._tissue_pressure_ascent.assert_called_once_with(4, 12,
+                [3.2, 3.1])
+
+        # from `step` to `first_stop` -> 6m, 36s
+        self.engine._step_next_ascent.assert_called_once_with(step, 36)
+
+
+    @mock.patch('decotengu.routines.bisect_find')
+    def test_in_deco(self, f_bf, f_rw):
+        """
+        Test first stop tabular finder when in deco already
+        """
+        self.engine._tissue_pressure_ascent = mock.MagicMock(return_value=[3.1, 4.0])
+        self.engine._step_next_ascent = mock.MagicMock()
+
+        start = Step(21, 1200, 4, [3.2, 3.1], 0.3)
+        step = Step(21, 1200, 4, [3.2, 3.1], 0.3)
+
+        f_rw.return_value = step
+        f_bf.return_value = 0 # in deco already
+
+        stop = self.engine._find_first_stop(start)
+        self.assertIs(stop, step)
+
+        self.assertFalse(self.engine._step_next_ascent.called)
+        self.assertTrue(f_rw.called)
+        self.assertTrue(f_bf.called)
+
+
+    def test_bisect_proper(self, f_rw):
+        """
+        Test first stop tabular finder proper usage of binary search
+        """
+        self.engine._step_next_ascent = mock.MagicMock()
+
+        # trigger bisect_find to use 2nd maximum time allowed by tabular
+        # tissue calculator...
+        self.engine._inv_ascent = mock.MagicMock(
+                side_effect=[True, True, False,
+                    True, False]) # debug calls "bisect check"
+
+        start = Step(30, 1200, 4, [3.2, 3.1], 0.3)
+        step = Step(27, 1200, 4, [3.2, 3.1], 0.3)
+
+        f_rw.return_value = step
+
+        self.engine._find_first_stop(start)
+
+        # 3 bisect calls, 2 debug "bisect check" calls, final call
+        self.assertEquals(6, self.engine._step_next_ascent.call_count,
+                '{}'.format(self.engine._step_next_ascent.call_args_list))
+        max_time = max(a[0][1] for a in self.engine._step_next_ascent.call_args_list)
+        # ... as max time should not be used by bisect_find (it is used by
+        # recurse_while)
+        self.assertEquals(self.engine.calc.max_time - 18, max_time)
 
 
 # vim: sw=4:et:ai

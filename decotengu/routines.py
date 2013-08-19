@@ -92,7 +92,7 @@ class FirstStopTabFinder(DecoRoutine):
         if t > 0:
             tp_start = engine._tissue_pressure_ascent(start.pressure, t, tp_start)
 
-        logger.debug('tabular search: restart at {}m, {}s ({})'.format(depth,
+        logger.debug('tabular search: restart at {}m, {}s ({}s)'.format(depth,
             time_start, t))
 
         step = engine._step(depth, time_start, tp_start)
@@ -107,9 +107,16 @@ class FirstStopTabFinder(DecoRoutine):
         logger.debug('tabular search: at {}m, {}s'.format(depth_start, time_start))
 
         # FIXME: copy of code from engine.py _find_first_stop
-        f = lambda k, step: True if k == 0 else \
-                    engine._inv_ascent(engine._step_next_ascent(step, k * 18))
-        k = bisect_find(len(calc._exp_time) + 1, f, step)
+        def f(k, step):
+            assert k <= len(calc._exp_time)
+            return True if k == 0 else \
+                engine._inv_ascent(engine._step_next_ascent(step, k * 18))
+
+        # FIXME: len(calc._exp_time) == calc.max_time / 6 so make it nicer
+        n = len(calc._exp_time)
+        k = bisect_find(n, f, step)
+        assert k != n # k == n is not used as guarded by recurse_while above
+
         if k > 0:
             t = k * 18
             step = engine._step_next_ascent(step, t)
