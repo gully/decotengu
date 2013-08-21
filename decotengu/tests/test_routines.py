@@ -50,7 +50,6 @@ class AscentJumperTestCase(unittest.TestCase):
 
 
 
-@mock.patch('decotengu.routines.recurse_while')
 class FirstStopTabFinderTestCase(unittest.TestCase):
     """
     First stop tabular finder tests.
@@ -61,6 +60,7 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         engine._find_first_stop = FirstStopTabFinder()
 
 
+    @mock.patch('decotengu.routines.recurse_while')
     @mock.patch('decotengu.routines.bisect_find')
     def test_level_from_30m(self, f_bf, f_rw):
         """
@@ -89,6 +89,7 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         self.engine._step_next_ascent.assert_called_once_with(step, 36)
 
 
+    @mock.patch('decotengu.routines.recurse_while')
     @mock.patch('decotengu.routines.bisect_find')
     def test_level_from_29m(self, f_bf, f_rw):
         """
@@ -117,6 +118,7 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         self.engine._step_next_ascent.assert_called_once_with(step, 36)
 
 
+    @mock.patch('decotengu.routines.recurse_while')
     @mock.patch('decotengu.routines.bisect_find')
     def test_in_deco(self, f_bf, f_rw):
         """
@@ -139,6 +141,7 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         self.assertTrue(f_bf.called)
 
 
+    @mock.patch('decotengu.routines.recurse_while')
     def test_bisect_proper(self, f_rw):
         """
         Test first stop tabular finder proper usage of binary search
@@ -165,6 +168,17 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         # ... as max time should not be used by bisect_find (it is used by
         # recurse_while)
         self.assertEquals(self.engine.calc.max_time - 18, max_time)
+
+
+    def test_surface(self):
+        """
+        Test first stop tabular finder when no deco required
+        """
+        self.engine.surface_pressure = 1
+        start = Step(30, 1200, 4, [1.0, 1.0], 0.3)
+
+        stop = self.engine._find_first_stop(start)
+        self.assertIsNone(stop)
 
 
 # vim: sw=4:et:ai

@@ -98,8 +98,20 @@ class FirstStopTabFinder(DecoRoutine):
             time_start, t))
 
         step = engine._step(depth, time_start, tp_start)
-        f = partial(engine._step_next_ascent, time=calc.max_time)
-        step = recurse_while(engine._inv_ascent, f, step)
+
+        # ascent using max depth allowed by tabular calculator; use None to
+        # indicate that surface is hit
+        f_step = lambda step: None if step.depth == 0 else \
+                engine._step_next_ascent(step, min(calc.max_time, step.depth * 6))
+
+        # execute ascent invariant until surface is hit
+        f_inv = lambda step: step is not None and engine._inv_ascent(step)
+
+        # ascent until deco zone or surface is hit (but stay deeper than
+        # first deco stop)
+        step = recurse_while(f_inv, f_step, step)
+        if step.depth == 0:
+            return None
 
         time_start = step.time
         depth_start = step.depth
@@ -116,7 +128,7 @@ class FirstStopTabFinder(DecoRoutine):
 
         # FIXME: len(calc._exp_time) == calc.max_time / 6 so make it nicer
         n = len(calc._exp_time)
-        k = bisect_find(n, f, step)
+        k = bisect_find(n, f, step) # narrow first deco stop
         assert k != n # k == n is not used as guarded by recurse_while above
 
         if k > 0:
