@@ -24,7 +24,7 @@ Engine class.
 
 from decotengu.engine import Engine, Step
 from decotengu.tab import TabTissueCalculator
-from decotengu.routines import AscentJumper, FirstStopTabFinder
+from decotengu.routines import AscentJumper, FirstStopTabFinder, DecoStopStepper
 
 import unittest
 import mock
@@ -179,6 +179,30 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
 
         stop = self.engine._find_first_stop(start)
         self.assertIsNone(stop)
+
+
+
+class DecoStopStepperTestCase(unittest.TestCase):
+    """
+    Decompression stepper tests.
+    """
+    def test_stepper(self):
+        """
+        Test decompression stepper
+        """
+        engine = Engine()
+        engine.surface_pressure = 1
+        engine._deco_ascent = DecoStopStepper()
+
+        first_stop = Step(9, 1200, 1.9, [2.8, 2.8], 0.3)
+        steps = list(engine._deco_ascent(first_stop))
+
+        # 5min of deco plus 3 steps for ascent between stops
+        self.assertEquals(8, len(steps))
+        self.assertEquals(steps[-1].depth, 0)
+
+        # stops at 9m, 6m and 3m and include last step at 0m
+        self.assertEquals(4, len(set(s.depth for s in steps)))
 
 
 # vim: sw=4:et:ai

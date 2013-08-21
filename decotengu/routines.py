@@ -27,6 +27,7 @@ The supported routines
   when trying to avoid Schreiner equation)
 - first stop tabular finder - search for first deco stop using tabular
   tissue calculator
+- deco stop stepper - perform dive decompression using 1min intervals
 
 """
 
@@ -142,7 +143,13 @@ class FirstStopTabFinder(DecoRoutine):
 
 
 
-class DecoStopStepFinder(DecoRoutine):
+class DecoStopStepper(DecoRoutine):
+    """
+    Perform dive decompression using 1min intervals.
+
+    The algorithm is quite inefficient, but is used some, so the
+    implementation is created for comparison purposes.
+    """
     def __call__(self, first_stop):
         engine = self.engine
         step = first_stop
@@ -178,5 +185,6 @@ class DecoStopStepFinder(DecoRoutine):
 
                 time = 0
                 k_stop += 1
+
 
 # vim: sw=4:et:ai

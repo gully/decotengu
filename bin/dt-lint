@@ -73,7 +73,7 @@ engine.conveyor.time_delta = None
 #config = decotengu.ZH_L16C()
 #engine._find_first_stop = FirstStopTabFinder()
 #engine._free_ascent = AscentJumper()
-#engine._deco_ascent = DecoStopStepFinder()
+#engine._deco_ascent = DecoStopStepper()
 #engine.calc = TabTissueCalculator()
 
 data = engine.calculate(args.depth, args.time * 60)
