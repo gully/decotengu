@@ -52,7 +52,7 @@ if args.verbose:
     logging.basicConfig(level=logging.DEBUG)
 
 import decotengu
-from decotengu.routines import AscentJumper, DecoStopStepFinder, FirstStopTabFinder
+#from decotengu.routines import AscentJumper, DecoStopStepper, FirstStopTabFinder
 from decotengu.tab import TabTissueCalculator
 from decotengu.util import write_csv
 
