@@ -18,6 +18,8 @@
 #
 
 """
+DecoTengu dive decompression engine.
+
 [mpdfd] Powell, Mark. Deco for Divers, United Kingdom, 2010
 """
 
@@ -351,13 +353,13 @@ class Engine(object):
             yield self._step_info(step, 'bottom')
 
         first_stop = self._find_first_stop(step)
-        if first_stop:
-            for step in self._free_ascent(step, first_stop):
-                yield self._step_info(step, 'ascent') 
 
         if first_stop: # otherwise we are at surface
             for step in self._deco_ascent(first_stop): 
                 yield self._step_info(step, 'deco')
+        else:
+            for step in self._free_ascent(step, first_stop):
+                yield self._step_info(step, 'ascent') 
 
 
     def deco_sum(self):
