@@ -46,10 +46,6 @@ DecoStopStep = namedtuple('DecoStopStep', 'depth time pressure tissues')
 DecoStop = namedtuple('Stop', 'depth time')
 
 
-def depth2bar(depth, surface_pressure):
-    return surface_pressure + depth * METER_TO_BAR
-
-
 
 class DecoRoutine(object):
     def __init__(self):
@@ -81,10 +77,24 @@ class Engine(object):
 
 
     def _to_pressure(self, depth):
-        return depth2bar(depth, self.surface_pressure)
+        """
+        Convert depth in meters to absolute pressure in bars.
+
+        :Parameters:
+         depth
+            Depth in meters.
+        """
+        return depth * METER_TO_BAR + self.surface_pressure
 
 
     def _to_depth(self, time):
+        """
+        Calculate depth travelled in time at given ascent rate.
+
+        :Parameters:
+         time
+            Time in seconds.
+        """
         return time * self.ascent_rate / 60
 
 
