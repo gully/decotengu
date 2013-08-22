@@ -372,8 +372,4 @@ class Engine(object):
                 yield self._step_info(step, 'ascent') 
 
 
-    def deco_sum(self):
-        return sum(s.time for s in self.deco_table)
-
-
 # vim: sw=4:et:ai

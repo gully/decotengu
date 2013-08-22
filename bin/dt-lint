@@ -54,7 +54,7 @@ if args.verbose:
 import decotengu
 #from decotengu.routines import AscentJumper, DecoStopStepper, FirstStopTabFinder
 from decotengu.tab import TabTissueCalculator
-from decotengu.util import write_csv
+from decotengu.util import write_csv, deco_sum
 
 engine = decotengu.Engine()
 
@@ -94,11 +94,10 @@ print()
 
 if engine.deco_table:
     print('Decompression stops ({}):'.format(engine.calc.config))
-    total = sum(stop.time for stop in engine.deco_table)
     for stop in engine.deco_table:
         print(' {:4.0f}m {:3}min'.format(stop.depth, stop.time))
     print('-' * 13)
-    print('Sum: {:5}min'.format(total))
+    print('Sum: {:5}min'.format(deco_sum(engine.deco_table)))
 else:
     print('No decompression dive ({}).'.format(engine.calc.config))
 

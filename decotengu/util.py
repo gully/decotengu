@@ -48,4 +48,15 @@ def write_csv(f, data):
             fcsv.writerow(r1 + r2)
 
 
+def deco_sum(stops):
+    """
+    Calculate total decompression time.
+
+    :Parameters:
+     stops
+        Collection of decompression stops.
+    """
+    return sum(s.time for s in stops)
+
+
 # vim: sw=4:et:ai

@@ -23,8 +23,8 @@ DecoTengu various utilities tests.
 
 import io
 
-from decotengu.engine import InfoSample, InfoTissue
-from decotengu.util import write_csv
+from decotengu.engine import InfoSample, InfoTissue, DecoStop
+from decotengu.util import write_csv, deco_sum
 
 import unittest
 
@@ -57,6 +57,20 @@ class WriteCSVTestCase(unittest.TestCase):
         self.assertTrue(st[0].startswith('depth,time,pressure,'))
         self.assertTrue(st[1].endswith('descent\r'), st[1])
         self.assertTrue(st[4].endswith('bottom\r'), st[4])
+
+
+
+class DecoSumTestCase(unittest.TestCase):
+    """
+    Deco sum function tests.
+    """
+    def test_deco_sum(self):
+        """
+        Test deco sum
+        """
+        stops = [DecoStop(9, 1), DecoStop(6, 2), DecoStop(3, 5)]
+        v = deco_sum(stops)
+        self.assertEquals(8, v)
 
 
 # vim: sw=4:et:ai
