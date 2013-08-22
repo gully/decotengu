@@ -240,14 +240,9 @@ class Engine(object):
         Find first decompression stop using Schreiner equation and bisect
         algorithm.
 
-        The followin
-        - generate list of decompression stops
-        - define first and last possible stops
-        - choose middle stop as candidate (a)
-        - calculate tissues saturation using Schreiner equation
-        - determine if we are too deep or to shallow and redefine first and
-          last possible stops
-        - jump to (a) if there are still decompression stops to consider
+        The depth of first decompression stop is the shallowest depth,
+        which does not breach the ascent limit imposed by maximum tissue
+        pressure limit. The depth is divisble by 3.
         """
         # FIXME: calculate time for 3m ascent, now hardcoded to 18s
         t0 = start.depth / self.ascent_rate * 60
