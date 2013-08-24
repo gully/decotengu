@@ -98,9 +98,9 @@ print(' {:3}m for {}min'.format(args.depth, args.time))
 print()
 
 print('Gas list:')
-for n2 in engine._gas_list:
+for m in engine._gas_list:
     #print(' o2={}%, he={}% at {}m'.format(m.o2, m.he, m.depth))
-    print(' o2={}%, he={}% at {}m'.format(int(100 - n2 * 100), 0, 0))
+    print(' o2={}% at {}m'.format(m.o2, m.depth))
 print()
 
 if engine.deco_table:
