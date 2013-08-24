@@ -21,7 +21,7 @@
 Tests for DecoTengu dive decompression engine.
 """
 
-from decotengu.engine import Engine
+from decotengu.engine import Engine, Step
 
 import unittest
 import mock
@@ -82,6 +82,26 @@ class EngineTestCase(unittest.TestCase):
         v = self.engine._max_tissue_pressure(tissues, 0.2)
         self.engine.calc.gf_limit.assert_called_once_with(0.2, tissues)
         self.assertEquals(2.4, v)
+
+
+    def test_ascent_invariant(self):
+        """
+        Test ascent invariant
+        """
+        step = Step(40, 120, 3.0, [], 0.3)
+        self.engine._max_tissue_pressure = mock.MagicMock(return_value=3.1)
+        v = self.engine._inv_ascent(step)
+        self.assertFalse(v)
+
+
+    def test_ascent_invariant_edge(self):
+        """
+        Test ascent invariant (at limit)
+        """
+        step = Step(40, 120, 3.1, [], 0.3)
+        self.engine._max_tissue_pressure = mock.MagicMock(return_value=3.1)
+        v = self.engine._inv_ascent(step)
+        self.assertFalse(v)
 
 
 # vim: sw=4:et:ai

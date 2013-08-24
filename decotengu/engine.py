@@ -122,7 +122,17 @@ class Engine(object):
 
 
     def _inv_ascent(self, step):
-        return step.pressure >= self._max_tissue_pressure(step.tissues)
+        """
+        Return true if ascent from a depth is possible.
+
+        Step's pressure is compared to maximum allowed tissue pressure. The
+        latter is calculated using configured gradient factor low limit.
+
+        :Parameters:
+         step
+            Dive step containing pressure information.
+        """
+        return step.pressure > self._max_tissue_pressure(step.tissues)
 
 
     def _inv_deco_stop(self, step, gf):
