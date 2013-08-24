@@ -237,14 +237,31 @@ class Engine(object):
                 pressure=step.pressure, tissues=tissues, type=type)
 
 
-    def _tissue_pressure_descent(self, abs_p, time, tp_start):
+    def _tissue_pressure_const(self, abs_p, time, tp_start):
         """
-        Calculate tissues pressure after descending from depth ``abs_p``
-        (as pressure) for ``time`` seconds.
+        Calculate tissues gas loading after exposure for specified time at
+        constant pressure.
 
         :Parameters:
          abs_p
-            Starting depth (pressure in bars).
+            The pressure indicating the depth [bar].
+         time
+            Time at pressure in seconds.
+         tp_start
+            Initial tissues pressure.
+        """
+        tp = self.calc.load_tissues(abs_p, time, 0, tp_start)
+        return tp
+
+
+    def _tissue_pressure_descent(self, abs_p, time, tp_start):
+        """
+        Calculate tissues gas loading after descent from pressure for
+        specified amount of time.
+
+        :Parameters:
+         abs_p
+            Starting pressure indicating the depth [bar].
          time
             Time of descent in seconds.
          tp_start
@@ -257,12 +274,12 @@ class Engine(object):
 
     def _tissue_pressure_ascent(self, abs_p, time, tp_start):
         """
-        Calculate tissues pressure after ascending from depth ``abs_p`` (as
-        pressure) for ``time`` seconds.
+        Calculate tissues gas loading after ascent from pressure for
+        specified amount of time.
 
         :Parameters:
          abs_p
-            Starting depth (pressure in bars).
+            Starting pressure indicating the depth [bar].
          time
             Time of ascent in seconds.
          tp_start
@@ -270,23 +287,6 @@ class Engine(object):
         """
         rate = -self.ascent_rate * METER_TO_BAR
         tp = self.calc.load_tissues(abs_p, time, rate, tp_start)
-        return tp
-
-
-    def _tissue_pressure_const(self, abs_p, time, tp_start):
-        """
-        Calculate tissues pressure after staying at specific depth ``abs_p`` (as
-        pressure) for ``time`` seconds.
-
-        :Parameters:
-         abs_p
-            The depth (pressure in bars).
-         time
-            Time of stay at depth in seconds.
-         tp_start
-            Initial tissues pressure.
-        """
-        tp = self.calc.load_tissues(abs_p, time, 0, tp_start)
         return tp
 
 
