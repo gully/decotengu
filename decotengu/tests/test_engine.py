@@ -193,13 +193,53 @@ class EngineTestCase(unittest.TestCase):
         self.engine._tissue_pressure_ascent = mock.MagicMock(
                 return_value=[2.6, 2.6])
 
-        step = self.engine._step_next_descent(step, 30)
-        self.assertEquals(15, step.depth)
+        step = self.engine._step_next_ascent(step, 30)
+        self.assertEquals(15.0, step.depth)
         self.assertEquals(150, step.time)
         self.assertEquals([2.6, 2.6], step.tissues)
 
         self.engine._tissue_pressure_ascent.assert_called_once_with(3.0, 30,
                 [2.8, 2.8])
+
+
+    def test_tissue_load(self):
+        """
+        Test tissue loading at constant depth
+        """
+        self.engine.calc.load_tissues = mock.MagicMock(return_value=[1.2, 1.3])
+        v = self.engine._tissue_pressure_const(2.0, 10, [1.1, 1.1])
+
+        # check the rate is 0
+        self.engine.calc.load_tissues.assert_called_once_with(2.0, 10, 0,
+                [1.1, 1.1])
+
+
+    def test_tissue_load_ascent(self):
+        """
+        Test tissue loading after ascent
+        """
+        self.engine.ascent_rate = 10
+        self.engine.calc.load_tissues = mock.MagicMock(return_value=[1.2, 1.3])
+        v = self.engine._tissue_pressure_ascent(2.0, 10, [1.1, 1.1])
+
+        # rate for ascent has to be negative and converted to bars
+        self.engine.calc.load_tissues.assert_called_once_with(2.0, 10,
+                -0.9984999999999999, [1.1, 1.1])
+        self.assertEquals([1.2, 1.3], v)
+
+
+    def test_tissue_load_descent(self):
+        """
+        Test tissue loading after descent
+        """
+        self.engine.descent_rate = 10
+        self.engine.calc.load_tissues = mock.MagicMock(return_value=[1.2, 1.3])
+        v = self.engine._tissue_pressure_descent(2.0, 10, [1.1, 1.1])
+
+        # rate for descent has to be positive number and converted to bars
+        self.engine.calc.load_tissues.assert_called_once_with(2.0, 10,
+                0.9984999999999999, [1.1, 1.1])
+        self.assertEquals([1.2, 1.3], v)
 
 
 # vim: sw=4:et:ai
