@@ -400,4 +400,38 @@ class EngineTestCase(unittest.TestCase):
         self.assertEquals(step.time, 1326)
 
 
+    def test_deco_ascent(self):
+        """
+        Test ascent with decompression stops
+        """
+        pressure = self.engine._to_pressure
+        self.engine.conveyor.time_delta = None
+        first_stop = Step(15, 1200, pressure(15), [2.5] * 3, 0.3)
+
+        steps = list(self.engine._deco_ascent(first_stop))
+        self.assertEquals(10, len(steps))
+
+        self.assertEquals(15, steps[0].depth)
+        self.assertEquals(1260, steps[0].time)
+        self.assertEquals(15, self.engine.deco_table[0].depth)
+        self.assertEquals(1, self.engine.deco_table[0].time)
+
+        self.assertEquals(12, steps[1].depth)
+        self.assertEquals(1278, steps[1].time)
+        self.assertEquals(12, steps[2].depth)
+        self.assertEquals(1338, steps[2].time)
+        self.assertEquals(12, self.engine.deco_table[1].depth)
+        self.assertEquals(1, self.engine.deco_table[1].time)
+
+        self.assertEquals(3, steps[7].depth)
+        self.assertEquals(1512, steps[7].time)
+        self.assertEquals(3, steps[8].depth)
+        self.assertEquals(1692, steps[8].time)
+        self.assertEquals(3, self.engine.deco_table[-1].depth)
+        self.assertEquals(3, self.engine.deco_table[-1].time)
+
+        self.assertEquals(0, steps[9].depth)
+        self.assertEquals(1710, steps[9].time)
+
+
 # vim: sw=4:et:ai

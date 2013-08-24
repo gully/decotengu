@@ -407,6 +407,13 @@ class Engine(object):
 
 
     def _deco_ascent(self, first_stop):
+        """
+        Ascent from first decompression stop to the surface. 
+
+        :Parameters:
+         first_stop
+            Dive stop indicating first decompression stop.
+        """
         step = first_stop
         tp = step.tissues
 
