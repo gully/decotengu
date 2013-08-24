@@ -108,7 +108,7 @@ class Engine(object):
     def _max_tissue_pressure(self, tp, gf=None):
         """
         Calculate maximum tissue pressure limit using gradient factor
-        limit.
+        value.
 
         :Parameters:
          tp
@@ -126,7 +126,7 @@ class Engine(object):
         Return true if ascent from a depth is possible.
 
         Step's pressure is compared to maximum allowed tissue pressure. The
-        latter is calculated using configured gradient factor low limit.
+        latter is calculated using configured gradient factor low value.
 
         :Parameters:
          step
@@ -136,9 +136,22 @@ class Engine(object):
 
 
     def _inv_deco_stop(self, step, gf):
+        """
+        Return true if one should stay at a decompression stop.
+
+        Tissue pressure limit is calculated for next decompression stop
+        (using gradient factor value) and it is checked that ascent to next
+        stop is not possible.
+
+        :Parameters:
+         step
+            Dive step - current decompression stop.
+         gf
+            Gradient factor limit for next decompression stop.
+        """
         tp = self._tissue_pressure_ascent(step.pressure, 18, step.tissues)
         max_tp = self._max_tissue_pressure(tp, gf=gf)
-        return self._to_pressure(step.depth - 3) < max_tp
+        return self._to_pressure(step.depth - 3) <= max_tp
 
 
     def _step(self, depth, time, tissues, gf=None):

@@ -104,4 +104,23 @@ class EngineTestCase(unittest.TestCase):
         self.assertFalse(v)
 
 
+    def test_deco_stop_invariant(self):
+        """
+        Test decompression stop invariant
+        """
+        step = Step(18, 120, 1.8, [1.8, 1.8], 0.3)
+        self.engine._tissue_pressure_ascent = mock.MagicMock(
+            return_value=[1.6, 1.6])
+        self.engine._max_tissue_pressure = mock.MagicMock(return_value=1.6)
+        self.engine._to_pressure = mock.MagicMock(return_value=1.5)
+
+        v = self.engine._inv_deco_stop(step, 0.4)
+
+        self.engine._max_tissue_pressure.assert_called_once_with(
+            [1.6, 1.6], gf=0.4)
+        self.engine._to_pressure.assert_called_once_with(15)
+
+        self.assertTrue(v)
+
+
 # vim: sw=4:et:ai
