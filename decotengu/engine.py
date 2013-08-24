@@ -114,7 +114,7 @@ class Engine(object):
          tp
             List of tissues pressure.
          gf
-            Gradient factor limit, GF low by default.
+            Gradient factor value, GF low by default.
         """
         if gf is None:
             gf = self.gf_low
@@ -147,7 +147,7 @@ class Engine(object):
          step
             Dive step - current decompression stop.
          gf
-            Gradient factor limit for next decompression stop.
+            Gradient factor value for next decompression stop.
         """
         tp = self._tissue_pressure_ascent(step.pressure, 18, step.tissues)
         max_tp = self._max_tissue_pressure(tp, gf=gf)
@@ -155,12 +155,42 @@ class Engine(object):
 
 
     def _step(self, depth, time, tissues, gf=None):
+        """
+        Create dive step record.
+
+        The dive step's pressure is calculated from the depth parameters.
+        The configured GF low value is used if gradient factor not
+        specified.
+
+        :Parameters:
+         depth
+            Depth of dive step.
+         time
+            Time at which dive step is recorded (in seconds since start of
+            a dive).
+         tissues
+            Current tissues gas loadings.
+         gf
+            Gradient factor value for pressure limit calculations.
+        """
         if gf is None:
             gf = self.gf_low
         return Step(depth, time, self._to_pressure(depth), tissues, gf)
 
 
     def _step_next(self, step, time, gf=None):
+        """
+        Calculate next dive step at constant depth and advanced by
+        specified amount of time.
+
+        :Parameters:
+         step
+            Current dive step.
+         time
+            Time spent at current depth.
+         gf
+            Gradient factor value for pressure limit calculation.
+        """
         tp = self._tissue_pressure_const(step.pressure, time, step.tissues)
         return self._step(step.depth, step.time + time, tp, gf)
 

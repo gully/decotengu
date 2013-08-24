@@ -108,19 +108,62 @@ class EngineTestCase(unittest.TestCase):
         """
         Test decompression stop invariant
         """
-        step = Step(18, 120, 1.8, [1.8, 1.8], 0.3)
+        step = Step(18, 120, 2.8, [1.8, 1.8], 0.3)
         self.engine._tissue_pressure_ascent = mock.MagicMock(
-            return_value=[1.6, 1.6])
-        self.engine._max_tissue_pressure = mock.MagicMock(return_value=1.6)
-        self.engine._to_pressure = mock.MagicMock(return_value=1.5)
+            return_value=[2.6, 2.6])
+        self.engine._max_tissue_pressure = mock.MagicMock(return_value=2.6)
+        self.engine._to_pressure = mock.MagicMock(return_value=2.5)
 
         v = self.engine._inv_deco_stop(step, 0.4)
 
         self.engine._max_tissue_pressure.assert_called_once_with(
-            [1.6, 1.6], gf=0.4)
+            [2.6, 2.6], gf=0.4)
         self.engine._to_pressure.assert_called_once_with(15)
 
         self.assertTrue(v)
+
+
+    def test_dive_step(self):
+        """
+        Test creation of dive step record
+        """
+        self.engine.gf_low = 0.2
+        step = self.engine._step(30, 1200, [0.1, 0.2])
+        self.assertEquals(30, step.depth)
+        self.assertEquals(1200, step.time)
+        self.assertEquals(4.00875, step.pressure)
+        self.assertEquals([0.1, 0.2], step.tissues)
+        self.assertEquals(0.2, step.gf)
+
+
+    def test_dive_step_gf(self):
+        """
+        Test creation of dive step record (with gf)
+        """
+        self.engine.gf_low = 0.2
+        step = self.engine._step(30, 1200, [0.1, 0.2], 0.21)
+        self.assertEquals(30, step.depth)
+        self.assertEquals(1200, step.time)
+        self.assertEquals(4.00875, step.pressure)
+        self.assertEquals([0.1, 0.2], step.tissues)
+        self.assertEquals(0.21, step.gf)
+
+
+    def test_step_next(self):
+        """
+        Test creation of next dive step record
+        """
+        step = Step(20, 120, 3.0, [1.8, 1.8], 0.3)
+
+        self.engine._tissue_pressure_const = mock.MagicMock(
+                return_value=[3.5, 3.5])
+
+        step = self.engine._step_next(step, 30)
+        self.assertEquals(20, step.depth, 20)
+        self.assertEquals(150, step.time)
+        self.assertEquals([3.5, 3.5], step.tissues)
+        self.engine._tissue_pressure_const.assert_called_once_with(3.0, 30,
+                [1.8, 1.8])
 
 
 # vim: sw=4:et:ai
