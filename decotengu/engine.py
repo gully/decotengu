@@ -357,8 +357,6 @@ class Engine(object):
                     self._inv_ascent(self._step_next_ascent(step, k * 18 + dt))
         # find largest k, so ascent is possible
         k = bisect_find(n, f, start)
-        if k == n:
-            return None
 
         t = k * 18 + dt
         first_stop =  self._step_next_ascent(start, t)
@@ -490,7 +488,7 @@ class Engine(object):
         for step in self._free_ascent(step, first_stop):
             yield self._step_info(step, 'ascent') 
 
-        if first_stop: # otherwise we are at surface
+        if first_stop.depth > 0: # otherwise we are at surface
             for step in self._deco_ascent(first_stop): 
                 yield self._step_info(step, 'deco')
 

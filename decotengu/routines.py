@@ -112,7 +112,7 @@ class FirstStopTabFinder(DecoRoutine):
         # first deco stop)
         step = recurse_while(f_inv, f_step, step)
         if step.depth == 0:
-            return None
+            return step
 
         time_start = step.time
         depth_start = step.depth

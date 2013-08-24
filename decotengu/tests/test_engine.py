@@ -355,7 +355,8 @@ class EngineTestCase(unittest.TestCase):
         start = Step(30, 1200, 4, [1.0, 1.0], 0.3)
 
         stop = self.engine._find_first_stop(start)
-        self.assertIsNone(stop)
+        self.assertEquals(0, stop.depth)
+        self.assertEquals(1200 + 180, stop.time)
 
 
     def test_free_ascent(self):
@@ -441,9 +442,10 @@ class EngineTestCase(unittest.TestCase):
         s1 = Step(0, 0, 1, (0.7, 0.7), 0.3)
         s2 = Step(25, 150, 2.5, (1.5, 1.5), 0.3)
         s3 = Step(25, 1050, 2.5, (2.0, 2.0), 0.3)
+        s4 = Step(0, 1200, 1.0, (1.0, 1.0), 0.3)
         self.engine._dive_descent = mock.MagicMock(return_value=[s1, s2])
         self.engine._dive_const = mock.MagicMock(return_value=[s3])
-        self.engine._find_first_stop = mock.MagicMock(return_value=None)
+        self.engine._find_first_stop = mock.MagicMock(return_value=s4)
         self.engine._free_ascent = mock.MagicMock()
         self.engine._deco_ascent = mock.MagicMock()
 

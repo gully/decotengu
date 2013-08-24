@@ -178,7 +178,8 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         start = Step(30, 1200, 4, [1.0, 1.0], 0.3)
 
         stop = self.engine._find_first_stop(start)
-        self.assertIsNone(stop)
+        self.assertEquals(0, stop.depth)
+        self.assertEquals(1380, stop.time)
 
 
 
