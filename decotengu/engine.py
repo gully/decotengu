@@ -372,7 +372,11 @@ class Engine(object):
 
     def _free_ascent(self, start, stop):
         """
-        Ascent from current depth to shallower depth.
+        Ascent from one dive step to destination one.
+
+        The ascent is performed without performing any decompression stops.
+        It is caller resposibility to provide the destination step outside
+        of decompression zone.
 
         :Parameters:
          start
