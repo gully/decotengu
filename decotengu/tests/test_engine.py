@@ -280,4 +280,42 @@ class EngineTestCase(unittest.TestCase):
         self.assertEquals(300, s3.time)
 
 
+    def test_dive_descent_no_time_delta(self):
+        """
+        Test dive descent (no time delta)
+        """
+        self.engine.time_delta = self.engine.conveyor.time_delta = None
+
+        assert self.engine.conveyor.time_delta is None, self.engine.conveyor.time_delta
+
+        steps = list(self.engine._dive_descent(21))
+        self.assertEquals(2, len(steps)) # should contain start of a dive
+
+        s1, s2 = steps
+        self.assertEquals(0, s1.depth)
+        self.assertEquals(0, s1.time)
+        self.assertEquals(21, s2.depth)
+        self.assertEquals(126, s2.time) # 1m is 6s at 10m/min
+
+
+    def test_dive_descent(self):
+        """
+        Test dive descent
+        """
+        self.engine.time_delta = self.engine.conveyor.time_delta = 60
+
+        steps = list(self.engine._dive_descent(21))
+        self.assertEquals(4, len(steps)) # should contain start of a dive
+
+        s1, s2, s3, s4 = steps
+        self.assertEquals(0, s1.depth)
+        self.assertEquals(0, s1.time)
+        self.assertEquals(10, s2.depth)
+        self.assertEquals(60, s2.time)
+        self.assertEquals(20, s3.depth)
+        self.assertEquals(120, s3.time)
+        self.assertEquals(21, s4.depth)
+        self.assertEquals(126, s4.time) # 1m is 6s at 10m/min
+
+
 # vim: sw=4:et:ai

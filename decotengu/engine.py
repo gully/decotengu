@@ -311,6 +311,13 @@ class Engine(object):
 
 
     def _dive_descent(self, depth):
+        """
+        Dive descent from surface to specified depth.
+
+        :Parameters:
+         depth
+            Destination depth.
+        """
         start = self.calc.init_tissues(self.surface_pressure)
         step = self._step(0, 0, start)
         yield step
