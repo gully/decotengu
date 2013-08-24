@@ -21,6 +21,7 @@
 import argparse
 import logging
 import re
+import sys
 
 
 parser = argparse.ArgumentParser(description='DecoTengu 0.1.0.')
