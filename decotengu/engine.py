@@ -68,13 +68,12 @@ class Engine(object):
         self.surface_pressure = 1.01325
         self.gf_low = 0.3
         self.gf_high = 0.85
-        self.time_delta = 60
         self.ascent_rate = 10
         self.descent_rate = 10 # FIXME: remove hardcodings before changing
                                #        to default 20m/min 
         self.deco_table = []
         self.conveyor = Conveyor()
-        self.conveyor.time_delta = self.time_delta
+        self.conveyor.time_delta = 60
 
 
     def _to_pressure(self, depth):

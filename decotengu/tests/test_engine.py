@@ -248,7 +248,7 @@ class EngineTestCase(unittest.TestCase):
         """
         step = Step(20, 120, 2, [1.9, 1.9], 0.3)
 
-        self.engine.time_delta = self.engine.conveyor.time_delta = None
+        self.engine.conveyor.time_delta = None
 
         assert self.engine.conveyor.time_delta is None, self.engine.conveyor.time_delta
 
@@ -266,7 +266,7 @@ class EngineTestCase(unittest.TestCase):
         """
         step = Step(20, 120, 2, [1.9, 1.9], 0.3)
 
-        self.engine.time_delta = self.engine.conveyor.time_delta = 60
+        self.engine.conveyor.time_delta = 60
 
         steps = list(self.engine._dive_const(step, 180))
         self.assertEquals(3, len(steps))
@@ -284,7 +284,7 @@ class EngineTestCase(unittest.TestCase):
         """
         Test dive descent (no time delta)
         """
-        self.engine.time_delta = self.engine.conveyor.time_delta = None
+        self.engine.conveyor.time_delta = None
 
         assert self.engine.conveyor.time_delta is None, self.engine.conveyor.time_delta
 
@@ -302,7 +302,7 @@ class EngineTestCase(unittest.TestCase):
         """
         Test dive descent
         """
-        self.engine.time_delta = self.engine.conveyor.time_delta = 60
+        self.engine.conveyor.time_delta = 60
 
         steps = list(self.engine._dive_descent(21))
         self.assertEquals(4, len(steps)) # should contain start of a dive

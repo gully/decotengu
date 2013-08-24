@@ -67,7 +67,6 @@ else:
 
 engine.gf_low = args.gf_low / 100
 engine.gf_high = args.gf_high / 100
-engine.time_delta = None
 engine.conveyor.time_delta = None
 
 #config = decotengu.ZH_L16C()
