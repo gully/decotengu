@@ -24,18 +24,25 @@ Tests for DecoTengu dive decompression engine.
 from decotengu.engine import Engine
 
 import unittest
+import mock
 
 class EngineTestCase(unittest.TestCase):
     """
     DecoTengu dive decompression engine tests.
     """
+    def setUp(self):
+        """
+        Create decompression engine.
+        """
+        self.engine = Engine()
+
+
     def test_depth_conversion(self):
         """
         Test deco engine depth to pressure conversion
         """
-        engine = Engine()
-        engine.surface_pressure = 1.2
-        v = engine._to_pressure(20)
+        self.engine.surface_pressure = 1.2
+        v = self.engine._to_pressure(20)
         self.assertAlmostEquals(v, 3.197)
 
 
@@ -43,10 +50,38 @@ class EngineTestCase(unittest.TestCase):
         """
         Test deco engine depth calculation using time
         """
-        engine = Engine()
-        engine.ascent_rate = 10
-        v = engine._to_depth(18)
+        self.engine.ascent_rate = 10
+        v = self.engine._to_depth(18)
         self.assertAlmostEquals(v, 3)
+
+
+    def test_max_tissue_pressure(self):
+        """
+        Test calculation of maximum allowed tissue pressure (default gf)
+        """
+        tissues = (1.5, 2.5, 2.0, 2.9, 2.6)
+        limit = (1.0, 2.0, 1.5, 2.4, 2.1)
+
+        self.engine.gf_low = 0.1
+        self.engine.calc.gf_limit = mock.MagicMock(return_value=limit)
+
+        v = self.engine._max_tissue_pressure(tissues)
+        self.engine.calc.gf_limit.assert_called_once_with(0.1, tissues)
+        self.assertEquals(2.4, v)
+
+
+    def test_max_tissue_pressure_gf(self):
+        """
+        Test calculation of maximum allowed tissue pressure (with gf)
+        """
+        tissues = (1.5, 2.5, 2.0, 2.9, 2.6)
+        limit = (1.0, 2.0, 1.5, 2.4, 2.1)
+
+        self.engine.calc.gf_limit = mock.MagicMock(return_value=limit)
+
+        v = self.engine._max_tissue_pressure(tissues, 0.2)
+        self.engine.calc.gf_limit.assert_called_once_with(0.2, tissues)
+        self.assertEquals(2.4, v)
 
 
 # vim: sw=4:et:ai
