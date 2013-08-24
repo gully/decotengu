@@ -214,6 +214,18 @@ class Engine(object):
 
 
     def _step_next_ascent(self, step, time, gf=None):
+        """
+        Calculate next dive step when ascent is performed for specified
+        period of time.
+
+        :Parameters:
+         step
+            Current dive step.
+         time
+            Time to ascent [s].
+         gf
+            Gradient factor value for pressure limit calculation.
+        """
         tp = self._tissue_pressure_ascent(step.pressure, time, step.tissues)
         depth = round(step.depth - self._to_depth(time), 4)
         return self._step(depth, step.time + time, tp, gf)

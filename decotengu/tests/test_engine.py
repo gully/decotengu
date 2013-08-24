@@ -168,7 +168,7 @@ class EngineTestCase(unittest.TestCase):
 
     def test_step_descent(self):
         """
-        Test creation of next dive step record
+        Test creation of next dive step record (descent)
         """
         step = Step(20, 120, 3.0, [2.8, 2.8], 0.3)
 
@@ -181,6 +181,24 @@ class EngineTestCase(unittest.TestCase):
         self.assertEquals([3.1, 3.1], step.tissues)
 
         self.engine._tissue_pressure_descent.assert_called_once_with(3.0, 30,
+                [2.8, 2.8])
+
+
+    def test_step_ascent(self):
+        """
+        Test creation of next dive step record (ascent)
+        """
+        step = Step(20, 120, 3.0, [2.8, 2.8], 0.3)
+
+        self.engine._tissue_pressure_ascent = mock.MagicMock(
+                return_value=[2.6, 2.6])
+
+        step = self.engine._step_next_descent(step, 30)
+        self.assertEquals(15, step.depth)
+        self.assertEquals(150, step.time)
+        self.assertEquals([2.6, 2.6], step.tissues)
+
+        self.engine._tissue_pressure_ascent.assert_called_once_with(3.0, 30,
                 [2.8, 2.8])
 
 
