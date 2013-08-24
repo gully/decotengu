@@ -187,7 +187,7 @@ class Engine(object):
          step
             Current dive step.
          time
-            Time spent at current depth.
+            Time spent at current depth [s].
          gf
             Gradient factor value for pressure limit calculation.
         """
@@ -196,6 +196,18 @@ class Engine(object):
 
 
     def _step_next_descent(self, step, time, gf=None):
+        """
+        Calculate next dive step when descent is performed for specified
+        period of time.
+
+        :Parameters:
+         step
+            Current dive step.
+         time
+            Time to descent [s].
+         gf
+            Gradient factor value for pressure limit calculation.
+        """
         tp = self._tissue_pressure_descent(step.pressure, time, step.tissues)
         depth = round(step.depth + self._to_depth(time), 4)
         return self._step(depth, step.time + time, tp, gf)

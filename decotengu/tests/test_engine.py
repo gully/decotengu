@@ -153,17 +153,35 @@ class EngineTestCase(unittest.TestCase):
         """
         Test creation of next dive step record
         """
-        step = Step(20, 120, 3.0, [1.8, 1.8], 0.3)
+        step = Step(20, 120, 3.0, [2.8, 2.8], 0.3)
 
         self.engine._tissue_pressure_const = mock.MagicMock(
-                return_value=[3.5, 3.5])
+                return_value=[3.0, 3.0])
 
         step = self.engine._step_next(step, 30)
-        self.assertEquals(20, step.depth, 20)
+        self.assertEquals(20, step.depth)
         self.assertEquals(150, step.time)
-        self.assertEquals([3.5, 3.5], step.tissues)
+        self.assertEquals([3.0, 3.0], step.tissues)
         self.engine._tissue_pressure_const.assert_called_once_with(3.0, 30,
-                [1.8, 1.8])
+                [2.8, 2.8])
+
+
+    def test_step_descent(self):
+        """
+        Test creation of next dive step record
+        """
+        step = Step(20, 120, 3.0, [2.8, 2.8], 0.3)
+
+        self.engine._tissue_pressure_descent = mock.MagicMock(
+                return_value=[3.1, 3.1])
+
+        step = self.engine._step_next_descent(step, 30)
+        self.assertEquals(25, step.depth)
+        self.assertEquals(150, step.time)
+        self.assertEquals([3.1, 3.1], step.tissues)
+
+        self.engine._tissue_pressure_descent.assert_called_once_with(3.0, 30,
+                [2.8, 2.8])
 
 
 # vim: sw=4:et:ai
