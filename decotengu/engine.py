@@ -338,6 +338,10 @@ class Engine(object):
         The depth of first decompression stop is the shallowest depth,
         which does not breach the ascent limit imposed by maximum tissue
         pressure limit. The depth is divisble by 3.
+
+        :Parameters:
+         start
+            Starting dive step indicating current depth. 
         """
         # FIXME: calculate time for 3m ascent, now hardcoded to 18s
         t0 = start.depth / self.ascent_rate * 60

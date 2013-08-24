@@ -318,4 +318,44 @@ class EngineTestCase(unittest.TestCase):
         self.assertEquals(126, s4.time) # 1m is 6s at 10m/min
 
 
+    @mock.patch('decotengu.engine.bisect_find')
+    def test_first_stop_finder(self, f_bf):
+        """
+        Test first deco stop finder
+        """
+        self.engine._step_next_ascent = mock.MagicMock()
+        start = Step(31, 1200, 4, [1.0, 1.0], 0.3)
+
+        f_bf.return_value = 6 # 31m -> 30m - 18m -> 12m
+        self.engine._find_first_stop(start)
+
+        # 6 * 3m + 1m (6s) == 114s to ascent from 31m to 12m
+        self.engine._step_next_ascent.assert_called_once_with(start, 114)
+
+
+    @mock.patch('decotengu.engine.bisect_find')
+    def test_first_stop_finder_steps(self, f_bf):
+        """
+        Test if first deco stop finder calculates proper amount of steps
+        """
+        self.engine._step_next_ascent = mock.MagicMock()
+        start = Step(31, 1200, 4, [1.0, 1.0], 0.3)
+
+        self.engine._find_first_stop(start)
+
+        assert f_bf.called # test precondition
+        self.assertEquals(10, f_bf.call_args_list[0][0][0])
+
+
+    def test_first_stop_finder_surface(self):
+        """
+        Test finding first deco stop when no deco required
+        """
+        self.engine.surface_pressure = 1
+        start = Step(30, 1200, 4, [1.0, 1.0], 0.3)
+
+        stop = self.engine._find_first_stop(start)
+        self.assertIsNone(stop)
+
+
 # vim: sw=4:et:ai
