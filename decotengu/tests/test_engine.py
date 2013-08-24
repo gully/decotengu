@@ -35,6 +35,7 @@ class EngineTestCase(unittest.TestCase):
         Create decompression engine.
         """
         self.engine = Engine()
+        self.engine.add_gas(0, 21)
 
 
     def test_depth_conversion(self):
