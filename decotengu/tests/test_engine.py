@@ -242,4 +242,42 @@ class EngineTestCase(unittest.TestCase):
         self.assertEquals([1.2, 1.3], v)
 
 
+    def test_dive_const_no_time_delta(self):
+        """
+        Test diving constant depth (no time delta)
+        """
+        step = Step(20, 120, 2, [1.9, 1.9], 0.3)
+
+        self.engine.time_delta = self.engine.conveyor.time_delta = None
+
+        assert self.engine.conveyor.time_delta is None, self.engine.conveyor.time_delta
+
+        steps = list(self.engine._dive_const(step, 121))
+        self.assertEquals(1, len(steps))
+
+        step = steps[0]
+        self.assertEquals(20, step.depth)
+        self.assertEquals(241, step.time)
+
+
+    def test_dive_const(self):
+        """
+        Test diving constant depth
+        """
+        step = Step(20, 120, 2, [1.9, 1.9], 0.3)
+
+        self.engine.time_delta = self.engine.conveyor.time_delta = 60
+
+        steps = list(self.engine._dive_const(step, 180))
+        self.assertEquals(3, len(steps))
+
+        s1, s2, s3 = steps
+        self.assertEquals(20, s1.depth)
+        self.assertEquals(180, s1.time)
+        self.assertEquals(20, s2.depth)
+        self.assertEquals(240, s2.time)
+        self.assertEquals(20, s3.depth)
+        self.assertEquals(300, s3.time)
+
+
 # vim: sw=4:et:ai

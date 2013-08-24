@@ -55,10 +55,11 @@ class DecoRoutine(object):
 
 class Engine(object):
     PARTS = {
-        '_free_ascent',
         '_deco_ascent',
-        '_dive_profile',
+        '_dive_const',
+        '_dive_descent',
         '_find_first_stop',
+        '_free_ascent',
     }
 
     def __init__(self):
@@ -290,15 +291,26 @@ class Engine(object):
         return tp
 
 
-    def _dive_profile(self, start, depth, time):
+    def _dive_const(self, start, time):
+        """
+        Dive constant depth for specifed amount of time.
+
+        Collection of dive steps is returned.
+
+        :Parameters:
+         start
+            Starting dive step.
+         depth
+        """
         step = start
-        belt = self.conveyor.trays(depth, step.time, step.time + time, 0)
+        duration = start.time + time
+        belt = self.conveyor.trays(start.depth, start.time, duration, 0)
         for tray in belt:
             step = self._step_next(step, tray.d_time)
             yield step
 
 
-    def _descent(self, depth):
+    def _dive_descent(self, depth):
         start = self.calc.init_tissues(self.surface_pressure)
         step = self._step(0, 0, start)
         yield step
@@ -428,10 +440,10 @@ class Engine(object):
     def calculate(self, depth, time):
         self.deco_table = []
 
-        for step in self._descent(depth):
+        for step in self._dive_descent(depth):
             yield self._step_info(step, 'descent')
 
-        for step in self._dive_profile(step, depth, time):
+        for step in self._dive_const(step, time):
             yield self._step_info(step, 'bottom')
 
         first_stop = self._find_first_stop(step)
