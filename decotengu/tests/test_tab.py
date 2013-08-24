@@ -45,7 +45,7 @@ class SchreinerTabularEquationTestCase(unittest.TestCase):
         Test Schreiner equation (tabular) - ascent 10m on air
         """
         # ascent, so rate == -1 bar/min
-        v = eq_schreiner_t(4, 60, -1, 3, 5.0, ZH_L16B_EXP_HALF_LIFE_10M[0])
+        v = eq_schreiner_t(4, 60, 0.79, -1, 3, 5.0, ZH_L16B_EXP_HALF_LIFE_10M[0])
         self.assertAlmostEqual(2.96198, v, 4)
 
 
@@ -54,7 +54,7 @@ class SchreinerTabularEquationTestCase(unittest.TestCase):
         Test Schreiner equation (tabular) - descent 10m on air
         """
         # rate == 1 bar/min
-        v = eq_schreiner_t(4, 60, 1, 3, 5.0, ZH_L16B_EXP_HALF_LIFE_10M[0])
+        v = eq_schreiner_t(4, 60, 0.79, 1, 3, 5.0, ZH_L16B_EXP_HALF_LIFE_10M[0])
         self.assertAlmostEqual(3.06661, v, 4)
 
 
@@ -146,8 +146,8 @@ class TabularTissueCalculatorTestCase(unittest.TestCase):
         with mock.patch('decotengu.tab.eq_schreiner_t') as f:
             f.return_value = 2
             c = TabTissueCalculator()
-            v = c._load_tissue(4, 144, -1, 3, 1)
-            f.assert_called_once_with(4, 144, -1, 3, 8.0,
+            v = c._load_tissue(4, 144, 0.79, -1, 3, 1)
+            f.assert_called_once_with(4, 144, 0.79, -1, 3, 8.0,
                     ZH_L16B_EXP_HALF_LIFE_TIME[-1][1])
             self.assertEquals(2, v)
 
@@ -159,8 +159,8 @@ class TabularTissueCalculatorTestCase(unittest.TestCase):
         with mock.patch('decotengu.tab.eq_schreiner_t') as f:
             f.return_value = 2
             c = TabTissueCalculator()
-            v = c._load_tissue(4, 6, -1, 3, 1)
-            f.assert_called_once_with(4, 6, -1, 3, 8.0,
+            v = c._load_tissue(4, 6, 0.79, -1, 3, 1)
+            f.assert_called_once_with(4, 6, 0.79, -1, 3, 8.0,
                     ZH_L16B_EXP_HALF_LIFE_1M[1])
             self.assertEquals(2, v)
 
@@ -172,8 +172,8 @@ class TabularTissueCalculatorTestCase(unittest.TestCase):
         with mock.patch('decotengu.tab.eq_schreiner_t') as f:
             f.return_value = 2
             c = TabTissueCalculator()
-            v = c._load_tissue(4, 12, -1, 3, 1)
-            f.assert_called_once_with(4, 12, -1, 3, 8.0,
+            v = c._load_tissue(4, 12, 0.79, -1, 3, 1)
+            f.assert_called_once_with(4, 12, 0.79, -1, 3, 8.0,
                     ZH_L16B_EXP_HALF_LIFE_2M[1])
             self.assertEquals(2, v)
 
@@ -185,8 +185,8 @@ class TabularTissueCalculatorTestCase(unittest.TestCase):
         with mock.patch('decotengu.tab.eq_schreiner_t') as f:
             f.return_value = 2
             c = TabTissueCalculator()
-            v = c._load_tissue(4, 60, -1, 3, 1)
-            f.assert_called_once_with(4, 60, -1, 3, 8.0,
+            v = c._load_tissue(4, 60, 0.79, -1, 3, 1)
+            f.assert_called_once_with(4, 60, 0.79, -1, 3, 8.0,
                     ZH_L16B_EXP_HALF_LIFE_10M[1])
             self.assertEquals(2, v)
 

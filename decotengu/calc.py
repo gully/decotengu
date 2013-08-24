@@ -26,7 +26,8 @@ import math
 from .const import WATER_VAPOUR_PRESSURE_DEFAULT, NUM_COMPARTMENTS
 
 
-def eq_schreiner(abs_p, time, rate, pressure, half_life, wvp=WATER_VAPOUR_PRESSURE_DEFAULT):
+def eq_schreiner(abs_p, time, gas, rate, pressure, half_life,
+        wvp=WATER_VAPOUR_PRESSURE_DEFAULT):
     """
     Calculate gas loading using Schreiner equation.
 
@@ -35,6 +36,8 @@ def eq_schreiner(abs_p, time, rate, pressure, half_life, wvp=WATER_VAPOUR_PRESSU
         Absolute pressure [bar] (current depth).
      time
         Time of exposure [s] (i.e. time of ascent).
+     gas
+        Inert gas fraction, i.e. 0.79.
      rate
         Pressure rate change [bar/min].
      pressure
@@ -45,10 +48,10 @@ def eq_schreiner(abs_p, time, rate, pressure, half_life, wvp=WATER_VAPOUR_PRESSU
         Water vapour pressure.
     """
     assert time > 0
-    palv = 0.79 * (abs_p - wvp)
+    palv = gas * (abs_p - wvp)
     t = time / 60.0
     k = math.log(2) / half_life
-    r = 0.79 * rate
+    r = gas * rate
     return palv + r * (t - 1 / k) - (palv - pressure - r / k) * math.exp(-k * t)
 
 
@@ -146,7 +149,7 @@ class TissueCalculator(object):
         self.config = ZH_L16B()
 
 
-    def _load_tissue(self, abs_p, time, rate, pressure, tissue_no):
+    def _load_tissue(self, abs_p, time, gas, rate, pressure, tissue_no):
         """
         Calculate gas loading of a tissue.
 
@@ -155,6 +158,8 @@ class TissueCalculator(object):
             Absolute pressure [bar] (current depth).
          time
             Time of exposure [second] (i.e. time of ascent).
+         gas
+            Inert gas fraction, i.e. 0.79.
          rate
             Pressure rate change [bar/min].
          pressure
@@ -163,7 +168,7 @@ class TissueCalculator(object):
             Tissue number.
         """
         hl = self.config.N2_HALF_LIFE[tissue_no]
-        return eq_schreiner(abs_p, time, rate, pressure, hl)
+        return eq_schreiner(abs_p, time, gas, rate, pressure, hl)
 
 
     def init_tissues(self, surface_pressure):
@@ -177,7 +182,7 @@ class TissueCalculator(object):
         return [0.7902 * (surface_pressure - self.config.water_vapour_pressure)] * NUM_COMPARTMENTS
 
 
-    def load_tissues(self, abs_p, time, rate, tissue_pressure):
+    def load_tissues(self, abs_p, time, gas, rate, tissue_pressure):
         """
         Change gas loading of all tissues.
 
@@ -186,12 +191,14 @@ class TissueCalculator(object):
             Absolute pressure [bar] (current depth).
          time
             Time of exposure [second] (i.e. time of ascent).
+         gas
+            Inert gas fraction, i.e. 0.79.
          rate
             Pressure rate change [bar/min].
          tissue_pressure
             Pressure of each tissue [bar].
         """
-        tp = (self._load_tissue(abs_p, time, rate, tp, k)
+        tp = (self._load_tissue(abs_p, time, gas, rate, tp, k)
                 for k, tp in enumerate(tissue_pressure))
         return tuple(tp)
 

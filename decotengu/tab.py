@@ -243,7 +243,8 @@ ZH_L16C_EXP_HALF_LIFE_10M = (
 
 
 
-def eq_schreiner_t(abs_p, time, rate, pressure, half_life, texp, wvp=WATER_VAPOUR_PRESSURE_DEFAULT):
+def eq_schreiner_t(abs_p, time, gas, rate, pressure, half_life, texp,
+        wvp=WATER_VAPOUR_PRESSURE_DEFAULT):
     """
     Calculate gas loading using Schreiner equation and precomputed values
     of exp and ln functions.
@@ -253,6 +254,8 @@ def eq_schreiner_t(abs_p, time, rate, pressure, half_life, texp, wvp=WATER_VAPOU
         Absolute pressure [bar] (current depth).
      time
         Time of exposure [s] (i.e. time of ascent).
+     gas
+        Inert gas fraction, i.e. 0.79.
      rate
         Pressure rate change [bar/min].
      pressure
@@ -264,10 +267,10 @@ def eq_schreiner_t(abs_p, time, rate, pressure, half_life, texp, wvp=WATER_VAPOU
      wvp
         Water vapour pressure.
     """
-    palv = 0.79 * (abs_p - wvp)
+    palv = gas * (abs_p - wvp)
     t = time / 60.0
     k = LOG_2 / half_life
-    r = 0.79 * rate
+    r = gas * rate
     return palv + r * (t - 1 / k) - (palv - pressure - r / k) * texp
 
 
@@ -331,7 +334,7 @@ class TabTissueCalculator(TissueCalculator):
 
     config = property(lambda self: self._config, _set_config)
 
-    def _load_tissue(self, abs_p, time, rate, pressure, tissue_no):
+    def _load_tissue(self, abs_p, time, gas, rate, pressure, tissue_no):
         """
         Calculate gas loading of a tissue.
 
@@ -340,6 +343,8 @@ class TabTissueCalculator(TissueCalculator):
             Absolute pressure [bar] (current depth).
          time
             Time of exposure [second] (i.e. time of ascent).
+         gas
+            Inert gas fraction, i.e. 0.79.
          rate
             Pressure rate change [bar/min].
          pressure
@@ -357,7 +362,7 @@ class TabTissueCalculator(TissueCalculator):
         else:
             idx = int(time / 18) - 1
             texp = self._exp_time[idx][tissue_no]
-        return eq_schreiner_t(abs_p, time, rate, pressure, hl, texp)
+        return eq_schreiner_t(abs_p, time, gas, rate, pressure, hl, texp)
 
 
 # vim: sw=4:et:ai

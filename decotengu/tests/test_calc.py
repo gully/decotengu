@@ -36,7 +36,7 @@ class SchreinerEquationTestCase(unittest.TestCase):
         Test Schreiner equation - ascent 10m on air
         """
         # ascent, so rate == -1 bar/min
-        v = eq_schreiner(4, 60, -1, 3, 5.0)
+        v = eq_schreiner(4, 60, 0.79, -1, 3, 5.0)
         self.assertAlmostEqual(2.96198, v, 4)
 
 
@@ -45,8 +45,26 @@ class SchreinerEquationTestCase(unittest.TestCase):
         Test Schreiner equation - descent 10m on air
         """
         # rate == 1 bar/min
-        v = eq_schreiner(4, 60, 1, 3, 5.0)
+        v = eq_schreiner(4, 60, 0.79, 1, 3, 5.0)
         self.assertAlmostEqual(3.06661, v, 4)
+
+
+    def test_ean_ascent(self):
+        """
+        Test Schreiner equation - ascent 10m on EAN32
+        """
+        # ascent, so rate == -1 bar/min
+        v = eq_schreiner(4, 60, 0.68, -1, 3, 5.0)
+        self.assertAlmostEqual(2.9132, v, 4)
+
+
+    def test_ean_descent(self):
+        """
+        Test Schreiner equation - descent 10m on EAN32
+        """
+        # rate == 1 bar/min
+        v = eq_schreiner(4, 60, 0.68, 1, 3, 5.0)
+        self.assertAlmostEqual(3.00326, v, 4)
 
 
 
@@ -92,8 +110,8 @@ class TissueCalculatorTestCase(unittest.TestCase):
         with mock.patch('decotengu.calc.eq_schreiner') as f:
             f.return_value = 2
             c = TissueCalculator()
-            v = c._load_tissue(4, 60, -1, 3, 1)
-            f.assert_called_once_with(4, 60, -1, 3, 8.0)
+            v = c._load_tissue(4, 60, 0.79, -1, 3, 1)
+            f.assert_called_once_with(4, 60, 0.79, -1, 3, 8.0)
             self.assertEquals(2, v)
 
 
@@ -103,11 +121,11 @@ class TissueCalculatorTestCase(unittest.TestCase):
         """
         c = TissueCalculator()
         c._load_tissue = mock.MagicMock(side_effect=range(1, 17))
-        v = c.load_tissues(4, 60, -1, [0.79] * NUM_COMPARTMENTS)
+        v = c.load_tissues(4, 60, 0.79, -1, [0.79] * NUM_COMPARTMENTS)
 
         self.assertEquals(NUM_COMPARTMENTS, c._load_tissue.call_count)
         self.assertEquals(tuple(range(NUM_COMPARTMENTS)),
-                tuple(t[0][4] for t in c._load_tissue.call_args_list))
+                tuple(t[0][5] for t in c._load_tissue.call_args_list))
         self.assertEquals(v, tuple(range(1, 17)))
 
 

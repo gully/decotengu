@@ -34,14 +34,15 @@ def write_csv(f, data):
      data
         Tissue saturation data.
     """
-    header = ['depth', 'time', 'pressure', 'tissue_no', 'tissue_pressure',
-            'tissue_limit', 'gf', 'tissue_gf_limit', 'type']
+    header = ['depth', 'time', 'pressure', 'gas', 'tissue_no',
+        'tissue_pressure', 'tissue_limit', 'gf', 'tissue_gf_limit', 'type'
+    ]
 
     fcsv = csv.writer(f)
     fcsv.writerow(header)
 
     for sample in data:
-        r1 = [sample.depth, sample.time, sample.pressure] 
+        r1 = [sample.depth, sample.time, sample.pressure, sample.gas] 
         for tissue in sample.tissues:
             r2 = [tissue.no, tissue.pressure, tissue.limit, tissue.gf,
                 tissue.gf_limit, sample.type]

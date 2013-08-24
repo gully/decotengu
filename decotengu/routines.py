@@ -51,7 +51,7 @@ class AscentJumper(DecoRoutine):
     accurate. The longer depth jump, the less accuracy. Do not use for
     ascents faster than 10m/min.
     """
-    def __call__(self, start, stop):
+    def __call__(self, start, stop, gas):
         engine = self.engine
         ascent_rate = engine.ascent_rate
         calc = engine.calc
@@ -65,8 +65,8 @@ class AscentJumper(DecoRoutine):
         for tray in belt:
             depth = tray.depth - engine._to_depth(tray.d_time) # jump
             abs_p = engine._to_pressure(depth)
-            tp = calc.load_tissues(abs_p, tray.d_time, 0, tp)
-            yield engine._step(depth, tray.time + tray.d_time, tp)
+            tp = calc.load_tissues(abs_p, tray.d_time, gas, 0, tp)
+            yield engine._step(depth, tray.time + tray.d_time, gas, tp)
 
 
 
@@ -80,7 +80,7 @@ class FirstStopTabFinder(DecoRoutine):
 
     Ascent rate is assumed to be 10m/min and non-configurable.
     """
-    def __call__(self, start):
+    def __call__(self, start, gas):
         engine = self.engine
         calc = engine.calc
 
@@ -93,17 +93,20 @@ class FirstStopTabFinder(DecoRoutine):
         time_start = start.time + t
 
         if t > 0:
-            tp_start = engine._tissue_pressure_ascent(start.pressure, t, tp_start)
+            tp_start = engine._tissue_pressure_ascent(start.pressure, t,
+                    gas, tp_start)
 
         logger.debug('tabular search: restart at {}m, {}s ({}s)'.format(depth,
             time_start, t))
 
-        step = engine._step(depth, time_start, tp_start)
+        step = engine._step(depth, time_start, gas, tp_start)
 
         # ascent using max depth allowed by tabular calculator; use None to
         # indicate that surface is hit
         f_step = lambda step: None if step.depth == 0 else \
-                engine._step_next_ascent(step, min(calc.max_time, step.depth * 6))
+                engine._step_next_ascent(step,
+                        min(calc.max_time, step.depth * 6),
+                        gas)
 
         # execute ascent invariant until surface is hit
         f_inv = lambda step: step is not None and engine._inv_ascent(step)
@@ -125,7 +128,7 @@ class FirstStopTabFinder(DecoRoutine):
         def f(k, step):
             assert k <= len(calc._exp_time)
             return True if k == 0 else \
-                engine._inv_ascent(engine._step_next_ascent(step, k * 18))
+                engine._inv_ascent(engine._step_next_ascent(step, k * 18, gas))
 
         # FIXME: len(calc._exp_time) == calc.max_time / 6 so make it nicer
         n = len(calc._exp_time)
@@ -134,7 +137,7 @@ class FirstStopTabFinder(DecoRoutine):
 
         if k > 0:
             t = k * 18
-            step = engine._step_next_ascent(step, t)
+            step = engine._step_next_ascent(step, t, gas)
 
         logger.debug('tabular search: free from {} to {}, ascent time={}' \
                 .format(depth_start, step.depth, step.time - time_start))
@@ -150,7 +153,7 @@ class DecoStopStepper(DecoRoutine):
     The algorithm is quite inefficient, but is used some, so the
     implementation is created for comparison purposes.
     """
-    def __call__(self, first_stop):
+    def __call__(self, first_stop, gas):
         engine = self.engine
         step = first_stop
 
@@ -177,9 +180,9 @@ class DecoStopStepper(DecoRoutine):
 
             yield step
 
-            if not engine._inv_deco_stop(step, gf + gf_step):
+            if not engine._inv_deco_stop(step, gas, gf + gf_step):
                 engine.deco_table.append(DecoStop(step.depth, time))
-                step = engine._step_next_ascent(step, 18, gf + gf_step)
+                step = engine._step_next_ascent(step, 18, gas, gf + gf_step)
 
                 yield step
 
