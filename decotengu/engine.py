@@ -372,7 +372,13 @@ class Engine(object):
 
     def _free_ascent(self, start, stop):
         """
-        Ascent using Schreiner equation from current depth to lower depth.
+        Ascent from current depth to shallower depth.
+
+        :Parameters:
+         start
+            Dive step indicating current depth.
+         stop
+            Dive step indicating destination depth.
         """
         logger.debug('ascent from {0.depth}m ({0.time}s)'
                 ' to {1.depth}m ({1.time}s)'.format(start, stop))

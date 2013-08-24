@@ -358,4 +358,46 @@ class EngineTestCase(unittest.TestCase):
         self.assertIsNone(stop)
 
 
+    def test_free_ascent(self):
+        """
+        Test ascent from current to shallower depth without deco
+        """
+        pressure = self.engine._to_pressure
+        self.engine.conveyor.time_delta = 60
+
+        start = Step(31, 1200, pressure(31), [1.0, 1.0], 0.3)
+        stop = Step(10, 1326, pressure(10), [1.33538844660, 1.22340240386], 0.3)
+        steps = list(self.engine._free_ascent(start, stop))
+
+        self.assertEquals(3, len(steps))
+
+        s1, s2, s3 = steps
+        self.assertEquals(s1.depth, 21.0)
+        self.assertEquals(s1.time, 1260)
+        self.assertEquals(s2.depth, 11.0)
+        self.assertEquals(s2.time, 1320)
+        self.assertEquals(s3.depth, 10.0)
+        self.assertEquals(s3.time, 1326)
+
+
+    def test_free_ascent_no_time_delta(self):
+        """
+        Test ascent from current to shallower depth without deco (no time delta)
+        """
+        pressure = self.engine._to_pressure
+        self.engine.conveyor.time_delta = None
+
+        assert self.engine.conveyor.time_delta is None, self.engine.conveyor.time_delta
+
+        start = Step(31, 1200, pressure(31), [1.0, 1.0], 0.3)
+        stop = Step(10, 1326, pressure(10), [1.33538844660, 1.22340240386], 0.3)
+        steps = list(self.engine._free_ascent(start, stop))
+
+        self.assertEquals(1, len(steps))
+
+        step = steps[0]
+        self.assertEquals(step.depth, 10)
+        self.assertEquals(step.time, 1326)
+
+
 # vim: sw=4:et:ai
