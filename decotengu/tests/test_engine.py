@@ -434,4 +434,47 @@ class EngineTestCase(unittest.TestCase):
         self.assertEquals(1710, steps[9].time)
 
 
+    def test_calculation_no_deco(self):
+        """
+        Test deco engine dive profile calculation without deco
+        """
+        s1 = Step(0, 0, 1, (0.7, 0.7), 0.3)
+        s2 = Step(25, 150, 2.5, (1.5, 1.5), 0.3)
+        s3 = Step(25, 1050, 2.5, (2.0, 2.0), 0.3)
+        self.engine._dive_descent = mock.MagicMock(return_value=[s1, s2])
+        self.engine._dive_const = mock.MagicMock(return_value=[s3])
+        self.engine._find_first_stop = mock.MagicMock(return_value=None)
+        self.engine._free_ascent = mock.MagicMock()
+        self.engine._deco_ascent = mock.MagicMock()
+
+        v = list(self.engine.calculate(25, 15 * 60))
+        self.assertEquals(1, self.engine._dive_descent.call_count)
+        self.assertEquals(1, self.engine._dive_const.call_count)
+        self.assertEquals(1, self.engine._find_first_stop.call_count)
+        self.assertEquals(1, self.engine._free_ascent.call_count)
+        self.assertEquals(0, self.engine._deco_ascent.call_count)
+
+
+    def test_calculation_with_deco(self):
+        """
+        Test deco engine dive profile calculation with deco
+        """
+        s1 = Step(0, 0, 1, (0.7, 0.7), 0.3)
+        s2 = Step(45, 270, 5.5, (3.0, 3.0), 0.3)
+        s3 = Step(45, 2070, 5.5, (4.5, 4.5), 0.3)
+        s4 = Step(21, 2214, 3.1, (3.0, 3.0), 0.3)
+        self.engine._dive_descent = mock.MagicMock(return_value=[s1, s2])
+        self.engine._dive_const = mock.MagicMock(return_value=[s3])
+        self.engine._find_first_stop = mock.MagicMock(return_value=s4)
+        self.engine._free_ascent = mock.MagicMock()
+        self.engine._deco_ascent = mock.MagicMock()
+
+        v = list(self.engine.calculate(45, 30 * 60))
+        self.assertEquals(1, self.engine._dive_descent.call_count)
+        self.assertEquals(1, self.engine._dive_const.call_count)
+        self.assertEquals(1, self.engine._find_first_stop.call_count)
+        self.assertEquals(1, self.engine._free_ascent.call_count)
+        self.assertEquals(1, self.engine._deco_ascent.call_count)
+
+
 # vim: sw=4:et:ai

@@ -465,6 +465,17 @@ class Engine(object):
 
 
     def calculate(self, depth, time):
+        """
+        Calculate dive profile.
+
+        Time spent at maximum depth does not include descent.
+
+        :Parameters:
+         depth
+            Maximum depth [m].
+         time
+            Time spent at maximum depth [s].
+        """
         self.deco_table = []
 
         for step in self._dive_descent(depth):
@@ -475,12 +486,13 @@ class Engine(object):
 
         first_stop = self._find_first_stop(step)
 
+        # first stop can be at the surface
+        for step in self._free_ascent(step, first_stop):
+            yield self._step_info(step, 'ascent') 
+
         if first_stop: # otherwise we are at surface
             for step in self._deco_ascent(first_stop): 
                 yield self._step_info(step, 'deco')
-        else:
-            for step in self._free_ascent(step, first_stop):
-                yield self._step_info(step, 'ascent') 
 
 
 # vim: sw=4:et:ai
