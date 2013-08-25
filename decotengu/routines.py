@@ -153,14 +153,13 @@ class DecoStopStepper(DecoRoutine):
     The algorithm is quite inefficient, but is used some, so the
     implementation is created for comparison purposes.
     """
-    def __call__(self, first_stop, gas):
+    def __call__(self, first_stop, depth, gas, gf_start, gf_step):
         engine = self.engine
         step = first_stop
 
         assert step.depth % 3 == 0
 
-        n_stops = int(step.depth / 3)
-        gf_step = (engine.gf_high - engine.gf_low) / n_stops
+        n_stops = round((step.depth - depth) / 3)
         logger.debug('stepper: stops={}, gf step={:.4}'.format(n_stops, gf_step))
 
         k_stop = 0
@@ -169,14 +168,14 @@ class DecoStopStepper(DecoRoutine):
             logger.debug('stepper: k_stop={}, depth={}m'.format(k_stop,
                 step.depth))
 
-            gf = engine.gf_low + k_stop * gf_step
+            gf = gf_start + k_stop * gf_step
 
             # stay 1 min
-            step = engine._step_next(step, 60, gas, gf)
+            step = engine._step_next(step, 60, gas, gf=gf)
             time += 1
 
-            logger.debug('stepper: {}m {}min, gf={:4f}'.format(step.depth, time,
-                gf))
+            logger.debug('stepper: {}m {}min, gas={.o2}, gf={:.4f}' \
+                .format(step.depth, time, gas, gf))
 
             yield step
 
