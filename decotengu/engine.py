@@ -46,7 +46,7 @@ Step = namedtuple('Step', 'depth time pressure gas tissues gf')
 DecoStopStep = namedtuple('DecoStopStep', 'depth time pressure gas tissues')
 DecoStop = namedtuple('Stop', 'depth time')
 
-GasMix = namedtuple('GasMix', 'depth o2 he')
+GasMix = namedtuple('GasMix', 'depth o2 n2 he')
 
 class DecoRoutine(object):
     def __init__(self):
@@ -513,7 +513,7 @@ class Engine(object):
          o2
             O2 percentage.
         """
-        self._gas_list.append(GasMix(depth, o2, 0))
+        self._gas_list.append(GasMix(depth, o2, 100 - o2, 0))
 
 
     def calculate(self, depth, time):

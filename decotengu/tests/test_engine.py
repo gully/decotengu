@@ -617,4 +617,19 @@ class EngineTestCase(unittest.TestCase):
         self.assertAlmostEquals(0.11, gf_steps[1])
 
 
+    def test_adding_gas(self):
+        """
+        Test deco engine adding new gas mix
+        """
+        assert len(self.engine._gas_list) == 1
+
+        self.engine.add_gas(33, 32)
+        mix = self.engine._gas_list[1]
+
+        self.assertEquals(32, mix.o2)
+        self.assertEquals(68, mix.n2)
+        self.assertEquals(0, mix.he)
+        self.assertEquals(33, mix.depth)
+
+
 # vim: sw=4:et:ai
