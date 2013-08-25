@@ -24,6 +24,18 @@ import re
 import sys
 
 
+class ValidateReplacement(argparse.Action):
+    PARTS = {'tab', 'ascentjump', 'decostep'}
+    def __call__(self, parser, args, values, option_string=None):
+        parts = set(values.split(','))
+        if parts - self.PARTS:
+            s = ', '.join(parts - self.PARTS)
+            raise argparse.ArgumentError(self,
+                'Invalid part replacement(s): {}'.format(s))
+        setattr(args, self.dest, tuple(sorted(parts)))
+
+
+
 parser = argparse.ArgumentParser(description='DecoTengu 0.1.0.')
 parser.add_argument('-v', '--verbose',
         action='store_true', dest='verbose', default=False,
@@ -47,6 +59,10 @@ parser.add_argument('--time-delta', '-t', dest='time_delta', default=None,
 #        default=True, type=bool, help='decompression model')
 parser.add_argument('--tissue-file', '-f', dest='tissue_file',
         default=None, type=str, help='tissue saturation data output file')
+parser.add_argument('--replace-parts', '-r', dest='parts',
+        default=(), type=str, action=ValidateReplacement,
+        help='list of alternative implementations to be used: tab,' \
+            ' ascentjump, decostep')
 parser.add_argument('depth', type=int, help='dive maximum depth [meter]')
 parser.add_argument('time', type=int, help='dive time [minute]')
 args = parser.parse_args()
@@ -55,7 +71,7 @@ if args.verbose:
     logging.basicConfig(level=logging.DEBUG)
 
 import decotengu
-#from decotengu.routines import AscentJumper, DecoStopStepper, FirstStopTabFinder
+from decotengu.routines import AscentJumper, DecoStopStepper, FirstStopTabFinder
 from decotengu.tab import TabTissueCalculator
 from decotengu.util import write_csv, deco_sum
 
@@ -85,10 +101,11 @@ if args.gas_list:
 else:
     engine.add_gas(0, 21)
 
-#config = decotengu.ZH_L16C()
+if 'ascentjump' in args.parts:
+    engine._free_ascent = AscentJumper()
+if 'decostep' in args.parts:
+    engine._deco_ascent = DecoStopStepper()
 #engine._find_first_stop = FirstStopTabFinder()
-#engine._free_ascent = AscentJumper()
-#engine._deco_ascent = DecoStopStepper()
 #engine.calc = TabTissueCalculator()
 
 data = engine.calculate(args.depth, args.time * 60)
