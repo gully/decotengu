@@ -172,7 +172,7 @@ class DecoStopStepper(DecoRoutine):
             gf = engine.gf_low + k_stop * gf_step
 
             # stay 1 min
-            step = engine._step_next(step, 60, gf)
+            step = engine._step_next(step, 60, gas, gf)
             time += 1
 
             logger.debug('stepper: {}m {}min, gf={:4f}'.format(step.depth, time,

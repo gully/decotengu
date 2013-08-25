@@ -344,7 +344,7 @@ class TabTissueCalculator(TissueCalculator):
          time
             Time of exposure [second] (i.e. time of ascent).
          gas
-            Inert gas fraction, i.e. 0.79.
+            Gas mix configuration.
          rate
             Pressure rate change [bar/min].
          pressure
@@ -362,7 +362,7 @@ class TabTissueCalculator(TissueCalculator):
         else:
             idx = int(time / 18) - 1
             texp = self._exp_time[idx][tissue_no]
-        return eq_schreiner_t(abs_p, time, gas, rate, pressure, hl, texp)
+        return eq_schreiner_t(abs_p, time, gas.n2 / 100, rate, pressure, hl, texp)
 
 
 # vim: sw=4:et:ai

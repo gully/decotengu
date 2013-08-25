@@ -159,7 +159,7 @@ class TissueCalculator(object):
          time
             Time of exposure [second] (i.e. time of ascent).
          gas
-            Inert gas fraction, i.e. 0.79.
+            Gas mix configuration.
          rate
             Pressure rate change [bar/min].
          pressure
@@ -168,7 +168,7 @@ class TissueCalculator(object):
             Tissue number.
         """
         hl = self.config.N2_HALF_LIFE[tissue_no]
-        return eq_schreiner(abs_p, time, gas, rate, pressure, hl)
+        return eq_schreiner(abs_p, time, gas.n2 / 100, rate, pressure, hl)
 
 
     def init_tissues(self, surface_pressure):
@@ -192,7 +192,7 @@ class TissueCalculator(object):
          time
             Time of exposure [second] (i.e. time of ascent).
          gas
-            Inert gas fraction, i.e. 0.79.
+            Gas mix configuration.
          rate
             Pressure rate change [bar/min].
          tissue_pressure

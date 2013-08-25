@@ -31,10 +31,12 @@ from decotengu.tab import eq_schreiner_t, TabTissueCalculator, \
         ZH_L16C_EXP_HALF_LIFE_2M, \
         ZH_L16C_EXP_HALF_LIFE_10M
 from decotengu.calc import ZH_L16B, ZH_L16C
+from decotengu.engine import GasMix
 
 import unittest
 import mock
 
+AIR = GasMix(0, 21, 79, 0)
 
 class SchreinerTabularEquationTestCase(unittest.TestCase):
     """
@@ -146,7 +148,7 @@ class TabularTissueCalculatorTestCase(unittest.TestCase):
         with mock.patch('decotengu.tab.eq_schreiner_t') as f:
             f.return_value = 2
             c = TabTissueCalculator()
-            v = c._load_tissue(4, 144, 0.79, -1, 3, 1)
+            v = c._load_tissue(4, 144, AIR, -1, 3, 1)
             f.assert_called_once_with(4, 144, 0.79, -1, 3, 8.0,
                     ZH_L16B_EXP_HALF_LIFE_TIME[-1][1])
             self.assertEquals(2, v)
@@ -159,7 +161,7 @@ class TabularTissueCalculatorTestCase(unittest.TestCase):
         with mock.patch('decotengu.tab.eq_schreiner_t') as f:
             f.return_value = 2
             c = TabTissueCalculator()
-            v = c._load_tissue(4, 6, 0.79, -1, 3, 1)
+            v = c._load_tissue(4, 6, AIR, -1, 3, 1)
             f.assert_called_once_with(4, 6, 0.79, -1, 3, 8.0,
                     ZH_L16B_EXP_HALF_LIFE_1M[1])
             self.assertEquals(2, v)
@@ -172,7 +174,7 @@ class TabularTissueCalculatorTestCase(unittest.TestCase):
         with mock.patch('decotengu.tab.eq_schreiner_t') as f:
             f.return_value = 2
             c = TabTissueCalculator()
-            v = c._load_tissue(4, 12, 0.79, -1, 3, 1)
+            v = c._load_tissue(4, 12, AIR, -1, 3, 1)
             f.assert_called_once_with(4, 12, 0.79, -1, 3, 8.0,
                     ZH_L16B_EXP_HALF_LIFE_2M[1])
             self.assertEquals(2, v)
@@ -185,7 +187,7 @@ class TabularTissueCalculatorTestCase(unittest.TestCase):
         with mock.patch('decotengu.tab.eq_schreiner_t') as f:
             f.return_value = 2
             c = TabTissueCalculator()
-            v = c._load_tissue(4, 60, 0.79, -1, 3, 1)
+            v = c._load_tissue(4, 60, AIR, -1, 3, 1)
             f.assert_called_once_with(4, 60, 0.79, -1, 3, 8.0,
                     ZH_L16B_EXP_HALF_LIFE_10M[1])
             self.assertEquals(2, v)

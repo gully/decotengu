@@ -150,7 +150,7 @@ class Engine(object):
          step
             Dive step - current decompression stop.
          gas
-            Inert gas fraction, i.e. 0.79.
+            Gas mix configuration.
          gf
             Gradient factor value for next decompression stop.
         """
@@ -174,7 +174,7 @@ class Engine(object):
             Time at which dive step is recorded (in seconds since start of
             a dive).
          gas
-            Inert gas fraction, i.e. 0.79.
+            Gas mix configuration.
          tissues
             Current tissues gas loadings.
          gf
@@ -196,7 +196,7 @@ class Engine(object):
          time
             Time spent at current depth [s].
          gas
-            Inert gas fraction, i.e. 0.79.
+            Gas mix configuration.
          gf
             Gradient factor value for pressure limit calculation.
         """
@@ -215,7 +215,7 @@ class Engine(object):
          time
             Time to descent [s].
          gas
-            Inert gas fraction, i.e. 0.79.
+            Gas mix configuration.
          gf
             Gradient factor value for pressure limit calculation.
         """
@@ -235,7 +235,7 @@ class Engine(object):
          time
             Time to ascent [s].
          gas
-            Inert gas fraction, i.e. 0.79.
+            Gas mix configuration.
          gf
             Gradient factor value for pressure limit calculation.
         """
@@ -261,7 +261,7 @@ class Engine(object):
          time
             Time at pressure in seconds.
          gas
-            Inert gas fraction, i.e. 0.79.
+            Gas mix configuration.
          tp_start
             Initial tissues pressure.
         """
@@ -280,7 +280,7 @@ class Engine(object):
          time
             Time of descent in seconds.
          gas
-            Inert gas fraction, i.e. 0.79.
+            Gas mix configuration.
          tp_start
             Initial tissues pressure.
         """
@@ -300,7 +300,7 @@ class Engine(object):
          time
             Time of ascent in seconds.
          gas
-            Inert gas fraction, i.e. 0.79.
+            Gas mix configuration.
          tp_start
             Initial tissues pressure.
         """
@@ -321,7 +321,7 @@ class Engine(object):
          time
             Duration of dive at depth indicated by starting dive step [s]. 
          gas
-            Inert gas fraction, i.e. 0.79.
+            Gas mix configuration.
         """
         step = start
         duration = start.time + time
@@ -339,7 +339,7 @@ class Engine(object):
          depth
             Destination depth.
          gas
-            Inert gas fraction, i.e. 0.79.
+            Gas mix configuration.
         """
         start = self.calc.init_tissues(self.surface_pressure)
         step = self._step(0, 0, gas, start)
@@ -373,7 +373,7 @@ class Engine(object):
          depth
             Depth limit - surface or gas switch depth.
          gas
-            Inert gas fraction, i.e. 0.79.
+            Gas mix configuration.
         """
         # FIXME: calculate time for 3m ascent, now hardcoded to 18s
         t0 = start.depth / self.ascent_rate * 60
@@ -414,7 +414,7 @@ class Engine(object):
          stop
             Dive step indicating destination depth.
          gas
-            Inert gas fraction, i.e. 0.79.
+            Gas mix configuration.
         """
         logger.debug('ascent from {0.depth}m ({0.time}s)'
                 ' to {1.depth}m ({1.time}s)'.format(start, stop))
@@ -448,7 +448,7 @@ class Engine(object):
          depth
             Destination depth.
          gas
-            Inert gas fraction, i.e. 0.79.
+            Gas mix configuration.
          gf_start
             Gradient factor start value for the first stop.
          gf_step
@@ -479,8 +479,8 @@ class Engine(object):
             k = bisect_find(max_time + 1, b_fg, l_step)
 
             t = round(l_step.time - step.time + (k + 1) * 60)
-            logger.debug('deco stop: search completed {}m, {}s, n2={}, gf={:.4}' \
-                    .format(step.depth, t, gas, gf))
+            logger.debug('deco stop: search completed {}m, {}s, n2={.n2}%,' \
+                ' gf={:.4}'.format(step.depth, t, gas, gf))
 
             time = step.time
             belt = self.conveyor.trays(step.depth, time, time + t, 0)
@@ -530,7 +530,7 @@ class Engine(object):
         """
         # FIXME: raise error when gas list empty
         self.deco_table = []
-        gas = (100 - self._gas_list[0].o2) / 100
+        gas = self._gas_list[0]
 
         for step in self._dive_descent(depth, gas):
             yield self._step_info(step, 'descent')
@@ -538,11 +538,11 @@ class Engine(object):
         for step in self._dive_const(step, time, gas):
             yield self._step_info(step, 'bottom')
 
-        # switch depth, gas -> destination depth, gas
+        # (switch depth, gas) -> (destination depth, gas)
         # (0m, 21%), (22m, 50%), (6m, 100%) -> (22m, 21%), (6m, 50%), (0m, 100%)
         mix = zip(self._gas_list[:-1], self._gas_list[1:])
-        depths = tuple((m2.depth, (100 - m1.o2) / 100) for m1, m2 in mix)
-        depths += ((0, (100 - self._gas_list[-1].o2) / 100), )
+        depths = tuple((m2.depth, m1) for m1, m2 in mix)
+        depths += ((0, self._gas_list[-1]), )
         k = len(depths)
 
         deco = False

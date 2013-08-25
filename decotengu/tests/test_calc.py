@@ -21,11 +21,14 @@
 DecoTengu calculator tests.
 """
 
+from decotengu.engine import GasMix
 from decotengu.calc import eq_schreiner, eq_gf_limit, TissueCalculator
 from decotengu.const import NUM_COMPARTMENTS
 
 import unittest
 import mock
+
+AIR = GasMix(depth=0, o2=21, n2=79, he=0)
 
 class SchreinerEquationTestCase(unittest.TestCase):
     """
@@ -110,7 +113,7 @@ class TissueCalculatorTestCase(unittest.TestCase):
         with mock.patch('decotengu.calc.eq_schreiner') as f:
             f.return_value = 2
             c = TissueCalculator()
-            v = c._load_tissue(4, 60, 0.79, -1, 3, 1)
+            v = c._load_tissue(4, 60, AIR, -1, 3, 1)
             f.assert_called_once_with(4, 60, 0.79, -1, 3, 8.0)
             self.assertEquals(2, v)
 
@@ -121,7 +124,7 @@ class TissueCalculatorTestCase(unittest.TestCase):
         """
         c = TissueCalculator()
         c._load_tissue = mock.MagicMock(side_effect=range(1, 17))
-        v = c.load_tissues(4, 60, 0.79, -1, [0.79] * NUM_COMPARTMENTS)
+        v = c.load_tissues(4, 60, AIR, -1, [0.79] * NUM_COMPARTMENTS)
 
         self.assertEquals(NUM_COMPARTMENTS, c._load_tissue.call_count)
         self.assertEquals(tuple(range(NUM_COMPARTMENTS)),

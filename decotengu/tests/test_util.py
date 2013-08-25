@@ -23,10 +23,12 @@ DecoTengu various utilities tests.
 
 import io
 
-from decotengu.engine import InfoSample, InfoTissue, DecoStop
+from decotengu.engine import InfoSample, InfoTissue, DecoStop, GasMix
 from decotengu.util import write_csv, deco_sum
 
 import unittest
+
+AIR = GasMix(0, 21, 79, 0)
 
 class WriteCSVTestCase(unittest.TestCase):
     """
@@ -39,11 +41,11 @@ class WriteCSVTestCase(unittest.TestCase):
         f = io.StringIO()
 
         data = [
-            InfoSample(0, 0, 2.1, 0.79, [
+            InfoSample(0, 0, 2.1, AIR, [
                 InfoTissue(0, 1.2, 0.9, 0.3, 0.95),
                 InfoTissue(1, 1.3, 0.91, 0.3, 0.96),
             ], 'descent'),
-            InfoSample(2, 5, 3.1, 0.79, [
+            InfoSample(2, 5, 3.1, AIR, [
                 InfoTissue(0, 1.4, 0.95, 0.3, 0.98),
                 InfoTissue(1, 1.5, 0.96, 0.3, 0.99),
             ], 'bottom'),
@@ -53,8 +55,8 @@ class WriteCSVTestCase(unittest.TestCase):
         st = f.getvalue().split('\n')
 
         self.assertEquals(6, len(st))
-        self.assertEquals(10, len(st[0].split(',')))
-        self.assertEquals(10, len(st[1].split(',')))
+        self.assertEquals(12, len(st[0].split(',')))
+        self.assertEquals(12, len(st[1].split(',')))
         self.assertEquals('', st[-1])
         self.assertTrue(st[0].startswith('depth,time,pressure,'))
         self.assertTrue(st[1].endswith('descent\r'), st[1])
