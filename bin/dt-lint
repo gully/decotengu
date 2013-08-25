@@ -34,8 +34,8 @@ parser.add_argument('--gf_high', '-gh', dest='gf_high', default=85,
         type=int, help='GF High, i.e. 85 [percentage]')
 parser.add_argument('--gas_list', '-l', dest='gas_list',
     help='gas list, i.e. "28,0@0" or "28,0@0 50,0@22"')
-#parser.add_argument('--pressure', '-p', dest='pressure', default=None,
-#        type=int, help='atmosphere pressure, i.e. 1013 [millibar]')
+parser.add_argument('--pressure', '-p', dest='pressure', default=None,
+        type=int, help='atmosphere pressure, i.e. 1013 [millibar]')
 #parser.add_argument('--altitude', '-a', dest='altitude', default=None,
 #        type=int, help='set altitude, i.e. 700m')
 parser.add_argument('--model', '-m', dest='model',
@@ -70,6 +70,9 @@ engine.gf_low = args.gf_low / 100
 engine.gf_high = args.gf_high / 100
 engine.conveyor.time_delta = None
 
+if args.pressure is not None:
+    engine.surface_pressure = int(args.pressure) / 1000
+
 if args.gas_list:
     for mix in args.gas_list.split():
         o2, he, depth = re.split('[,@]', mix)
@@ -95,6 +98,10 @@ else:
 
 print('Dive profile:')
 print(' {:3}m for {}min'.format(args.depth, args.time))
+print()
+print('GF Low: {}%'.format(int(engine.gf_low * 100)))
+print('GF High: {}%'.format(int(engine.gf_high * 100)))
+print('Surface pressure: {:.2f} millibar'.format(engine.surface_pressure * 1000))
 print()
 
 print('Gas list:')
