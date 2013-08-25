@@ -25,6 +25,7 @@ DecoTengu dive decompression engine.
 
 from functools import partial
 from collections import namedtuple
+import math
 import logging
 
 from .calc import TissueCalculator, ZH_L16B
@@ -353,10 +354,14 @@ class Engine(object):
 
 
 
-    def _find_first_stop(self, start, gas):
+    def _find_first_stop(self, start, depth, gas):
         """
         Find first decompression stop using Schreiner equation and bisect
         algorithm.
+
+        The first decompression stop is searched between depth indicated by
+        starting dive step and depth parameter (the latter can be 0
+        (surface) or any other depth (gas switch depth).
 
         The depth of first decompression stop is the shallowest depth,
         which does not breach the ascent limit imposed by maximum tissue
@@ -365,6 +370,8 @@ class Engine(object):
         :Parameters:
          start
             Starting dive step indicating current depth.
+         depth
+            Depth limit - surface or gas switch depth.
          gas
             Inert gas fraction, i.e. 0.79.
         """
@@ -373,7 +380,7 @@ class Engine(object):
         t1 = int(t0 / 18) * 18
         assert t0 >= t1
         dt = t0 - t1
-        n = t1 // 18
+        n = int(t1 // 18 - math.ceil(depth / 3))
 
         # for each k ascent for k * 18 + dt seconds and check if ascent
         # invariant is not violated; k * 18 + dt formula gives first stop
@@ -431,15 +438,22 @@ class Engine(object):
                 for v1, v2 in zip(step.tissues, stop.tissues)), dstr
 
 
-    def _deco_ascent(self, first_stop, gas):
+    def _deco_ascent(self, first_stop, depth, gas, gf_start, gf_step):
         """
-        Ascent from first decompression stop to the surface. 
+        Ascent from first decompression stop to the specified depth. 
 
         :Parameters:
          first_stop
             Dive stop indicating first decompression stop.
+         depth
+            Destination depth.
          gas
             Inert gas fraction, i.e. 0.79.
+         gf_start
+            Gradient factor start value for the first stop.
+         gf_step
+            Gradient factor step to calculate gradient factor value for
+            next stops.
         """
         step = first_stop
         tp = step.tissues
@@ -447,15 +461,13 @@ class Engine(object):
         assert step.depth % 3 == 0, step.depth
 
         max_time = 64
-        n_stops = int(step.depth) // 3
-        gf_step = (self.gf_high - self.gf_low) / n_stops
+        n_stops = round((step.depth - depth) / 3)
+        logger.debug('stops={}, gf start={:.4}, gf step={:.4}' \
+                .format(n_stops, gf_start, gf_step))
 
-        logger.debug('stops={}, gf step={:.4}'.format(n_stops, gf_step))
-
-        k_stop = 0
         for k_stop in range(n_stops):
             logger.debug('deco stop: k_stop={}, depth={}'.format(k_stop, step.depth))
-            gf = self.gf_low + k_stop * gf_step
+            gf = gf_start + k_stop * gf_step
 
             inv_f = partial(self._inv_deco_stop, gas=gas, gf=gf + gf_step)
             l_fg = partial(self._step_next, time=max_time * 60, gas=gas, gf=gf)
@@ -467,8 +479,8 @@ class Engine(object):
             k = bisect_find(max_time + 1, b_fg, l_step)
 
             t = round(l_step.time - step.time + (k + 1) * 60)
-            logger.debug('deco stop: search completed {}m, {}s'.format(step.depth,
-                t))
+            logger.debug('deco stop: search completed {}m, {}s, n2={}, gf={:.4}' \
+                    .format(step.depth, t, gas, gf))
 
             time = step.time
             belt = self.conveyor.trays(step.depth, time, time + t, 0)
@@ -526,15 +538,39 @@ class Engine(object):
         for step in self._dive_const(step, time, gas):
             yield self._step_info(step, 'bottom')
 
-        first_stop = self._find_first_stop(step, gas)
+        # switch depth, gas -> destination depth, gas
+        # (0m, 21%), (22m, 50%), (6m, 100%) -> (22m, 21%), (6m, 50%), (0m, 100%)
+        mix = zip(self._gas_list[:-1], self._gas_list[1:])
+        depths = tuple((m2.depth, (100 - m1.o2) / 100) for m1, m2 in mix)
+        depths += ((0, (100 - self._gas_list[-1].o2) / 100), )
+        k = len(depths)
 
-        # first stop can be at the surface
-        for step in self._free_ascent(step, first_stop, gas):
-            yield self._step_info(step, 'ascent') 
+        deco = False
+        for i, (depth, gas) in enumerate(depths):
+            time_ascent = (step.depth - depth) / self.ascent_rate * 60
+            stop = self._step_next_ascent(step, time_ascent, gas)
+            if not self._inv_ascent(stop):
+                stop = self._find_first_stop(step, depth, gas)
+                deco = True
 
-        if first_stop.depth > 0: # otherwise we are at surface
-            for step in self._deco_ascent(first_stop, gas): 
-                yield self._step_info(step, 'deco')
+            for step in self._free_ascent(step, stop, gas):
+                yield self._step_info(step, 'ascent') 
+
+            if deco:
+                k = i
+                break
+
+        if deco:
+            assert step.depth % 3 == 0
+            n_stops = step.depth / 3
+            gf_step = (self.gf_high - self.gf_low) / n_stops
+            logger.debug('engine deco: gf step={:.4}'.format(gf_step))
+            first_stop = step.depth
+            for depth, gas in depths[k:]:
+                gf = self.gf_low + (first_stop - step.depth) / 3 * gf_step
+                for step in self._deco_ascent(step, depth, gas, gf, gf_step): 
+                    yield self._step_info(step, 'deco')
+            logger.debug('engine deco: gf at surface={:.4f}'.format(step.gf))
 
 
 # vim: sw=4:et:ai
