@@ -41,6 +41,8 @@ parser.add_argument('--pressure', '-p', dest='pressure', default=None,
 parser.add_argument('--model', '-m', dest='model',
         default='zh-l16b', choices=('zh-l16b', 'zh-l16c'),
         help='decompression model')
+parser.add_argument('--time-delta', '-t', dest='time_delta', default=None,
+        type=int, help='time between dive steps, i.e. 60 [s]')
 #parser.add_argument('--no-descent', '-nd', dest='descent',
 #        default=True, type=bool, help='decompression model')
 parser.add_argument('--tissue-file', '-f', dest='tissue_file',
@@ -68,7 +70,7 @@ else:
 
 engine.gf_low = args.gf_low / 100
 engine.gf_high = args.gf_high / 100
-engine.conveyor.time_delta = None
+engine.conveyor.time_delta = args.time_delta
 
 if args.pressure is not None:
     engine.surface_pressure = int(args.pressure) / 1000
