@@ -40,9 +40,9 @@ class DecoTableTestCase(unittest.TestCase):
             Step(15, 100, 2.5, AIR, [], 0.3),
             Step(15, 145, 2.5, AIR, [], 0.3),
             Step(15, 190, 2.5, AIR, [], 0.3),
-            Step(15, 235, 2.5, AIR, [], 0.3),
-            Step(12, 240, 2.2, AIR, [], 0.3),
-            Step(12, 300, 2.2, AIR, [], 0.3),
+            Step(15, 235, 2.5, AIR, [], 0.3), # 3min
+            Step(12, 240, 2.2, AIR, [], 0.3), 
+            Step(12, 300, 2.2, AIR, [], 0.3), # 1min
         ]
 
         self.dt = DecoTable()
@@ -64,6 +64,25 @@ class DecoTableTestCase(unittest.TestCase):
         times = tuple(self.dt._stops.values())
         self.assertEquals([100, 235], times[0])
         self.assertEquals([240, 300], times[1])
+
+
+    def test_deco_stops(self):
+        """
+        Test deco table mod deco stops summary
+        """
+        stops = self.dt.stops
+        self.assertEquals(2, len(stops))
+        self.assertEquals(15, stops[0].depth)
+        self.assertEquals(3, stops[0].time)
+        self.assertEquals(12, stops[1].depth)
+        self.assertEquals(1, stops[1].time)
+
+
+    def test_total(self):
+        """
+        Test deco table mod total time summary
+        """
+        self.assertEquals(4, self.dt.total)
 
 
 # vim: sw=4:et:ai
