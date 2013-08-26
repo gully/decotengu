@@ -414,25 +414,29 @@ class EngineTestCase(unittest.TestCase):
         first_stop = Step(15, 1200, pressure(15), AIR, [2.5] * 3, 0.3)
 
         steps = list(self.engine._deco_ascent(first_stop, 0, AIR, 0.3, 0.11))
-        self.assertEquals(10, len(steps))
+        self.assertEquals(11, len(steps))
 
         self.assertEquals(15, steps[0].depth)
-        self.assertEquals(1260, steps[0].time)
+        self.assertEquals(1200, steps[0].time)
         self.assertEquals(0.30, steps[0].gf)
 
-        self.assertEquals(12, steps[1].depth)
-        self.assertEquals(1278, steps[1].time)
+        self.assertEquals(15, steps[1].depth)
+        self.assertEquals(1260, steps[1].time)
+        self.assertEquals(0.30, steps[1].gf)
+
         self.assertEquals(12, steps[2].depth)
-        self.assertEquals(1338, steps[2].time)
+        self.assertEquals(1278, steps[2].time)
+        self.assertEquals(12, steps[3].depth)
+        self.assertEquals(1338, steps[3].time)
 
-        self.assertEquals(3, steps[7].depth)
-        self.assertEquals(1512, steps[7].time)
         self.assertEquals(3, steps[8].depth)
-        self.assertEquals(1692, steps[8].time)
+        self.assertEquals(1512, steps[8].time)
+        self.assertEquals(3, steps[9].depth)
+        self.assertEquals(1692, steps[9].time)
 
-        self.assertEquals(0, steps[9].depth)
-        self.assertEquals(1710, steps[9].time)
-        self.assertAlmostEquals(0.85, steps[9].gf)
+        self.assertEquals(0, steps[10].depth)
+        self.assertEquals(1710, steps[10].time)
+        self.assertAlmostEquals(0.85, steps[10].gf)
 
 
     def test_deco_ascent_depth(self):
@@ -446,24 +450,28 @@ class EngineTestCase(unittest.TestCase):
         first_stop = Step(15, 1200, pressure(15), AIR, [2.5] * 3, 0.3)
 
         steps = list(self.engine._deco_ascent(first_stop, 7, AIR, 0.3, 0.11))
-        self.assertEquals(6, len(steps))
+        self.assertEquals(7, len(steps))
 
         self.assertEquals(15, steps[0].depth)
-        self.assertEquals(1260, steps[0].time)
+        self.assertEquals(1200, steps[0].time)
         self.assertEquals(0.30, steps[0].gf)
 
-        self.assertEquals(12, steps[1].depth)
-        self.assertEquals(1278, steps[1].time)
-        self.assertEquals(12, steps[2].depth)
-        self.assertEquals(1338, steps[2].time)
+        self.assertEquals(15, steps[1].depth)
+        self.assertEquals(1260, steps[1].time)
+        self.assertEquals(0.30, steps[1].gf)
 
-        self.assertEquals(9, steps[4].depth)
-        self.assertEquals(1416, steps[4].time)
+        self.assertEquals(12, steps[2].depth)
+        self.assertEquals(1278, steps[2].time)
+        self.assertEquals(12, steps[3].depth)
+        self.assertEquals(1338, steps[3].time)
+
+        self.assertEquals(9, steps[5].depth)
+        self.assertEquals(1416, steps[5].time)
 
         # last stop at 6m due to depth limit
-        self.assertEquals(6, steps[5].depth)
-        self.assertEquals(1434, steps[5].time)
-        self.assertEquals(0.63, steps[5].gf)
+        self.assertEquals(6, steps[6].depth)
+        self.assertEquals(1434, steps[6].time)
+        self.assertEquals(0.63, steps[6].gf)
 
 
     def test_calculation_no_deco(self):

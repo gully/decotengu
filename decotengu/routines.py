@@ -159,6 +159,8 @@ class DecoStopStepper(DecoRoutine):
 
         assert step.depth % 3 == 0
 
+        yield step # mark begining of deco zone
+
         n_stops = round((step.depth - depth) / 3)
         logger.debug('stepper: stops={}, gf step={:.4}'.format(n_stops, gf_step))
 
