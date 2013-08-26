@@ -24,14 +24,16 @@ DecoTengu mods allow to enhance DecoTengu engine calculations. Currently
 supported mods are
 
 - decompression table to summarize required decompression stops
+- convert dive step into rich dive information records
 
 More mods can be implemented, i.e. to calculate CNS or to track PPO2.
 """
 
 from collections import OrderedDict
 import math
+import csv
 
-from .engine import DecoStop
+from .engine import DecoStop, InfoTissue, InfoSample
 from .flow import coroutine
 
 class DecoTable(object):
@@ -79,6 +81,69 @@ class DecoTable(object):
                     stops[depth][1] = step.time
                 else:
                     stops[depth] = [step.time, step.time]
+
+
+
+@coroutine
+def dive_step_info(calc, target):
+    """
+    Coroutine to convert dive step into rich dive information records.
+    
+    :Parameters:
+     calc
+        Tissue calculator.
+     target
+        Coroutine to send dive information records to.
+    """
+    while True:
+        phase, step = (yield)
+        gf_low = step.gf
+        tissue_pressure = step.tissues
+
+        tl = calc.gf_limit(gf_low, tissue_pressure)
+        tm = calc.gf_limit(1, tissue_pressure)
+
+        tissues = tuple(InfoTissue(k, p, l, step.gf, gf)
+                for k, (p, l, gf) in enumerate(zip(tissue_pressure, tm, tl), 1))
+        sample = InfoSample(step.depth, step.time, step.pressure, step.gas,
+                tissues, phase)
+
+        target.send(sample)
+
+
+@coroutine
+def info_csv_writer(f, target=None):
+    """
+    Write rich dive information records into a CSV file.
+
+    :Parameters:
+     f
+        File object.
+     target
+        Optional coroutine to forward dive information records to.
+    """
+    header = [
+        'depth', 'time', 'pressure', 'gas_o2', 'gas_n2', 'gas_he', 'tissue_no',
+        'tissue_pressure', 'tissue_limit', 'gf', 'tissue_gf_limit', 'phase'
+    ]
+
+    fcsv = csv.writer(f)
+    fcsv.writerow(header)
+
+    while True:
+        sample = (yield)
+
+        r1 = [
+            sample.depth, sample.time, sample.pressure,
+            sample.gas.o2, sample.gas.n2, sample.gas.he
+        ]
+        for tissue in sample.tissues:
+            r2 = [tissue.no, tissue.pressure, tissue.limit, tissue.gf,
+                tissue.gf_limit, sample.phase]
+            fcsv.writerow(r1 + r2)
+
+        if target:
+            target.send(sample)
 
 
 # vim: sw=4:et:ai

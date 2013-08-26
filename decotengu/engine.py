@@ -39,7 +39,7 @@ EPSILON = 10 ** -10
 logger = logging.getLogger('decotengu.engine')
 
 # InfoSample [1] --> [16] tissues: InfoTissue
-InfoSample = namedtuple('InfoSample', 'depth time pressure gas tissues type')
+InfoSample = namedtuple('InfoSample', 'depth time pressure gas tissues phase')
 InfoTissue = namedtuple('InfoTissue', 'no pressure limit gf gf_limit')
 
 # tissues is tuple of 16 numbers - pressure for each compartment
@@ -116,13 +116,6 @@ class Engine(object):
             Time in seconds.
         """
         return time * self.ascent_rate / 60
-
-
-    def _tissue_data(self, tissue_pressure, gf_low):
-        tl = self.calc.gf_limit(gf_low, tissue_pressure)
-        tm = self.calc.gf_limit(1, tissue_pressure)
-        return tuple(InfoTissue(no=k, pressure=p, limit=l, gf=gf_low, gf_limit=gf)
-            for k, (p, l, gf) in enumerate(zip(tissue_pressure, tm, tl), 1))
 
 
     def _max_tissue_pressure(self, tp, gf=None):
@@ -259,12 +252,6 @@ class Engine(object):
         tp = self._tissue_pressure_ascent(step.pressure, time, gas, step.tissues)
         depth = round(step.depth - self._to_depth(time), 4)
         return self._step(depth, step.time + time, gas, tp, gf)
-
-
-    def _step_info(self, step, type):
-        tissues = self._tissue_data(step.tissues, step.gf)
-        return InfoSample(depth=step.depth, time=step.time,
-                pressure=step.pressure, gas=step.gas, tissues=tissues, type=type)
 
 
     def _tissue_pressure_const(self, abs_p, time, gas, tp_start):

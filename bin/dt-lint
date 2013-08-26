@@ -73,11 +73,20 @@ if args.verbose:
 import decotengu
 from decotengu.routines import AscentJumper, DecoStopStepper, FirstStopTabFinder
 from decotengu.tab import TabTissueCalculator
-from decotengu.util import write_csv
+from decotengu.mod import dive_step_info, info_csv_writer
 
+mods = []
 engine = decotengu.Engine()
 deco_table = decotengu.DecoTable()
-engine.add_mod(deco_table())
+mods.append(deco_table())
+
+if args.tissue_file:
+    f = open(args.tissue_file, 'w')
+    csv_writer = info_csv_writer(f)
+    info = dive_step_info(engine.calc, csv_writer)
+    mods.append(info)
+
+engine.add_mod(*mods)
 
 if args.model == 'zh-l16b':
     engine.calc.config = decotengu.ZH_L16B()
@@ -111,11 +120,7 @@ if 'decostep' in args.parts:
 #engine.calc = TabTissueCalculator()
 
 data = engine.calculate(args.depth, args.time * 60)
-if args.tissue_file:
-    with open(args.tissue_file, 'w') as f:
-        write_csv(f, data)
-else:
-    list(data)
+for s in data: pass
 
 print('Dive profile:')
 print(' {:3}m for {}min'.format(args.depth, args.time))
