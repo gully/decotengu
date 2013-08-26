@@ -235,15 +235,11 @@ class DecoStopStepperTestCase(unittest.TestCase):
         self.assertEquals(15, steps[0].depth)
         self.assertEquals(1260, steps[0].time)
         self.assertEquals(0.30, steps[0].gf)
-        self.assertEquals(15, engine.deco_table[0].depth)
-        self.assertEquals(1, engine.deco_table[0].time)
 
         self.assertEquals(12, steps[1].depth)
         self.assertEquals(1278, steps[1].time)
         self.assertEquals(12, steps[2].depth)
         self.assertEquals(1338, steps[2].time)
-        self.assertEquals(12, engine.deco_table[1].depth)
-        self.assertEquals(1, engine.deco_table[1].time)
 
         self.assertEquals(9, steps[4].depth)
         self.assertEquals(1416, steps[4].time)

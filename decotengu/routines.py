@@ -34,7 +34,7 @@ The supported routines
 from functools import partial
 import logging
 
-from .engine import DecoRoutine, DecoStop
+from .engine import DecoRoutine
 from .ft import recurse_while, bisect_find
 
 logger = logging.getLogger('decotengu.routines')
@@ -163,7 +163,6 @@ class DecoStopStepper(DecoRoutine):
         logger.debug('stepper: stops={}, gf step={:.4}'.format(n_stops, gf_step))
 
         k_stop = 0
-        time = 0
         while k_stop < n_stops:
             logger.debug('stepper: k_stop={}, depth={}m'.format(k_stop,
                 step.depth))
@@ -172,20 +171,15 @@ class DecoStopStepper(DecoRoutine):
 
             # stay 1 min
             step = engine._step_next(step, 60, gas, gf=gf)
-            time += 1
 
-            logger.debug('stepper: {}m {}min, gas={.o2}, gf={:.4f}' \
-                .format(step.depth, time, gas, gf))
+            logger.debug('stepper: {}m {}s, gas={.o2}, gf={:.4f}' \
+                .format(step.depth, step.time, gas, gf))
 
             yield step
 
             if not engine._inv_deco_stop(step, gas, gf + gf_step):
-                engine.deco_table.append(DecoStop(step.depth, time))
                 step = engine._step_next_ascent(step, 18, gas, gf + gf_step)
-
                 yield step
-
-                time = 0
                 k_stop += 1
 
 

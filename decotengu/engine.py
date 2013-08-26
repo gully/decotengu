@@ -28,9 +28,10 @@ from collections import namedtuple
 import math
 import logging
 
-from .calc import TissueCalculator, ZH_L16B
+from .calc import TissueCalculator
 from .conveyor import Conveyor
 from .ft import recurse_while, bisect_find
+from .flow import split
 from .const import METER_TO_BAR
 
 EPSILON = 10 ** -10
@@ -72,11 +73,27 @@ class Engine(object):
         self.ascent_rate = 10
         self.descent_rate = 10 # FIXME: remove hardcodings before changing
                                #        to default 20m/min 
-        self.deco_table = []
         self.conveyor = Conveyor()
         self.conveyor.time_delta = 60
 
         self._gas_list = []
+
+        self._sink = None
+
+
+    def _send(self, phase, step):
+        """
+        Send dive step to DecoTengu mod sink if it exists.
+
+        :Parameters:
+         phase
+            Dive phase.
+         step
+            Dive step.
+        """
+        if self._sink:
+            self._sink.send((phase, step))
+        return step
 
 
     def _to_pressure(self, depth):
@@ -481,16 +498,13 @@ class Engine(object):
             t = round(l_step.time - step.time + (k + 1) * 60)
             logger.debug('deco stop: search completed {}m, {}s, n2={.n2}%,' \
                 ' gf={:.4}'.format(step.depth, t, gas, gf))
+            assert t % 60 == 0, t
 
             time = step.time
             belt = self.conveyor.trays(step.depth, time, time + t, 0)
             for tray in belt:
                 step = self._step_next(step, tray.d_time, gas, gf)
                 yield step
-
-            assert t % 60 == 0, t
-            self.deco_table.append(DecoStop(step.depth, int(t / 60)))
-            logger.debug('deco stop: {}'.format(self.deco_table[-1]))
 
             step = self._step_next_ascent(step, 18, gas, gf + gf_step)
             yield step
@@ -501,6 +515,17 @@ class Engine(object):
             logger.debug('part "{}" override with "{}"'.format(attr, value))
             value.engine = self
         super().__setattr__(attr, value)
+
+
+    def add_mod(self, *mods):
+        """
+        Add DecoTengu mods.
+
+        :Parameters:
+         mods
+            Collection of DecoTengu mods.
+        """
+        self._sink = split(*mods)
 
 
     def add_gas(self, depth, o2):
@@ -529,14 +554,13 @@ class Engine(object):
             Time spent at maximum depth [s].
         """
         # FIXME: raise error when gas list empty
-        self.deco_table = []
         gas = self._gas_list[0]
 
         for step in self._dive_descent(depth, gas):
-            yield self._step_info(step, 'descent')
+            yield self._send('descent', step)
 
         for step in self._dive_const(step, time, gas):
-            yield self._step_info(step, 'bottom')
+            yield self._send('bottom', step)
 
         # (switch depth, gas) -> (destination depth, gas)
         # (0m, 21%), (22m, 50%), (6m, 100%) -> (22m, 21%), (6m, 50%), (0m, 100%)
@@ -554,7 +578,7 @@ class Engine(object):
                 deco = True
 
             for step in self._free_ascent(step, stop, gas):
-                yield self._step_info(step, 'ascent') 
+                yield self._send('ascent', step) 
 
             if deco:
                 k = i
@@ -569,7 +593,7 @@ class Engine(object):
             for depth, gas in depths[k:]:
                 gf = self.gf_low + (first_stop - step.depth) / 3 * gf_step
                 for step in self._deco_ascent(step, depth, gas, gf, gf_step): 
-                    yield self._step_info(step, 'deco')
+                    yield self._send('deco', step)
             logger.debug('engine deco: gf at surface={:.4f}'.format(step.gf))
 
 

@@ -18,6 +18,7 @@
 #
 
 from .engine import Engine
+from .mod import DecoTable
 from .calc import ZH_L16B, ZH_L16C
 
 __version__ = '0.1.0'
