@@ -9,12 +9,14 @@ saturation information. Third party applications can use those results for
 dive planning functionality.
  
 Visualization of tissue saturation is possible with dt-plot script (depends
-on R), which allows to:
+on R), which allows to
+
 - plot single dive data
 - plot data of two different dives, i.e. to compare two different
   implementations of an algorithm
 
-The calculations are divided into the following parts:
+The calculations are divided into the following parts
+
 - descent
 - bottom time
 - find first stop
@@ -24,6 +26,7 @@ The calculations are divided into the following parts:
 
 Each part can be replaced with independent implementation. Existing
 alternatives to basic implementation
+
 - first stop tabular finder - search for first deco stop using tabular
   tissue calculator
 - tabular tissue calculator - calculate tissues saturation using fixed
