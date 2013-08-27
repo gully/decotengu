@@ -49,6 +49,17 @@ DecoStop = namedtuple('Stop', 'depth time')
 
 GasMix = namedtuple('GasMix', 'depth o2 n2 he')
 
+
+class EngineError(Exception):
+    pass
+
+
+
+class ConfigError(EngineError):
+    pass
+
+
+
 class DecoRoutine(object):
     def __init__(self):
         self.engine = None
@@ -571,7 +582,9 @@ class Engine(object):
          time
             Time spent at maximum depth [s].
         """
-        # FIXME: raise error when gas list empty
+        if len(self._gas_list) == 0:
+            raise ConfigError('No gas mixes configured')
+
         gas = self._gas_list[0]
 
         for step in self._dive_descent(depth, gas):

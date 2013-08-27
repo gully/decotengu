@@ -21,7 +21,7 @@
 Tests for DecoTengu dive decompression engine.
 """
 
-from decotengu.engine import Engine, Step, GasMix
+from decotengu.engine import Engine, Step, GasMix, ConfigError
 
 import unittest
 import mock
@@ -472,6 +472,15 @@ class EngineTestCase(unittest.TestCase):
         self.assertEquals(6, steps[6].depth)
         self.assertEquals(1434, steps[6].time)
         self.assertEquals(0.63, steps[6].gf)
+
+
+    def test_calculation_no_gas_error(self):
+        """
+        Test deco engine dive profile calculation error without any gas mix
+        """
+        engine = Engine()
+        it = engine.calculate(25, 15 * 60)
+        self.assertRaises(ConfigError, next, it)
 
 
     def test_calculation_no_deco(self):
