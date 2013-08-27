@@ -44,7 +44,8 @@ InfoTissue = namedtuple('InfoTissue', 'no pressure limit gf gf_limit')
 
 # tissues is tuple of 16 numbers - pressure for each compartment
 Step = namedtuple('Step', 'depth time pressure gas tissues gf')
-GasMix = namedtuple('GasMix', 'depth o2 n2 he')
+GasMix = namedtuple('GasMix', 'depth o2 n2 he') 
+DecoStop = namedtuple('Stop', 'depth time')
 
 
 class EngineError(Exception):
