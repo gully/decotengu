@@ -50,7 +50,7 @@ class DecoTableTestCase(unittest.TestCase):
         ]
 
         self.dt = DecoTable()
-        dtc = self.dt()
+        dtc = self.dtc = self.dt()
 
         for s in stops:
             dtc.send(('deco', s))
@@ -87,6 +87,26 @@ class DecoTableTestCase(unittest.TestCase):
         Test deco table mod total time summary
         """
         self.assertEquals(4, self.dt.total)
+
+
+    def test_deco_check_time(self):
+        """
+        Check if ValueError is raised on 0min deco stop
+        """
+        stop = Step(21, 100, 2.5, AIR, [], 0.3)
+        self.dtc.send(('deco', stop))
+        with self.assertRaises(ValueError) as e:
+            self.dt.stops
+
+
+    def test_deco_check_depth(self):
+        """
+        Check if ValueError is raised on 0m deco stop
+        """
+        stop = Step(0, 100, 2.5, AIR, [], 0.3)
+        self.dtc.send(('deco', stop))
+        with self.assertRaises(ValueError) as e:
+            self.dt.stops
 
 
 

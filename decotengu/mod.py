@@ -63,7 +63,14 @@ class DecoTable(object):
         List of decompression stops.
         """
         times = (math.ceil((s[1] - s[0]) / 60) for s in self._stops.values())
-        return [DecoStop(d, t) for d, t in zip(self._stops, times) if t > 0]
+        stops = [DecoStop(d, t) for d, t in zip(self._stops, times)]
+
+        if any(s.time == 0 for s in stops):
+            raise ValueError('No deco stop can last 0 minutes')
+        if any(s.depth == 0 for s in stops):
+            raise ValueError('No deco stop can at 0m')
+
+        return stops
 
 
     @coroutine
