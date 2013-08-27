@@ -533,12 +533,29 @@ class Engine(object):
         """
         Add gas to gas mix list.
 
+        Rules
+
+        # First gas mix switch depth should be 0m.
+        # Second or later gas mix switch depth should be greater than 0m.
+        # Third or later gas mix switch depth should be shallower than last
+          one.
+
         :Parameters:
          depth
-            Depth at which gas should be used.
+            Switch depth of gas.
          o2
             O2 percentage.
         """
+        if len(self._gas_list) == 0 and depth != 0:
+            raise ValueError('First gas mix switch depth should be at 0m')
+        elif len(self._gas_list) > 0 and depth == 0:
+            raise ValueError('Second or later gas mix switch depth should' \
+                ' be > 0m')
+
+        if len(self._gas_list) > 1 and self._gas_list[-1].depth < depth:
+            raise ValueError('Gas mix switch depth should be shallower than' \
+                ' last one')
+
         self._gas_list.append(GasMix(depth, o2, 100 - o2, 0))
 
 

@@ -619,12 +619,23 @@ class EngineTestCase(unittest.TestCase):
         self.assertAlmostEquals(0.11, gf_steps[1])
 
 
+
+class GasMixTestCase(unittest.TestCase):
+    """
+    DecoTengu deco engine gas mix tests.
+    """
+    def setUp(self):
+        """
+        Create decompression engine.
+        """
+        self.engine = Engine()
+
+
     def test_adding_gas(self):
         """
         Test deco engine adding new gas mix
         """
-        assert len(self.engine._gas_list) == 1
-
+        self.engine.add_gas(0, 21)
         self.engine.add_gas(33, 32)
         mix = self.engine._gas_list[1]
 
@@ -632,6 +643,46 @@ class EngineTestCase(unittest.TestCase):
         self.assertEquals(68, mix.n2)
         self.assertEquals(0, mix.he)
         self.assertEquals(33, mix.depth)
+
+
+    def test_adding_gas_first(self):
+        """
+        Test deco engine adding first gas mix
+        """
+        assert len(self.engine._gas_list) == 0
+        self.assertRaises(ValueError, self.engine.add_gas, 33, 32)
+
+
+    def test_adding_gas_depth(self):
+        """
+        Test deco engine adding gas mix with 0m switch depth
+        """
+        self.engine.add_gas(0, 21)
+
+        assert len(self.engine._gas_list) == 1
+        self.assertRaises(ValueError, self.engine.add_gas, 0, 21)
+
+
+    def test_adding_gas_depth(self):
+        """
+        Test deco engine adding gas mix with 0m switch depth
+        """
+        self.engine.add_gas(0, 21)
+        self.engine.add_gas(33, 32)
+
+        assert len(self.engine._gas_list) == 2
+        self.assertRaises(ValueError, self.engine.add_gas, 0, 21)
+
+
+    def test_adding_gas_next_depth(self):
+        """
+        Test deco engine adding gas mix with wrong switch depth order
+        """
+        self.engine.add_gas(0, 21)
+        self.engine.add_gas(12, 80)
+
+        assert len(self.engine._gas_list) == 2
+        self.assertRaises(ValueError, self.engine.add_gas, 22, 50)
 
 
 # vim: sw=4:et:ai
