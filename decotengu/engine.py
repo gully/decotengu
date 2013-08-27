@@ -474,6 +474,7 @@ class Engine(object):
         tp = step.tissues
 
         assert step.depth % 3 == 0, step.depth
+        assert step.depth != depth
 
         yield step # mark begining of deco zone
 
@@ -585,7 +586,7 @@ class Engine(object):
                 break
 
         if deco:
-            assert step.depth % 3 == 0
+            assert step.depth % 3 == 0 and step.depth > 0
             n_stops = step.depth / 3
             gf_step = (self.gf_high - self.gf_low) / n_stops
             logger.debug('engine deco: gf step={:.4}'.format(gf_step))
