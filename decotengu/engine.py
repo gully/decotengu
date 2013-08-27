@@ -540,18 +540,18 @@ class Engine(object):
 
     def add_gas(self, depth, o2):
         """
-        Add gas to gas mix list.
+        Add gas mix to gas mix list.
 
         Rules
 
-        # First gas mix switch depth should be 0m.
-        # Second or later gas mix switch depth should be greater than 0m.
-        # Third or later gas mix switch depth should be shallower than last
-          one.
+        #. First gas mix switch depth should be 0m.
+        #. Second or later gas mix switch depth should be greater than 0m.
+        #. Third or later gas mix switch depth should be shallower than last
+           one.
 
         :Parameters:
          depth
-            Switch depth of gas.
+            Switch depth of gas mix.
          o2
             O2 percentage.
         """

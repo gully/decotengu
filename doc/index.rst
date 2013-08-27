@@ -39,4 +39,16 @@ alternatives to basic implementation
 The DecoTengu library is licensed under terms of GPL license, version 3,
 see COPYING file for details.
 
+Table of Contents
+-----------------
+
+.. toctree::
+   :maxdepth: 3
+
+   api
+
+* :ref:`genindex`
+* :ref:`search`
+
+
 .. vim: sw=4:et:ai
