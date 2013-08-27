@@ -444,7 +444,18 @@ class Engine(object):
 
     def _deco_ascent(self, first_stop, depth, gas, gf_start, gf_step):
         """
-        Ascent from first decompression stop to the specified depth. 
+        Ascent from first decompression stop to the destination depth. 
+
+        The depth of first stop should be divisible by 3. The depth of last
+        step is at value indicated by ``depth`` value (0 if at surface).
+        There is no decompression at the destination depth performed.
+
+        Tissue gas loading is performed using gas mix configuration.
+
+        The length of a decompression stop is guarded by gradient factor
+        start value and gradient factor step - the decompression stop lasts
+        until it is allowed to ascent to next stop (see _inv_ascent
+        method).
 
         :Parameters:
          first_stop
