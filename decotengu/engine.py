@@ -485,8 +485,6 @@ class Engine(object):
         assert step.depth % 3 == 0, step.depth
         assert step.depth != depth
 
-        yield step # mark begining of deco zone
-
         max_time = 64
         n_stops = round((step.depth - depth) / 3)
         logger.debug('stops={}, gf start={:.4}, gf step={:.4}' \

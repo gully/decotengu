@@ -204,12 +204,9 @@ class DecoStopStepperTestCase(unittest.TestCase):
         steps = list(engine._deco_ascent(first_stop, 0, AIR, 0.3, gf_step))
 
         # 5min of deco plus 3 steps for ascent between stops
-        self.assertEquals(9, len(steps))
+        self.assertEquals(8, len(steps))
 
         self.assertEquals(9, steps[0].depth)
-        self.assertEquals(1200, steps[0].time)
-        self.assertEquals(9, steps[1].depth)
-        self.assertEquals(1260, steps[1].time)
         self.assertAlmostEquals(0.30, steps[0].gf)
         self.assertEquals(0, steps[-1].depth)
         self.assertAlmostEquals(0.85, steps[-1].gf)
@@ -233,28 +230,24 @@ class DecoStopStepperTestCase(unittest.TestCase):
         first_stop = Step(15, 1200, pressure(15), AIR, [2.5] * 3, 0.3)
 
         steps = list(engine._deco_ascent(first_stop, 7, AIR, 0.3, 0.11))
-        self.assertEquals(7, len(steps))
+        self.assertEquals(6, len(steps))
 
         self.assertEquals(15, steps[0].depth)
-        self.assertEquals(1200, steps[0].time)
+        self.assertEquals(1260, steps[0].time)
         self.assertEquals(0.30, steps[0].gf)
 
-        self.assertEquals(15, steps[1].depth)
-        self.assertEquals(1260, steps[1].time)
-        self.assertEquals(0.30, steps[1].gf)
-
+        self.assertEquals(12, steps[1].depth)
+        self.assertEquals(1278, steps[1].time)
         self.assertEquals(12, steps[2].depth)
-        self.assertEquals(1278, steps[2].time)
-        self.assertEquals(12, steps[3].depth)
-        self.assertEquals(1338, steps[3].time)
+        self.assertEquals(1338, steps[2].time)
 
-        self.assertEquals(9, steps[5].depth)
-        self.assertEquals(1416, steps[5].time)
+        self.assertEquals(9, steps[4].depth)
+        self.assertEquals(1416, steps[4].time)
 
         # last stop at 6m due to depth limit
-        self.assertEquals(6, steps[6].depth)
-        self.assertEquals(1434, steps[6].time)
-        self.assertEquals(0.63, steps[6].gf)
+        self.assertEquals(6, steps[5].depth)
+        self.assertEquals(1434, steps[5].time)
+        self.assertEquals(0.63, steps[5].gf)
 
 
 # vim: sw=4:et:ai
