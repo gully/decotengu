@@ -68,7 +68,7 @@ class DecoTable(object):
         if any(s.time == 0 for s in stops):
             raise ValueError('No deco stop can last 0 minutes')
         if any(s.depth == 0 for s in stops):
-            raise ValueError('No deco stop can at 0m')
+            raise ValueError('No deco stop can be at 0m')
 
         return stops
 
