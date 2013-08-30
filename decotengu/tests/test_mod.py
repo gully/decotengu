@@ -41,33 +41,35 @@ class DecoTableTestCase(unittest.TestCase):
         Set up deco table tests data.
         """
         stops = [
-            Step(15, 100, 2.5, AIR, [], 0.3),
-            Step(15, 145, 2.5, AIR, [], 0.3),
-            Step(15, 190, 2.5, AIR, [], 0.3),
-            Step(15, 235, 2.5, AIR, [], 0.3), # 3min
-            Step(12, 240, 2.2, AIR, [], 0.3), 
+            Step(15, 160, 2.5, AIR, [], 0.3),
+            Step(15, 200, 2.5, AIR, [], 0.3),
+            Step(15, 250, 2.5, AIR, [], 0.3), # 3min
+            Step(12, 258, 2.2, AIR, [], 0.3), 
             Step(12, 300, 2.2, AIR, [], 0.3), # 1min
+            # start of next stop at 9m, to be skipped
+            Step(9, 318, 1.9, AIR, [], 0.3),
         ]
 
         self.dt = DecoTable()
         dtc = self.dtc = self.dt()
 
+        dtc.send(('bottom', Step(25, 40, 1.9, AIR, [], 0.3)))
+        # first stop starts at 15m after the ascent
+        dtc.send(('ascent', Step(15, 100, 2.5, AIR, [], 0.3)))
         for s in stops:
             dtc.send(('deco', s))
-
-        dtc.send(('bottom', Step(9, 400, 1.9, AIR, [], 0.3)))
 
 
     def test_internals(self):
         """
         Test deco table mod internals
         """
-        self.assertEquals(2, len(self.dt._stops))
-        self.assertEquals((15, 12), tuple(self.dt._stops))
+        self.assertEquals(3, len(self.dt._stops), self.dt._stops)
+        self.assertEquals((15, 12, 9), tuple(self.dt._stops))
 
         times = tuple(self.dt._stops.values())
-        self.assertEquals([100, 235], times[0])
-        self.assertEquals([240, 300], times[1])
+        self.assertEquals([100, 250], times[0])
+        self.assertEquals([258, 300], times[1])
 
 
     def test_deco_stops(self):
@@ -87,26 +89,6 @@ class DecoTableTestCase(unittest.TestCase):
         Test deco table mod total time summary
         """
         self.assertEquals(4, self.dt.total)
-
-
-    def test_deco_check_time(self):
-        """
-        Check if ValueError is raised on 0min deco stop
-        """
-        stop = Step(21, 100, 2.5, AIR, [], 0.3)
-        self.dtc.send(('deco', stop))
-        with self.assertRaises(ValueError) as e:
-            self.dt.stops
-
-
-    def test_deco_check_depth(self):
-        """
-        Check if ValueError is raised on 0m deco stop
-        """
-        stop = Step(0, 100, 2.5, AIR, [], 0.3)
-        self.dtc.send(('deco', stop))
-        with self.assertRaises(ValueError) as e:
-            self.dt.stops
 
 
 
