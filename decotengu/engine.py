@@ -388,6 +388,8 @@ class Engine(object):
          gas
             Gas mix configuration.
         """
+        assert start.depth > depth
+
         # FIXME: calculate time for 3m ascent, now hardcoded to 18s
         t0 = start.depth / self.ascent_rate * 60
         t1 = int(t0 / 18) * 18
@@ -398,12 +400,15 @@ class Engine(object):
         # for each k ascent for k * 18 + dt seconds and check if ascent
         # invariant is not violated; k * 18 + dt formula gives first stop
         # candidates as multiples of 3m (18s at 10m/min ascent rate is 3m)
-        f = lambda k, step: True if k == 0 else \
+        f = lambda k, step: True if k == 0 and dt == 0 else \
                     self._inv_ascent(self._step_next_ascent(step, k * 18 + dt, gas))
         # find largest k, so ascent is possible
         k = bisect_find(n, f, start)
 
         t = k * 18 + dt
+        if t == 0:
+            return start
+
         first_stop =  self._step_next_ascent(start, t, gas)
 
         logger.debug('deco zone found: free from {} to {}, ascent time={}' \
@@ -604,8 +609,11 @@ class Engine(object):
                 stop = self._find_first_stop(step, depth, gas)
                 deco = True
 
-            for step in self._free_ascent(step, stop, gas):
-                yield self._send('ascent', step) 
+            # is free ascent needed?
+            if stop.depth != step.depth:
+                assert step.depth > stop.depth
+                for step in self._free_ascent(step, stop, gas):
+                    yield self._send('ascent', step) 
 
             if deco:
                 k = i
