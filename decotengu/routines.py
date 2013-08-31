@@ -34,7 +34,7 @@ The supported routines
 from functools import partial
 import logging
 
-from .engine import DecoRoutine
+from .engine import DecoRoutine, Phase
 from .ft import recurse_while, bisect_find
 
 logger = logging.getLogger('decotengu.routines')
@@ -62,11 +62,14 @@ class AscentJumper(DecoRoutine):
 
         belt = conveyor.trays(start.depth, start.time, stop.time, -ascent_rate)
         tp = start.tissues
+        step = start
         for tray in belt:
             depth = tray.depth - engine._to_depth(tray.d_time) # jump
             abs_p = engine._to_pressure(depth)
             tp = calc.load_tissues(abs_p, tray.d_time, gas, 0, tp)
-            yield engine._step(depth, tray.time + tray.d_time, gas, tp)
+            step = engine._step(Phase.DECOSTOP, step, depth,
+                    tray.time + tray.d_time, gas, tp)
+            yield step
 
 
 
@@ -99,7 +102,8 @@ class FirstStopTabFinder(DecoRoutine):
         logger.debug('tabular search: restart at {}m, {}s ({}s)'.format(depth,
             time_start, t))
 
-        step = engine._step(depth, time_start, gas, tp_start)
+        step = engine._step(Phase.ASCENT, start, depth, time_start, gas,
+                tp_start)
 
         # ascent using max depth allowed by tabular calculator; use None to
         # indicate that surface is hit

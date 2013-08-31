@@ -23,7 +23,7 @@ Tests for basic DecoTengu mods.
 
 import io
 
-from decotengu.engine import Step, GasMix, InfoSample, InfoTissue
+from decotengu.engine import Phase, Step, GasMix, InfoSample, InfoTissue
 from decotengu.mod import DecoTable, dive_step_info, info_csv_writer
 from decotengu.calc import TissueCalculator
 from decotengu.flow import coroutine
@@ -40,32 +40,31 @@ class DecoTableTestCase(unittest.TestCase):
         """
         Set up deco table tests data.
         """
-        stops = [
-            Step(15, 160, 2.5, AIR, [], 0.3),
-            Step(15, 200, 2.5, AIR, [], 0.3),
-            Step(15, 250, 2.5, AIR, [], 0.3), # 3min
-            Step(12, 258, 2.2, AIR, [], 0.3), 
-            Step(12, 300, 2.2, AIR, [], 0.3), # 1min
-            # start of next stop at 9m, to be skipped
-            Step(9, 318, 1.9, AIR, [], 0.3),
-        ]
+        s1 = Step(Phase.CONST, 25, 40, 1.9, AIR, [], 0.3, None)
+        s2 = Step(Phase.ASCENT, 15, 100, 2.5, AIR, [], 0.3, s1)
+        s3 = Step(Phase.DECOSTOP, 15, 160, 2.5, AIR, [], 0.3, s2)
+        s4 = Step(Phase.DECOSTOP, 15, 200, 2.5, AIR, [], 0.3, s3)
+        s5 = Step(Phase.DECOSTOP, 15, 250, 2.5, AIR, [], 0.3, s4) # 3min
+        s6 = Step(Phase.ASCENT, 12, 258, 2.2, AIR, [], 0.3, s5)
+        s7 = Step(Phase.DECOSTOP, 12, 300, 2.2, AIR, [], 0.3, s6) # 1min
+        # start of next stop at 9m, to be skipped
+        s8 = Step(Phase.ASCENT, 9, 318, 1.9, AIR, [], 0.3, s7)
+
+        stops = (s1, s2, s3, s4, s5, s6, s7, s8)
 
         self.dt = DecoTable()
         dtc = self.dtc = self.dt()
 
-        dtc.send(('bottom', Step(25, 40, 1.9, AIR, [], 0.3)))
-        # first stop starts at 15m after the ascent
-        dtc.send(('ascent', Step(15, 100, 2.5, AIR, [], 0.3)))
         for s in stops:
-            dtc.send(('deco', s))
+            dtc.send(s)
 
 
     def test_internals(self):
         """
         Test deco table mod internals
         """
-        self.assertEquals(3, len(self.dt._stops), self.dt._stops)
-        self.assertEquals((15, 12, 9), tuple(self.dt._stops))
+        self.assertEquals(2, len(self.dt._stops), self.dt._stops)
+        self.assertEquals((15, 12), tuple(self.dt._stops))
 
         times = tuple(self.dt._stops.values())
         self.assertEquals([100, 250], times[0])
@@ -101,8 +100,8 @@ class DiveStepInfoTestCase(unittest.TestCase):
         Test dive step info mod
         """
         calc = TissueCalculator()
-        s1 = Step(20, 100, 3.5, AIR, [2.2, 2.3], 0.3)
-        s2 = Step(15, 145, 2.5, AIR, [1.2, 1.3], 0.4)
+        s1 = Step(Phase.CONST, 20, 100, 3.5, AIR, [2.2, 2.3], 0.3, None)
+        s2 = Step(Phase.DECOSTOP, 15, 145, 2.5, AIR, [1.2, 1.3], 0.4, s1)
 
         data = []
         @coroutine
@@ -112,8 +111,8 @@ class DiveStepInfoTestCase(unittest.TestCase):
                 data.append(v)
 
         info = dive_step_info(calc, sink())
-        info.send(('bottom', s1))
-        info.send(('deco', s2))
+        info.send(s1)
+        info.send(s2)
 
         self.assertEquals(2, len(data))
         i1, i2 = data
@@ -122,14 +121,14 @@ class DiveStepInfoTestCase(unittest.TestCase):
         self.assertEquals(100, i1.time)
         self.assertEquals(3.5, i1.pressure)
         self.assertEquals(AIR, i1.gas)
-        self.assertEquals('bottom', i1.phase)
+        self.assertEquals('const', i1.phase)
         self.assertEquals(2, len(i1.tissues))
 
         self.assertEquals(15, i2.depth)
         self.assertEquals(145, i2.time)
         self.assertEquals(2.5, i2.pressure)
         self.assertEquals(AIR, i2.gas)
-        self.assertEquals('deco', i2.phase)
+        self.assertEquals('decostop', i2.phase)
         self.assertEquals(2, len(i2.tissues))
 
         t1, t2 = i1.tissues
@@ -164,7 +163,7 @@ class CSVWriterTestCase(unittest.TestCase):
             InfoSample(2, 5, 3.1, AIR, [
                 InfoTissue(0, 1.4, 0.95, 0.3, 0.98),
                 InfoTissue(1, 1.5, 0.96, 0.3, 0.99),
-            ], 'bottom'),
+            ], 'const'),
         ]
 
         writer = info_csv_writer(f)
@@ -179,7 +178,7 @@ class CSVWriterTestCase(unittest.TestCase):
         self.assertEquals('', st[-1])
         self.assertTrue(st[0].startswith('depth,time,pressure,'))
         self.assertTrue(st[1].endswith('descent\r'), st[1])
-        self.assertTrue(st[4].endswith('bottom\r'), st[4])
+        self.assertTrue(st[4].endswith('const\r'), st[4])
 
 
 # vim: sw=4:et:ai

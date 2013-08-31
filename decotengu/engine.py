@@ -42,9 +42,58 @@ logger = logging.getLogger('decotengu.engine')
 InfoSample = namedtuple('InfoSample', 'depth time pressure gas tissues phase')
 InfoTissue = namedtuple('InfoTissue', 'no pressure limit gf gf_limit')
 
-# tissues is tuple of 16 numbers - pressure for each compartment
-Step = namedtuple('Step', 'depth time pressure gas tissues gf')
+#
+# Dive phase. 
+#
+Phase = namedtuple('Phase', 'START DESCENT CONST ASCENT DECOSTOP')('start',
+    'descent', 'const', 'ascent', 'decostop')
+
+#
+# Dive step.
+# 
+# phase
+#   Dive phase.
+# depth
+#   Depth of dive [m].
+# time
+#   Time of dive [s].
+# pressure
+#   Pressure at depth [bar].
+# gas
+#   Gas mix.
+# tissues
+#   Tissues gas loading (tuple of 16 numbers - pressure for each compartment)
+# gf
+#   Gradient factor value.
+# prev
+#   Previous dive step
+#
+Step = namedtuple('Step', 'phase depth time pressure gas tissues gf prev')
+Step.__repr__ = lambda s: 'Step(phase="{}", depth={}, time={}, pressure={:.4f},' \
+    ' gf={:.4f})'.format(s.phase, s.depth, s.time, s.pressure, s.gf)
+
+#
+# Gas mix.
+#
+# depth
+#   Gas mix switch depth.
+# o2
+#   O2 percentage.
+# n2
+#   N2 percentage.
+# he
+#   Helium percentage.
+#
 GasMix = namedtuple('GasMix', 'depth o2 n2 he') 
+
+#
+# Dive decompression stop.
+#
+# depth
+#   Depth of decompression stop [m].
+# time
+#   Length of decompression stops [min].
+#
 DecoStop = namedtuple('Stop', 'depth time')
 
 
@@ -90,18 +139,16 @@ class Engine(object):
         self._sink = None
 
 
-    def _send(self, phase, step):
+    def _send(self, step):
         """
         Send dive step to DecoTengu mod sink if it exists.
 
         :Parameters:
-         phase
-            Dive phase.
          step
             Dive step.
         """
         if self._sink:
-            self._sink.send((phase, step))
+            self._sink.send(step)
         return step
 
 
@@ -178,7 +225,7 @@ class Engine(object):
         return self._to_pressure(step.depth - 3) <= max_tp
 
 
-    def _step(self, depth, time, gas, tissues, gf=None):
+    def _step(self, phase, prev, depth, time, gas, tissues, gf=None):
         """
         Create dive step record.
 
@@ -201,10 +248,11 @@ class Engine(object):
         """
         if gf is None:
             gf = self.gf_low
-        return Step(depth, time, self._to_pressure(depth), gas, tissues, gf)
+        return Step(phase, depth, time, self._to_pressure(depth), gas, tissues,
+                gf, prev)
 
 
-    def _step_next(self, step, time, gas, gf=None):
+    def _step_next(self, step, time, gas, gf=None, phase='const'):
         """
         Calculate next dive step at constant depth and advanced by
         specified amount of time.
@@ -220,10 +268,10 @@ class Engine(object):
             Gradient factor value for pressure limit calculation.
         """
         tp = self._tissue_pressure_const(step.pressure, time, gas, step.tissues)
-        return self._step(step.depth, step.time + time, gas, tp, gf)
+        return self._step(phase, step, step.depth, step.time + time, gas, tp, gf)
 
 
-    def _step_next_descent(self, step, time, gas, gf=None):
+    def _step_next_descent(self, step, time, gas, gf=None, phase='descent'):
         """
         Calculate next dive step when descent is performed for specified
         period of time.
@@ -240,10 +288,10 @@ class Engine(object):
         """
         tp = self._tissue_pressure_descent(step.pressure, time, gas, step.tissues)
         depth = round(step.depth + self._to_depth(time), 4)
-        return self._step(depth, step.time + time, gas, tp, gf)
+        return self._step(phase, step, depth, step.time + time, gas, tp, gf)
 
 
-    def _step_next_ascent(self, step, time, gas, gf=None):
+    def _step_next_ascent(self, step, time, gas, gf=None, phase='ascent'):
         """
         Calculate next dive step when ascent is performed for specified
         period of time.
@@ -260,7 +308,7 @@ class Engine(object):
         """
         tp = self._tissue_pressure_ascent(step.pressure, time, gas, step.tissues)
         depth = round(step.depth - self._to_depth(time), 4)
-        return self._step(depth, step.time + time, gas, tp, gf)
+        return self._step(phase, step, depth, step.time + time, gas, tp, gf)
 
 
     def _tissue_pressure_const(self, abs_p, time, gas, tp_start):
@@ -355,7 +403,7 @@ class Engine(object):
             Gas mix configuration.
         """
         start = self.calc.init_tissues(self.surface_pressure)
-        step = self._step(0, 0, gas, start)
+        step = self._step('start', None, 0, 0, gas, start)
         yield step
 
         time = depth / self.descent_rate * 60
@@ -516,7 +564,8 @@ class Engine(object):
             time = step.time
             belt = self.conveyor.trays(step.depth, time, time + t, 0)
             for tray in belt:
-                step = self._step_next(step, tray.d_time, gas, gf)
+                step = self._step_next(step, tray.d_time, gas, gf,
+                        phase='decostop')
                 yield step
 
             step = self._step_next_ascent(step, 18, gas, gf + gf_step)
@@ -589,10 +638,10 @@ class Engine(object):
         gas = self._gas_list[0]
 
         for step in self._dive_descent(depth, gas):
-            yield self._send('descent', step)
+            yield self._send(step)
 
         for step in self._dive_const(step, time, gas):
-            yield self._send('bottom', step)
+            yield self._send(step)
 
         # (switch depth, gas) -> (destination depth, gas)
         # (0m, 21%), (22m, 50%), (6m, 100%) -> (22m, 21%), (6m, 50%), (0m, 100%)
@@ -613,7 +662,7 @@ class Engine(object):
             if stop.depth != step.depth:
                 assert step.depth > stop.depth
                 for step in self._free_ascent(step, stop, gas):
-                    yield self._send('ascent', step) 
+                    yield self._send(step) 
 
             if deco:
                 k = i
@@ -628,7 +677,7 @@ class Engine(object):
             for depth, gas in depths[k:]:
                 gf = self.gf_low + (first_stop - step.depth) / 3 * gf_step
                 for step in self._deco_ascent(step, depth, gas, gf, gf_step): 
-                    yield self._send('deco', step)
+                    yield self._send(step)
             logger.debug('engine deco: gf at surface={:.4f}'.format(step.gf))
 
 

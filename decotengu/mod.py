@@ -78,18 +78,14 @@ class DecoTable(object):
         information.
         """
         stops = self._stops
-        prev = None
         while True:
-            phase, step = (yield)
-            if phase == 'deco':
+            step = yield
+            if step.phase == 'decostop':
                 depth = step.depth
                 if depth in stops:
                     stops[depth][1] = step.time
-                elif prev.depth == depth:
-                    stops[depth] = [prev.time, step.time]
                 else:
-                    stops[depth] = [step.time, step.time]
-            prev = step
+                    stops[depth] = [step.prev.time, step.time]
 
 
 
@@ -105,9 +101,10 @@ def dive_step_info(calc, target):
         Coroutine to send dive information records to.
     """
     while True:
-        phase, step = (yield)
+        step = yield
         gf_low = step.gf
         tissue_pressure = step.tissues
+        phase = step.phase
 
         tl = calc.gf_limit(gf_low, tissue_pressure)
         tm = calc.gf_limit(1, tissue_pressure)
@@ -140,7 +137,7 @@ def info_csv_writer(f, target=None):
     fcsv.writerow(header)
 
     while True:
-        sample = (yield)
+        sample = yield
 
         r1 = [
             sample.depth, sample.time, sample.pressure,
