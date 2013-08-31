@@ -221,6 +221,10 @@ class Engine(object):
         specified.
 
         :Parameters:
+         phase
+            Dive phase (see Phase enum).
+         prev
+            Previous dive step.
          depth
             Depth of dive step.
          time
@@ -253,6 +257,8 @@ class Engine(object):
             Gas mix configuration.
          gf
             Gradient factor value for pressure limit calculation.
+         phase
+            Dive phase.
         """
         tp = self._tissue_pressure_const(step.pressure, time, gas, step.tissues)
         return self._step(phase, step, step.depth, step.time + time, gas, tp, gf)
@@ -272,6 +278,8 @@ class Engine(object):
             Gas mix configuration.
          gf
             Gradient factor value for pressure limit calculation.
+         phase
+            Dive phase.
         """
         tp = self._tissue_pressure_descent(step.pressure, time, gas, step.tissues)
         depth = round(step.depth + self._to_depth(time), 4)
@@ -292,6 +300,8 @@ class Engine(object):
             Gas mix configuration.
          gf
             Gradient factor value for pressure limit calculation.
+         phase
+            Dive phase.
         """
         tp = self._tissue_pressure_ascent(step.pressure, time, gas, step.tissues)
         depth = round(step.depth - self._to_depth(time), 4)
@@ -607,6 +617,8 @@ class Engine(object):
             Maximum depth [m].
          time
             Time spent at maximum depth [min].
+         mods
+            Collection of deco engine mods.
         """
         if len(self._gas_list) == 0:
             raise ConfigError('No gas mixes configured')
