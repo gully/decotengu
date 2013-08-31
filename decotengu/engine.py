@@ -132,7 +132,7 @@ class Engine(object):
         self.descent_rate = 10 # FIXME: remove hardcodings before changing
                                #        to default 20m/min 
         self.conveyor = Conveyor()
-        self.conveyor.time_delta = 60
+        self.conveyor.time_delta = None
 
         self._gas_list = []
 
