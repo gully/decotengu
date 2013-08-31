@@ -498,7 +498,7 @@ class EngineTestCase(unittest.TestCase):
         Test deco engine dive profile calculation error without any gas mix
         """
         engine = Engine()
-        it = engine.calculate(25, 15 * 60)
+        it = engine.calculate(25, 15)
         self.assertRaises(ConfigError, next, it)
 
 
@@ -518,7 +518,7 @@ class EngineTestCase(unittest.TestCase):
         self.engine._step_next_ascent = mock.MagicMock(return_value=s4)
         self.engine._inv_ascent = mock.MagicMock(return_value=True)
 
-        v = list(self.engine.calculate(25, 15 * 60))
+        v = list(self.engine.calculate(25, 15))
         self.assertEquals(1, self.engine._dive_descent.call_count)
         self.assertEquals(1, self.engine._dive_const.call_count)
         self.assertEquals(0, self.engine._find_first_stop.call_count)
@@ -540,7 +540,7 @@ class EngineTestCase(unittest.TestCase):
         self.engine._free_ascent = mock.MagicMock()
         self.engine._deco_ascent = mock.MagicMock()
 
-        v = list(self.engine.calculate(45, 30 * 60))
+        v = list(self.engine.calculate(45, 30))
         self.assertEquals(1, self.engine._dive_descent.call_count)
         self.assertEquals(1, self.engine._dive_const.call_count)
         self.assertEquals(1, self.engine._find_first_stop.call_count)
@@ -564,7 +564,7 @@ class EngineTestCase(unittest.TestCase):
         self.engine._free_ascent = mock.MagicMock(return_value=[s4])
         self.engine._deco_ascent = mock.MagicMock()
 
-        v = list(self.engine.calculate(45, 30 * 60))
+        v = list(self.engine.calculate(45, 30))
         # finding first stop between 12m at 0m
         self.assertEquals(1, self.engine._find_first_stop.call_count)
         # first stop at 12m, gas switch at 12m, so there should be only one
@@ -600,7 +600,7 @@ class EngineTestCase(unittest.TestCase):
         self.engine._free_ascent = mock.MagicMock()
         self.engine._deco_ascent = mock.MagicMock()
 
-        v = list(self.engine.calculate(25, 15 * 60))
+        v = list(self.engine.calculate(25, 15))
         self.assertEquals(1, self.engine._dive_descent.call_count)
         self.assertEquals(1, self.engine._dive_const.call_count)
         self.assertEquals(0, self.engine._find_first_stop.call_count)
@@ -640,7 +640,7 @@ class EngineTestCase(unittest.TestCase):
         self.engine._free_ascent = mock.MagicMock(side_effect=[[s4], [s5]])
         self.engine._deco_ascent = mock.MagicMock(side_effect=[[s6], [s7]])
 
-        v = list(self.engine.calculate(25, 15 * 60))
+        v = list(self.engine.calculate(25, 15))
         self.assertEquals(1, self.engine._dive_descent.call_count)
         self.assertEquals(1, self.engine._dive_const.call_count)
         self.assertEquals(1, self.engine._find_first_stop.call_count)

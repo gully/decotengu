@@ -33,7 +33,7 @@ decompression engine object and configure at least one gas mix
 The :py:func:`decotengu.Engine.calculate` method calculates dive profile
 and returns iterator of dive steps
 
-    >>> data = engine.calculate(35, 40 * 60)  # dive to 35m for 40min
+    >>> data = engine.calculate(35, 40)  # dive to 35m for 40min
     >>> for step in data:
     ...     print(step)     # doctest:+ELLIPSIS
     Step(phase="start", depth=0, time=0, pressure=1.0132, gf=0.3000)
@@ -52,7 +52,7 @@ Decompression Table
 The decompression table can be easily calculated
 
     >>> dt = decotengu.DecoTable()
-    >>> data = engine.calculate(35, 40 * 60, dt())  # dive to 35m for 40min
+    >>> data = engine.calculate(35, 40, dt())  # dive to 35m for 40min
     >>> list(data)      # doctest:+ELLIPSIS
     [Step(phase="start", depth=0, time=0, ...]
     >>> for stop in dt.stops:
@@ -84,7 +84,7 @@ def create(time_delta=None):
     >>> import decotengu
     >>> engine, dt = decotengu.create()
     >>> engine.add_gas(0, 21)
-    >>> data = list(engine.calculate(35, 40 * 60, dt()))
+    >>> data = list(engine.calculate(35, 40, dt()))
     >>> print(dt.total)
     50
 

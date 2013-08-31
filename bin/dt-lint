@@ -114,7 +114,7 @@ if 'decostep' in args.parts:
 #engine._find_first_stop = FirstStopTabFinder()
 #engine.calc = TabTissueCalculator()
 
-data = engine.calculate(args.depth, args.time * 60, *mods)
+data = engine.calculate(args.depth, args.time, *mods)
 for s in data: pass
 
 print('Dive profile:')

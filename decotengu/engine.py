@@ -606,7 +606,7 @@ class Engine(object):
          depth
             Maximum depth [m].
          time
-            Time spent at maximum depth [s].
+            Time spent at maximum depth [min].
         """
         if len(self._gas_list) == 0:
             raise ConfigError('No gas mixes configured')
@@ -619,7 +619,7 @@ class Engine(object):
             sink.send(step)
             yield step
 
-        for step in self._dive_const(step, time, gas):
+        for step in self._dive_const(step, time * 60, gas):
             sink.send(step)
             yield step
 
