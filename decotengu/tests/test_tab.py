@@ -143,7 +143,7 @@ class TabularTissueCalculatorTestCase(unittest.TestCase):
 
     def test_tissue_load_24m(self):
         """
-        Test tabular tissue calculator tissue gas loading (1m)
+        Test tabular tissue calculator tissue gas loading (>= 3m)
         """
         with mock.patch('decotengu.tab.eq_schreiner_t') as f:
             f.return_value = 2
