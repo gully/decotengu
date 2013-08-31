@@ -28,11 +28,9 @@ from multiprocessing import Pool
 
 def go_for_depth(engine, depth):
     t1 = time.time()
-    for t in range(18 * 60, 51 * 60, 60):
+    for t in range(18, 51):
         data = engine.calculate(depth, t)
         list(data)
-        if len(engine.deco_table) == 0:
-            raise ValueError('{}'.format(engine.deco_table))
     t2 = time.time()
     print('{:.1f}m processed, time={:.2f}s'.format(depth, t2 - t1))
 
@@ -43,7 +41,7 @@ def go(engine):
 
     #
     # ### pool.map(f, seq(160, 40, -0.1))
-    # ###    for t in range(18 * 60, 51 * 60, 60):
+    # ###    for t in range(18, 51):
     # - single process:
     #   - deco by 1min step: 280min
     #   - deco bisect(740): 46min
@@ -55,7 +53,7 @@ def go(engine):
     #
     #
     # ### pool.map(f, seq(350, 40, -0.1))
-    # ###    for t in range(18 * 60, 51 * 60, 60):
+    # ###    for t in range(18, 51):
     # - 2 processes (2 cores with ht)
     #   - deco linear+bisect(64): 110min
     #
@@ -65,8 +63,7 @@ def go(engine):
 
 if __name__ == '__main__':
     d = decotengu.Engine()
-    d.time_delta = None
-    d.conveyor.time_delta = None
+    d.add_gas(0, 21)
     go(d)
 
 
