@@ -139,19 +139,6 @@ class Engine(object):
         self._sink = None
 
 
-    def _send(self, step):
-        """
-        Send dive step to DecoTengu mod sink if it exists.
-
-        :Parameters:
-         step
-            Dive step.
-        """
-        if self._sink:
-            self._sink.send(step)
-        return step
-
-
     def _to_pressure(self, depth):
         """
         Convert depth in meters to absolute pressure in bars.
@@ -579,17 +566,6 @@ class Engine(object):
         super().__setattr__(attr, value)
 
 
-    def add_mod(self, *mods):
-        """
-        Add DecoTengu mods.
-
-        :Parameters:
-         mods
-            Collection of DecoTengu mods.
-        """
-        self._sink = split(*mods)
-
-
     def add_gas(self, depth, o2):
         """
         Add gas mix to gas mix list.
@@ -620,7 +596,7 @@ class Engine(object):
         self._gas_list.append(GasMix(depth, o2, 100 - o2, 0))
 
 
-    def calculate(self, depth, time):
+    def calculate(self, depth, time, *mods):
         """
         Calculate dive profile.
 
@@ -635,13 +611,17 @@ class Engine(object):
         if len(self._gas_list) == 0:
             raise ConfigError('No gas mixes configured')
 
+        sink = split(*mods)
+
         gas = self._gas_list[0]
 
         for step in self._dive_descent(depth, gas):
-            yield self._send(step)
+            sink.send(step)
+            yield step
 
         for step in self._dive_const(step, time, gas):
-            yield self._send(step)
+            sink.send(step)
+            yield step
 
         # (switch depth, gas) -> (destination depth, gas)
         # (0m, 21%), (22m, 50%), (6m, 100%) -> (22m, 21%), (6m, 50%), (0m, 100%)
@@ -662,7 +642,8 @@ class Engine(object):
             if stop.depth != step.depth:
                 assert step.depth > stop.depth
                 for step in self._free_ascent(step, stop, gas):
-                    yield self._send(step) 
+                    sink.send(step)
+                    yield step
 
             if deco:
                 k = i
@@ -677,7 +658,8 @@ class Engine(object):
             for depth, gas in depths[k:]:
                 gf = self.gf_low + (first_stop - step.depth) / 3 * gf_step
                 for step in self._deco_ascent(step, depth, gas, gf, gf_step): 
-                    yield self._send(step)
+                    sink.send(step)
+                    yield step
             logger.debug('engine deco: gf at surface={:.4f}'.format(step.gf))
 
 

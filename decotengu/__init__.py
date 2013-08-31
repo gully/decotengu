@@ -52,8 +52,7 @@ Decompression Table
 The decompression table can be easily calculated
 
     >>> dt = decotengu.DecoTable()
-    >>> engine.add_mod(dt())
-    >>> data = engine.calculate(35, 40 * 60)  # dive to 35m for 40min
+    >>> data = engine.calculate(35, 40 * 60, dt())  # dive to 35m for 40min
     >>> list(data)      # doctest:+ELLIPSIS
     [Step(phase="start", depth=0, time=0, ...]
     >>> for stop in dt.stops:
@@ -75,6 +74,32 @@ from .calc import ZH_L16B, ZH_L16C
 
 __version__ = '0.1.0'
 
-__all__ = [Engine, ZH_L16B, ZH_L16C]
+
+def create(time_delta=None):
+    """
+    Create deco engine with decompression table.
+
+    Usage
+
+    >>> import decotengu
+    >>> engine, dt = decotengu.create()
+    >>> engine.add_gas(0, 21)
+    >>> data = list(engine.calculate(35, 40 * 60, dt()))
+    >>> print(dt.total)
+    50
+
+    :Parameters:
+     time_delta
+        Time between dive steps.
+    """
+    engine = Engine()
+    engine.conveyor.time_delta = time_delta
+
+    dt = DecoTable()
+
+    return engine, dt
+
+
+__all__ = [create, Engine, ZH_L16B, ZH_L16C]
 
 # vim: sw=4:et:ai
