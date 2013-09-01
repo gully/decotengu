@@ -514,7 +514,7 @@ class EngineTestCase(unittest.TestCase):
         self.engine._dive_descent = mock.MagicMock(return_value=[s1, s2])
         self.engine._dive_const = mock.MagicMock(return_value=[s3])
         self.engine._find_first_stop = mock.MagicMock()
-        self.engine._free_ascent = mock.MagicMock()
+        self.engine._free_ascent = mock.MagicMock(return_value=[s4])
         self.engine._deco_ascent = mock.MagicMock()
         self.engine._step_next_ascent = mock.MagicMock(return_value=s4)
         self.engine._inv_ascent = mock.MagicMock(return_value=True)
@@ -538,7 +538,7 @@ class EngineTestCase(unittest.TestCase):
         self.engine._dive_descent = mock.MagicMock(return_value=[s1, s2])
         self.engine._dive_const = mock.MagicMock(return_value=[s3])
         self.engine._find_first_stop = mock.MagicMock(return_value=s4)
-        self.engine._free_ascent = mock.MagicMock()
+        self.engine._free_ascent = mock.MagicMock(return_value=[s4])
         self.engine._deco_ascent = mock.MagicMock()
 
         v = list(self.engine.calculate(45, 30))
@@ -598,7 +598,7 @@ class EngineTestCase(unittest.TestCase):
         self.engine._find_first_stop = mock.MagicMock()
         self.engine._step_next_ascent = mock.MagicMock(side_effect=[s4, s5, s6])
         self.engine._inv_ascent = mock.MagicMock(return_value=True)
-        self.engine._free_ascent = mock.MagicMock()
+        self.engine._free_ascent = mock.MagicMock(side_effect=[[s4], [s5]])
         self.engine._deco_ascent = mock.MagicMock()
 
         v = list(self.engine.calculate(25, 15))
