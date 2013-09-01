@@ -18,7 +18,6 @@
 #
 
 from collections import namedtuple
-import math
 
 from .ft import seq
 
