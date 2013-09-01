@@ -145,14 +145,12 @@ class BisectFindTestCase(unittest.TestCase):
         # each at < bt
         at = [0.05, 0.1,   2,   4, 5, 6, 7, 8, 9, 10]
         bt = [ 0.1, 0.2, 2.9, 4.1, 6, 7, 8, 9, 10, 11]
-        k = bisect_find(10, self._f, at, bt)
-        self.assertEquals(-1, k)
+        self.assertRaises(ValueError, bisect_find, 10, self._f, at, bt)
 
         # each at >= bt
         at = [ 0.1, 0.2, 2.9, 4.1, 6, 7, 8, 9, 10, 11]
         bt = [0.05, 0.1,   2,   4, 5, 6, 7, 8, 9, 10]
-        k = bisect_find(10, self._f, at, bt)
-        self.assertEquals(10, k)
+        self.assertRaises(ValueError, bisect_find, 10, self._f, at, bt)
 
 
 # vim: sw=4:et:ai

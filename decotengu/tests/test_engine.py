@@ -380,7 +380,7 @@ class EngineTestCase(unittest.TestCase):
         self.engine._find_first_stop(start, 0, AIR)
 
         assert f_bf.called # test precondition
-        self.assertEquals(10, f_bf.call_args_list[0][0][0])
+        self.assertEquals(11, f_bf.call_args_list[0][0][0])
 
 
     def test_free_ascent(self):

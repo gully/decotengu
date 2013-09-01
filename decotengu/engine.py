@@ -440,7 +440,9 @@ class Engine(object):
         t1 = int(t0 / 18) * 18
         assert t0 >= t1
         dt = t0 - t1
-        n = int(t1 // 18 - math.ceil(depth / 3))
+        # bisect search solution range: 0 <= k < n - 1; shallowest possible
+        # first stop at n - 2 (n - 1 in deco zone)
+        n = int(t1 // 18 - math.ceil(depth / 3)) + 1
 
         # for each k ascent for k * 18 + dt seconds and check if ascent
         # invariant is not violated; k * 18 + dt formula gives first stop
@@ -449,7 +451,6 @@ class Engine(object):
                     self._inv_ascent(self._step_next_ascent(step, k * 18 + dt, gas))
         # find largest k, so ascent is possible
         k = bisect_find(n, f, start)
-        assert k >= 0, k
 
         t = k * 18 + dt
         if t > 0:
@@ -534,7 +535,7 @@ class Engine(object):
         tp = step.tissues
 
         assert step.depth % 3 == 0, step.depth
-        assert step.depth != depth
+        assert step.depth != depth, '{} vs. {}'.format(step.depth, depth)
 
         max_time = 64
         n_stops = round((step.depth - depth) / 3)
@@ -671,7 +672,7 @@ class Engine(object):
             assert step.depth % 3 == 0 and step.depth > 0
             n_stops = step.depth / 3
             gf_step = (self.gf_high - self.gf_low) / n_stops
-            logger.debug('engine deco: gf step={:.4}'.format(gf_step))
+            logger.debug('deco engine: gf step={:.4}'.format(gf_step))
             first_stop = step.depth
             for depth, gas in depths[k:]:
                 gf = self.gf_low + (first_stop - step.depth) / 3 * gf_step

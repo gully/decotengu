@@ -61,14 +61,14 @@ def bisect_find(n, f, *args, **kw):
     """
     Find largest k for which f(k) is True.
     
-    The k is integer in range 0 <= k <= n - 1.
+    The k is integer in range 0 <= k < n - 1.
 
-    There must be at least one k for which f(k) is False. If not, then
-    ValueError exception is raised.
+    There must be at least one k for which f(k) is False (i.e. n - 1). If
+    not, then ValueError exception is raised.
 
     :Parameters:
      n
-        Range for k, so 0 <= k <= n - 1.
+        Range for k, so 0 <= k < n - 1.
      f
         Invariant function accepting k.
      *args
@@ -91,12 +91,11 @@ def bisect_find(n, f, *args, **kw):
         else:
             hi = k
 
-    if hi == 0:
-        return -1
-        # raise ValueError('Possible solution out of 0 <= k <= {} range (k reached {})'.format(n - 1, hi - 1))
-    elif lo == n:
-        return n
-        # raise ValueError('Possible solution out of 0 <= k <= {} range (k reached {})'.format(n - 1, lo))
+    logger.debug('{} {}'.format(k, lo))
+    if hi == 0 or lo == n:
+        raise ValueError('Solution {} out of range 0 <= k < {}'.format(hi - 1,
+            n - 1))
+
     assert hi > 0
     if __debug__:
         logger.debug('bisect check a >= b')
