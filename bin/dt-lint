@@ -54,7 +54,7 @@ parser.add_argument('--model', '-m', dest='model',
         default='zh-l16b', choices=('zh-l16b', 'zh-l16c'),
         help='decompression model')
 parser.add_argument('--time-delta', '-t', dest='time_delta', default=None,
-        type=int, help='time between dive steps, i.e. 60 [s]')
+        type=float, help='time between dive steps, i.e. 60, 0.5 [s]')
 #parser.add_argument('--no-descent', '-nd', dest='descent',
 #        default=True, type=bool, help='decompression model')
 parser.add_argument('--tissue-file', '-f', dest='tissue_file',
