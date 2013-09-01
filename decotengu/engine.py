@@ -646,8 +646,9 @@ class Engine(object):
         deco = False
         for i, (depth, gas) in enumerate(depths):
             # target depth should be divisble by 3m in case when gas switch
-            # depth is bit shallower than first deco stop, i.e. ascent
-            # limit 21.9m, gas switch depth 22m, first deco stop 24m
+            # depth is deeper than ascent limit and shallower than first
+            # deco stop, i.e. ascent limit 21.9m, gas switch depth 22m,
+            # first deco stop 24m
             time_ascent = (step.depth - (depth // 3) * 3) \
                     / self.ascent_rate * 60
             stop = self._step_next_ascent(step, time_ascent, gas)
