@@ -56,7 +56,7 @@ class ConveyorTestCase(unittest.TestCase):
         self.assertEquals([3], t_time)
 
 
-    def test_trayper_depth_constant(self):
+    def test_tray_depth_constant(self):
         """
         Test conveyor when depth is constant
         """
