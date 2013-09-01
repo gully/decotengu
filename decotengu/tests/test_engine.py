@@ -376,6 +376,7 @@ class EngineTestCase(unittest.TestCase):
         self.engine._step_next_ascent = mock.MagicMock()
         start = Step(Phase.ASCENT, 31, 1200, 4, AIR, [1.0, 1.0], 0.3, None)
 
+        f_bf.return_value = 5
         self.engine._find_first_stop(start, 0, AIR)
 
         assert f_bf.called # test precondition
@@ -616,16 +617,16 @@ class EngineTestCase(unittest.TestCase):
         self.engine.add_gas(6, 100)
 
         s1 = Step(Phase.START, 0, 0, 1, AIR, (0.7, 0.7), 0.3, None)
-        s2 = Step(Phase.DESCENT, 25, 150, 2.5, AIR, (1.5, 1.5), 0.3, s1)
-        s3 = Step(Phase.CONST, 25, 1050, 2.5, AIR, (2.0, 2.0), 0.3, s2)
+        s2 = Step(Phase.DESCENT, 25, 150, 3.5, AIR, (1.5, 1.5), 0.3, s1)
+        s3 = Step(Phase.CONST, 25, 1050, 3.5, AIR, (2.0, 2.0), 0.3, s2)
 
         
         # gas switch
-        s4 = Step(Phase.ASCENT, 22, 1068, 1.0, AIR, (1.0, 1.0), 0.3, s3)
+        s4 = Step(Phase.ASCENT, 22, 1068, 3.2, AIR, (1.0, 1.0), 0.3, s3)
         # first deco stop
-        s5 = Step(Phase.ASCENT, 15, 1110, 1.0, AIR, (1.0, 1.0), 0.3, s4)
+        s5 = Step(Phase.ASCENT, 15, 1110, 2.5, AIR, (1.0, 1.0), 0.3, s4)
         # gas switch
-        s6 = Step(Phase.ASCENT, 6, 1164, 1.0, 0.50, (1.0, 1.0), 0.3, s5)
+        s6 = Step(Phase.ASCENT, 6, 1164, 1.6, 0.50, (1.0, 1.0), 0.3, s5)
 
         # surface
         s7 = Step(Phase.ASCENT, 0, 1200, 1.0, 0.00, (1.0, 1.0), 0.3, s6)
@@ -674,6 +675,15 @@ class EngineTestCase(unittest.TestCase):
         gf_steps = [a[0][4] for a in args]
         self.assertAlmostEquals(0.11, gf_steps[0])
         self.assertAlmostEquals(0.11, gf_steps[1])
+
+        # calculations for ascent invariant: trying 25 -> 21, 22 -> 6
+        self.assertEquals(2, self.engine._step_next_ascent.call_count)
+        args = self.engine._step_next_ascent.call_args_list
+        # 1st call, trying ascent to 21m (target depth should be divisble
+        # by 3m): 25 - 21 = 4 -> 4 / 10 * 60 = 2.5
+        self.assertEquals(24.0, args[0][0][1], args)
+        # 2nd call: 22m -> 6m
+        self.assertEquals(96.0, args[1][0][1], args)
 
 
 

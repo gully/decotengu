@@ -449,12 +449,13 @@ class Engine(object):
                     self._inv_ascent(self._step_next_ascent(step, k * 18 + dt, gas))
         # find largest k, so ascent is possible
         k = bisect_find(n, f, start)
+        assert k >= 0, k
 
         t = k * 18 + dt
-        if t == 0:
-            return start
-
-        first_stop =  self._step_next_ascent(start, t, gas)
+        if t > 0:
+            first_stop =  self._step_next_ascent(start, t, gas)
+        else:
+            first_stop = start
 
         logger.debug('deco zone found: free from {} to {}, ascent time={}' \
                 .format(start.depth, first_stop.depth,
@@ -644,7 +645,11 @@ class Engine(object):
 
         deco = False
         for i, (depth, gas) in enumerate(depths):
-            time_ascent = (step.depth - depth) / self.ascent_rate * 60
+            # target depth should be divisble by 3m in case when gas switch
+            # depth is bit shallower than first deco stop, i.e. ascent
+            # limit 21.9m, gas switch depth 22m, first deco stop 24m
+            time_ascent = (step.depth - (depth // 3) * 3) \
+                    / self.ascent_rate * 60
             stop = self._step_next_ascent(step, time_ascent, gas)
             if not self._inv_ascent(stop):
                 stop = self._find_first_stop(step, depth, gas)
