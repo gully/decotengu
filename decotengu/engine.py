@@ -444,6 +444,9 @@ class Engine(object):
         # first stop at n - 2 (n - 1 in deco zone)
         n = int(t1 // 18 - math.ceil(depth / 3)) + 1
 
+        logger.debug('find first stop: start={}m n={}, dt={:.4}s' \
+                .format(start.depth, n, dt))
+
         # for each k ascent for k * 18 + dt seconds and check if ascent
         # invariant is not violated; k * 18 + dt formula gives first stop
         # candidates as multiples of 3m (18s at 10m/min ascent rate is 3m)
@@ -679,7 +682,7 @@ class Engine(object):
                 for step in self._deco_ascent(step, depth, gas, gf, gf_step): 
                     sink.send(step)
                     yield step
-            logger.debug('engine deco: gf at surface={:.4f}'.format(step.gf))
+            logger.debug('deco engine: gf at surface={:.4f}'.format(step.gf))
 
 
 # vim: sw=4:et:ai
