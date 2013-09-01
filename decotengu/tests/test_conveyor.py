@@ -17,12 +17,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+"""
+Conveyor tests.
+"""
+
 from decotengu.conveyor import Conveyor
 
 import unittest
 
 
 class ConveyorTestCase(unittest.TestCase):
+    """
+    Conveyor tests.
+    """
     def test_no_time_delta(self):
         """
         Test conveyor without time delta

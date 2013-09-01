@@ -17,20 +17,82 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+"""
+Conveyor to move depth between points in time.
+"""
+
 from collections import namedtuple
 
 from .ft import seq
 
+#
+# Tray tuple having depth, time and delta time for next tray.
+#
+# depth
+#   Depth in meters.
+# time
+#   Time in seconds.
+# d_time
+#   Delta time for next tray (next tray time is equal to time + d_time).
+#   
 Tray = namedtuple('Tray', 'depth time d_time')
 
 EPSILON = 10 ** -10
 
 class Conveyor(object):
+    """
+    Conveyor to move depth between points in time.
+
+    The points in time are calculated using time delta attribute. If time
+    delta is ``None``, then one point time exists only.
+
+    To ascent from 40m depth
+
+    >>> from pprint import pprint
+    >>> conveyor = Conveyor()
+    >>> conveyor.time_delta = 60
+    >>> belt = conveyor.trays(40, 100, 220, -10)
+    >>> for tray in belt:
+    ...     print(tray)
+    Tray(depth=40.0, time=100, d_time=60)
+    Tray(depth=30.0, time=160, d_time=60)
+
+    Last point in time is given by last tray's time plus its time delta
+
+    >>> belt = conveyor.trays(40, 100, 230, -10)
+    >>> for tray in belt:
+    ...     print(tray)
+    Tray(depth=40.0, time=100, d_time=60)
+    Tray(depth=30.0, time=160, d_time=60)
+    Tray(depth=20.0, time=220, d_time=10)
+    >>> print('next point in time {}'.format(tray.time + tray.d_time))
+    next point in time 230
+
+    :Attributes:
+     time_delta
+        Time delta to calculate points in time.
+    """
     def __init__(self):
+        """
+        Create conveyor.
+        """
         self.time_delta = None
 
 
     def trays(self, start_depth, start_time, end_time, rate):
+        """
+        Return collection of tray tuples.
+
+        :Parameters:
+         start_depth
+            Starting depth [m].
+         start_time
+            Starting time [s].
+         end_time
+            Ending time [s].
+         rate
+            Rate at which depth changes [m/min].
+        """
         if self.time_delta is None:
             d_time = end_time - start_time
         else:
