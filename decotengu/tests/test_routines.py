@@ -40,6 +40,7 @@ class AscentJumperTestCase(unittest.TestCase):
         Test ascent jumper between 30m and 5m
         """
         engine = Engine()
+        engine.conveyor.time_delta = 60 # FIXME: this should be automatic
         engine._free_ascent = AscentJumper()
 
         start = Step(Phase.ASCENT, 30, 1200, 4, AIR, [3.2, 4.1], 0.3, None)
