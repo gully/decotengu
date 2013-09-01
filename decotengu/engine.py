@@ -676,7 +676,7 @@ class Engine(object):
                 for step in self._free_ascent(step, stop, gas):
                     sink.send(step)
                     yield step
-                assert abs(step.depth - depth) < EPSILON, (step.depth, depth)
+                assert abs(step.depth - stop.depth) < EPSILON, (step.depth, depth)
 
             if deco:
                 k = i
