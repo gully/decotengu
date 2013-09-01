@@ -91,7 +91,6 @@ def bisect_find(n, f, *args, **kw):
         else:
             hi = k
 
-    logger.debug('{} {}'.format(k, lo))
     if hi == 0 or lo == n:
         raise ValueError('Solution {} out of range 0 <= k < {}'.format(hi - 1,
             n - 1))
