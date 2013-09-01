@@ -282,7 +282,7 @@ class Engine(object):
             Dive phase.
         """
         tp = self._tissue_pressure_descent(step.pressure, time, gas, step.tissues)
-        depth = round(step.depth + self._to_depth(time), 4)
+        depth = step.depth + self._to_depth(time)
         return self._step(phase, step, depth, step.time + time, gas, tp, gf)
 
 
@@ -304,7 +304,7 @@ class Engine(object):
             Dive phase.
         """
         tp = self._tissue_pressure_ascent(step.pressure, time, gas, step.tissues)
-        depth = round(step.depth - self._to_depth(time), 4)
+        depth = step.depth - self._to_depth(time)
         return self._step(phase, step, depth, step.time + time, gas, tp, gf)
 
 
@@ -409,6 +409,7 @@ class Engine(object):
         for tray in belt:
             step = self._step_next_descent(step, tray.d_time, gas)
             yield step
+        logger.debug('descent finished at {}m'.format(step.depth))
 
 
 
@@ -438,14 +439,17 @@ class Engine(object):
         # FIXME: calculate time for 3m ascent, now hardcoded to 18s
         t0 = start.depth / self.ascent_rate * 60
         t1 = int(t0 / 18) * 18
-        assert t0 >= t1
         dt = t0 - t1
+
+        assert t0 >= t1, (t0, t1)
+        assert 0 <= dt < 18, dt
+
         # bisect search solution range: 0 <= k < n - 1; shallowest possible
         # first stop at n - 2 (n - 1 in deco zone)
         n = int(t1 // 18 - math.ceil(depth / 3)) + 1
 
-        logger.debug('find first stop: start={}m, {}s, n={}, dt={:.4}s' \
-                .format(start.depth, start.time, n, dt))
+        logger.debug('find first stop: {}m -> {}m, {}s, n={}, dt={}s' \
+                .format(start.depth, depth, start.time, n, dt))
 
         # for each k ascent for k * 18 + dt seconds and check if ascent
         # invariant is not violated; k * 18 + dt formula gives first stop
@@ -655,6 +659,7 @@ class Engine(object):
             # first deco stop 24m
             time_ascent = (step.depth - (depth // 3) * 3) \
                     / self.ascent_rate * 60
+            assert time_ascent > 0, time_ascent
             stop = self._step_next_ascent(step, time_ascent, gas)
             if not self._inv_ascent(stop):
                 stop = self._find_first_stop(step, depth, gas)
@@ -664,6 +669,7 @@ class Engine(object):
             if stop.depth != step.depth:
                 assert step.depth > stop.depth
                 for step in self._free_ascent(step, stop, gas):
+                    assert step.depth >= depth, (step.depth, depth)
                     sink.send(step)
                     yield step
 
