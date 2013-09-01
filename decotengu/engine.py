@@ -437,7 +437,9 @@ class Engine(object):
         assert start.depth > depth
 
         # FIXME: calculate time for 3m ascent, now hardcoded to 18s
-        t0 = start.depth / self.ascent_rate * 60
+        # round to keep numerical stability when conveyor.time_delta is
+        # small
+        t0 = round(start.depth / self.ascent_rate * 60, 10)
         t1 = int(t0 / 18) * 18
         dt = t0 - t1
 
@@ -491,13 +493,15 @@ class Engine(object):
         logger.debug('ascent from {0.depth}m ({0.time}s)'
                 ' to {1.depth}m ({1.time}s)'.format(start, stop))
 
-        belt = self.conveyor.trays(start.depth, start.time,
-                stop.time, -self.ascent_rate)
+        belt = self.conveyor.trays(start.depth, start.time, stop.time,
+                -self.ascent_rate)
 
         step = start
         for tray in belt:
             step = self._step_next_ascent(step, tray.d_time, gas)
             yield step
+
+        logger.debug('ascent finished at {}m'.format(step.depth))
 
         if __debug__:
             assert abs(step.depth - stop.depth) < EPSILON, '{} ({}s) vs. {} ({}s)' \
@@ -541,8 +545,9 @@ class Engine(object):
         step = first_stop
         tp = step.tissues
 
-        assert step.depth % 3 == 0, step.depth
-        assert step.depth != depth, '{} vs. {}'.format(step.depth, depth)
+        assert round(step.depth, 10) % 3 == 0 and step.depth > 0, step.depth
+        assert abs(step.depth - depth) > EPSILON, '{} vs. {}' \
+                .format(step.depth, depth)
 
         max_time = 64
         n_stops = round((step.depth - depth) / 3)
@@ -666,19 +671,19 @@ class Engine(object):
                 deco = True
 
             # is free ascent needed?
-            if stop.depth != step.depth:
+            if abs(stop.depth - step.depth) > EPSILON:
                 assert step.depth > stop.depth
                 for step in self._free_ascent(step, stop, gas):
-                    assert step.depth >= depth, (step.depth, depth)
                     sink.send(step)
                     yield step
+                assert abs(step.depth - depth) < EPSILON, (step.depth, depth)
 
             if deco:
                 k = i
                 break
 
         if deco:
-            assert step.depth % 3 == 0 and step.depth > 0
+            assert round(step.depth, 10) % 3 == 0 and step.depth > 0, step.depth
             n_stops = step.depth / 3
             gf_step = (self.gf_high - self.gf_low) / n_stops
             logger.debug('deco engine: gf step={:.4}'.format(gf_step))
