@@ -25,7 +25,6 @@ DecoTengu dive decompression engine.
 
 from functools import partial
 from collections import namedtuple
-import math
 import logging
 
 from .calc import TissueCalculator
@@ -439,16 +438,15 @@ class Engine(object):
         # FIXME: calculate time for 3m ascent, now hardcoded to 18s
         # round to keep numerical stability when conveyor.time_delta is
         # small
-        t0 = round(start.depth / self.ascent_rate * 60, 10)
-        t1 = int(t0 / 18) * 18
-        dt = t0 - t1
+        t = round((start.depth - (depth // 3) * 3) / self.ascent_rate * 60, 10)
+        dt = t % 18
 
-        assert t0 >= t1, (t0, t1)
+        assert t >= 0
         assert 0 <= dt < 18, dt
 
         # bisect search solution range: 0 <= k < n - 1; shallowest possible
         # first stop at n - 2 (n - 1 in deco zone)
-        n = int(t1 // 18 - math.ceil(depth / 3)) + 1
+        n = t // 18 + 1
 
         logger.debug('find first stop: {}m -> {}m, {}s, n={}, dt={}s' \
                 .format(start.depth, depth, start.time, n, dt))
