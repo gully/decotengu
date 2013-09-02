@@ -23,14 +23,17 @@ Tests for basic DecoTengu mods.
 
 import io
 
-from decotengu.engine import Phase, Step, GasMix, InfoSample, InfoTissue
-from decotengu.mod import DecoTable, dive_step_info, info_csv_writer
+from decotengu.engine import Engine, EngineError, Phase, Step, GasMix, \
+        InfoSample, InfoTissue
+from decotengu.mod import DecoTable, dive_step_info, info_csv_writer, \
+        tissue_pressure_validator
 from decotengu.calc import TissueCalculator
 from decotengu.flow import coroutine
 
 import unittest
 
 AIR = GasMix(0, 21, 79, 0)
+
 
 class DecoTableTestCase(unittest.TestCase):
     """
@@ -179,6 +182,38 @@ class CSVWriterTestCase(unittest.TestCase):
         self.assertTrue(st[0].startswith('depth,time,pressure,'))
         self.assertTrue(st[1].endswith('descent\r'), st[1])
         self.assertTrue(st[4].endswith('const\r'), st[4])
+
+
+
+class TissuePressureValidatorTestCase(unittest.TestCase):
+    """
+    Dive step tissue pressure validator tests.
+    """
+    def test_tissue_validator(self):
+        """
+        Test dive step tissue pressure validator
+        """
+        engine = Engine()
+
+        # 2.157535, so pressure limit for 30% raises error and for 90% is OK
+        engine.gf_low = 0.3
+        s = Step(Phase.CONST, 25, 3, 1.3127, AIR, [1.263320, 2.157535], 0.9,
+                None)
+
+        mod = tissue_pressure_validator(engine)
+        mod.send(s)
+
+
+    def test_tissue_validator_error(self):
+        """
+        Test dive step tissue pressure validator error
+        """
+        engine = Engine()
+        s = Step(Phase.CONST, 25, 3, 1.3127, AIR, [2.263320, 2.957535], 0.9,
+                None)
+
+        mod = tissue_pressure_validator(engine)
+        self.assertRaises(EngineError, mod.send, s)
 
 
 # vim: sw=4:et:ai

@@ -25,6 +25,8 @@ supported mods are
 
 - decompression table to summarize required decompression stops
 - convert dive step into rich dive information records
+- saving rich dive information records in CSV file
+- dive step tissue pressure validator
 
 More mods can be implemented, i.e. to calculate CNS or to track PPO2.
 """
@@ -33,7 +35,7 @@ from collections import OrderedDict
 import math
 import csv
 
-from .engine import DecoStop, InfoTissue, InfoSample
+from .engine import DecoStop, InfoTissue, InfoSample, EngineError
 from .flow import coroutine
 
 class DecoTable(object):
@@ -93,7 +95,7 @@ class DecoTable(object):
 def dive_step_info(calc, target):
     """
     Coroutine to convert dive step into rich dive information records.
-    
+
     :Parameters:
      calc
         Tissue calculator.
@@ -150,6 +152,27 @@ def info_csv_writer(f, target=None):
 
         if target:
             target.send(sample)
+
+
+@coroutine
+def tissue_pressure_validator(engine):
+    """
+    Dive step tissue pressure validator.
+
+    The validator verifies that maximum allowed tissue pressure of a dive
+    step is not over pressure limit.
+
+    :Parameters:
+     engine
+        DecoTengu engine object.
+    """
+    while True:
+        step = yield
+
+        limit = engine._max_tissue_pressure(step.tissues, gf=step.gf)
+        if step.pressure < limit: # ok when step.pressure >= limit
+            raise EngineError('Tissue pressure validation error at {}' \
+                    ' (limit={})'.format(step, limit))
 
 
 # vim: sw=4:et:ai
