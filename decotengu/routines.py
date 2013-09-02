@@ -64,7 +64,7 @@ class AscentJumper(DecoRoutine):
         tp = start.tissues
         step = start
         for tray in belt:
-            depth = tray.depth - engine._to_depth(tray.d_time) # jump
+            depth = tray.depth - engine._to_depth(tray.d_time, engine.ascent_rate) # jump
             abs_p = engine._to_pressure(depth)
             tp = calc.load_tissues(abs_p, tray.d_time, gas, 0, tp)
             step = engine._step(Phase.DECOSTOP, step, depth,

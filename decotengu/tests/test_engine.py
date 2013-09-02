@@ -56,8 +56,8 @@ class EngineTestCase(unittest.TestCase):
         Test deco engine depth calculation using time
         """
         self.engine.ascent_rate = 10
-        v = self.engine._to_depth(18)
-        self.assertAlmostEquals(v, 3)
+        v = self.engine._to_depth(18, 5)
+        self.assertAlmostEquals(v, 1.5)
 
 
     def test_max_tissue_pressure(self):
@@ -184,6 +184,7 @@ class EngineTestCase(unittest.TestCase):
         """
         Test creation of next dive step record (descent)
         """
+        self.engine.descent_rate = 10
         start = Step(Phase.CONST, 20, 120, 3.0, AIR, [2.8, 2.8], 0.3, None)
 
         self.engine._tissue_pressure_descent = mock.MagicMock(
@@ -303,6 +304,7 @@ class EngineTestCase(unittest.TestCase):
         """
         Test dive descent (no time delta)
         """
+        self.engine.descent_rate = 10
         self.engine.conveyor.time_delta = None
 
         assert self.engine.conveyor.time_delta is None, self.engine.conveyor.time_delta
@@ -322,6 +324,7 @@ class EngineTestCase(unittest.TestCase):
         """
         Test dive descent
         """
+        self.engine.descent_rate = 10
         self.engine.conveyor.time_delta = 60
 
         steps = list(self.engine._dive_descent(21, AIR))

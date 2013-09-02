@@ -127,9 +127,8 @@ class Engine(object):
         self.surface_pressure = 1.01325
         self.gf_low = 0.3
         self.gf_high = 0.85
-        self.ascent_rate = 10
-        self.descent_rate = 10 # FIXME: remove hardcodings before changing
-                               #        to default 20m/min 
+        self.ascent_rate = 10.0
+        self.descent_rate = 20.0
         self.conveyor = Conveyor()
         self.conveyor.time_delta = None
 
@@ -149,15 +148,17 @@ class Engine(object):
         return depth * METER_TO_BAR + self.surface_pressure
 
 
-    def _to_depth(self, time):
+    def _to_depth(self, time, rate):
         """
         Calculate depth travelled in time at given ascent rate.
 
         :Parameters:
          time
             Time in seconds.
+         rate
+            Rate of depth change [m/min].
         """
-        return time * self.ascent_rate / 60
+        return time * rate / 60
 
 
     def _max_tissue_pressure(self, tp, gf=None):
@@ -281,7 +282,7 @@ class Engine(object):
             Dive phase.
         """
         tp = self._tissue_pressure_descent(step.pressure, time, gas, step.tissues)
-        depth = step.depth + self._to_depth(time)
+        depth = step.depth + self._to_depth(time, self.descent_rate)
         return self._step(phase, step, depth, step.time + time, gas, tp, gf)
 
 
@@ -303,7 +304,7 @@ class Engine(object):
             Dive phase.
         """
         tp = self._tissue_pressure_ascent(step.pressure, time, gas, step.tissues)
-        depth = step.depth - self._to_depth(time)
+        depth = step.depth - self._to_depth(time, self.ascent_rate)
         return self._step(phase, step, depth, step.time + time, gas, tp, gf)
 
 

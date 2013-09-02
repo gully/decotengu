@@ -46,7 +46,7 @@ class EngineTestCase(unittest.TestCase):
             data = list(engine.calculate(40, 35, dt()))
 
             self.assertEquals(7, len(dt.stops))
-            self.assertEquals(17, dt.total)
+            self.assertEquals(16, dt.total)
 
 
     def test_various_time_delta_gas_switch(self):

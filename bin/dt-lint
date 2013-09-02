@@ -53,6 +53,8 @@ parser.add_argument('--pressure', '-p', dest='pressure', default=None,
 parser.add_argument('--model', '-m', dest='model',
         default='zh-l16b', choices=('zh-l16b', 'zh-l16c'),
         help='decompression model')
+parser.add_argument('--descent-rate', dest='descent_rate', default=20,
+        type=float, help='descent rate, i.e. 20 [m/min]')
 parser.add_argument('--time-delta', '-t', dest='time_delta', default=None,
         type=float, help='time between dive steps, i.e. 60, 0.5 [s]')
 #parser.add_argument('--no-descent', '-nd', dest='descent',
@@ -96,6 +98,7 @@ engine.gf_high = args.gf_high / 100
 
 if args.pressure is not None:
     engine.surface_pressure = int(args.pressure) / 1000
+engine.descent_rate = args.descent_rate
 
 if args.gas_list:
     for mix in args.gas_list.split():
@@ -117,8 +120,9 @@ if 'decostep' in args.parts:
 data = engine.calculate(args.depth, args.time, *mods)
 for s in data: pass
 
-print('Dive profile:')
-print(' {:3}m for {}min'.format(args.depth, args.time))
+print('Dive profile: {:3}m for {}min'.format(args.depth, args.time))
+print('Descent rate: {}m/min'.format(engine.descent_rate))
+print('Ascent rate: {}m/min'.format(engine.ascent_rate))
 print()
 print('GF Low: {}%'.format(int(engine.gf_low * 100)))
 print('GF High: {}%'.format(int(engine.gf_high * 100)))

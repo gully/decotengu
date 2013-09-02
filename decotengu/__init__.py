@@ -37,12 +37,12 @@ and returns iterator of dive steps
     >>> for step in data:
     ...     print(step)     # doctest:+ELLIPSIS
     Step(phase="start", depth=0, time=0, pressure=1.0132, gf=0.3000)
-    Step(phase="descent", depth=35.0, time=210.0, pressure=4.5080, gf=0.3000)
-    Step(phase="const", depth=35.0, time=2610.0, pressure=4.5080, gf=0.3000)
+    Step(phase="descent", depth=35.0, time=105.0, pressure=4.5080, gf=0.3000)
+    Step(phase="const", depth=35.0, time=2505.0, pressure=4.5080, gf=0.3000)
     ...
-    Step(phase="ascent", depth=9.0, time=3186.0, pressure=1.9119, gf=0.5750)
+    Step(phase="ascent", depth=9.0, time=3081.0, pressure=1.9119, gf=0.5750)
     ...
-    Step(phase="ascent", depth=0.0, time=5820.0, pressure=1.0132, gf=0.8500)
+    Step(phase="ascent", depth=0.0, time=5595.0, pressure=1.0132, gf=0.8500)
     >>>
 
 Decompression Table
@@ -56,13 +56,13 @@ The decompression table can be easily calculated
     >>> for stop in dt.stops:
     ...     print(stop)
     Stop(depth=18.0, time=1)
-    Stop(depth=15.0, time=2)
-    Stop(depth=12.0, time=4)
-    Stop(depth=9.0, time=6)
-    Stop(depth=6.0, time=13)
+    Stop(depth=15.0, time=1)
+    Stop(depth=12.0, time=5)
+    Stop(depth=9.0, time=5)
+    Stop(depth=6.0, time=12)
     Stop(depth=3.0, time=24)
     >>> print(dt.total)
-    50
+    48
 
 """
 
@@ -84,7 +84,7 @@ def create(time_delta=None):
     >>> engine.add_gas(0, 21)
     >>> data = list(engine.calculate(35, 40, dt()))
     >>> print(dt.total)
-    50
+    48
 
     :Parameters:
      time_delta
