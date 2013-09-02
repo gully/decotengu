@@ -21,6 +21,8 @@
 DecoTengu engine integration tests.
 """
 
+import itertools
+
 from decotengu import create
 
 import unittest
@@ -45,6 +47,29 @@ class EngineTestCase(unittest.TestCase):
 
             self.assertEquals(7, len(dt.stops))
             self.assertEquals(17, dt.total)
+
+
+    def test_various_time_delta_gas_switch(self):
+        """
+        Test various deco engine runs with time delta and gas switches variations
+
+        Depending on time delta and EAN50 gas mix depth switch DecoTengu
+        could crash, when searching for first decompression stop.
+        """
+        time_delta = [None, 60, 0.1, 0.5, 5]
+        mix_depth = [21, 22, 24]
+        times = {21: 22, 22: 22, 24: 21}
+        for delta, depth in itertools.product(time_delta, mix_depth):
+            engine, dt = create(time_delta=delta)
+            engine.gf_low = 0.2
+            engine.gf_high = 0.9
+            engine.add_gas(0, 21)
+            engine.add_gas(depth, 50)
+            engine.add_gas(6, 100)
+            data = list(engine.calculate(40, 35, dt()))
+
+            self.assertEquals(8, len(dt.stops), dt.stops)
+            self.assertEquals(times[depth], dt.total)
 
 
 # vim: sw=4:et:ai
