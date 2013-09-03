@@ -24,7 +24,7 @@ Tests for DecoTengu dive decompression engine.
 from decotengu.engine import Engine, Phase, Step, GasMix, ConfigError
 
 import unittest
-import mock
+from unittest import mock
 
 AIR = GasMix(depth=0, o2=21, n2=79, he=0)
 EAN50 = GasMix(depth=22, o2=50, n2=50, he=0)

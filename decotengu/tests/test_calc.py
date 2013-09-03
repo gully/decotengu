@@ -26,7 +26,7 @@ from decotengu.calc import eq_schreiner, eq_gf_limit, TissueCalculator
 from decotengu.const import NUM_COMPARTMENTS
 
 import unittest
-import mock
+from unittest import mock
 
 AIR = GasMix(depth=0, o2=21, n2=79, he=0)
 

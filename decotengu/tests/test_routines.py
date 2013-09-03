@@ -27,7 +27,7 @@ from decotengu.tab import TabTissueCalculator
 from decotengu.routines import AscentJumper, FirstStopTabFinder, DecoStopStepper
 
 import unittest
-import mock
+from unittest import mock
 
 AIR = GasMix(0, 21, 79, 0)
 

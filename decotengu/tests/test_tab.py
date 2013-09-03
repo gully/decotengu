@@ -34,7 +34,7 @@ from decotengu.calc import ZH_L16B, ZH_L16C
 from decotengu.engine import GasMix
 
 import unittest
-import mock
+from unittest import mock
 
 AIR = GasMix(0, 21, 79, 0)
 
