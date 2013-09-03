@@ -208,8 +208,12 @@ class DecoStopStepperTestCase(unittest.TestCase):
         self.assertEquals(8, len(steps))
 
         self.assertEquals(9, steps[0].depth)
+        self.assertEquals('decostop', steps[0].phase)
         self.assertAlmostEquals(0.30, steps[0].gf)
+        self.assertEquals(3, steps[-2].depth)
+        self.assertEquals('decostop', steps[-2].phase)
         self.assertEquals(0, steps[-1].depth)
+        self.assertEquals('ascent', steps[-1].phase)
         self.assertAlmostEquals(0.85, steps[-1].gf)
 
         # stops at 9m, 6m and 3m and include last step at 0m

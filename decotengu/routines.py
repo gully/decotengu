@@ -154,8 +154,9 @@ class DecoStopStepper(DecoRoutine):
     """
     Perform dive decompression using 1min intervals.
 
-    The algorithm is quite inefficient, but is used some, so the
-    implementation is created for comparison purposes.
+    The algorithm is quite inefficient, but is used by some of the
+    implementations, so the deco stop stepper is created for comparison
+    purposes.
     """
     def __call__(self, first_stop, depth, gas, gf_start, gf_step):
         engine = self.engine
@@ -174,7 +175,7 @@ class DecoStopStepper(DecoRoutine):
             gf = gf_start + k_stop * gf_step
 
             # stay 1 min
-            step = engine._step_next(step, 60, gas, gf=gf)
+            step = engine._step_next(step, 60, gas, gf=gf, phase=Phase.DECOSTOP)
 
             logger.debug('stepper: {}m {}s, gas={.o2}, gf={:.4f}' \
                 .format(step.depth, step.time, gas, gf))
