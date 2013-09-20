@@ -18,23 +18,29 @@
 #
 
 """
+Basic Usage
+-----------
+
 The DecoTengu dive decompression library exports its main API via
 ``decotengu`` module.
 
-Dive Profile
-------------
-To simply calculate dive profile import the module first, create the
-decompression engine object and configure at least one gas mix
+The calculation of dive profile and decompression table can be performed in
+few simple steps by using :func:`~decotengu.create` function, which creates
+:class:`DecoTengu engine <Engine>` and :class:`decompression table
+<DecoTable>` objects. Having DecoTengu engine object, we need to instruct
+it what gas mixes are used after which we can start calculations. The
+following example executes calculations for a dive to 35 meters for 40
+minutes::
 
     >>> import decotengu
-    >>> engine = decotengu.Engine()
-    >>> engine.add_gas(0, 21)       # add air gas mix, first gas mix at 0m
+    >>> engine, deco_table = decotengu.create()
+    >>> engine.add_gas(0, 21)
+    >>> profile = engine.calculate(35, 40, deco_table())
 
-The :py:func:`decotengu.Engine.calculate` method calculates dive profile
-and returns iterator of dive steps
+The :func:`DecoTengu engine calculation <Engine.calculate>` function returns
+an iterator with dive profile steps::
 
-    >>> data = engine.calculate(35, 40)  # dive to 35m for 40min
-    >>> for step in data:
+    >>> for step in profile:
     ...     print(step)     # doctest:+ELLIPSIS
     Step(phase="start", depth=0, time=0, pressure=1.0132, gf=0.3000)
     Step(phase="descent", depth=35.0, time=105.0, pressure=4.5080, gf=0.3000)
@@ -45,15 +51,10 @@ and returns iterator of dive steps
     Step(phase="ascent", depth=0.0, time=5595.0, pressure=1.0132, gf=0.8500)
     >>>
 
-Decompression Table
--------------------
-The decompression table can be easily calculated
+After dive profile iterator is fully exhausted, the dive table can be used
+to obtain all information about decompression stops::
 
-    >>> dt = decotengu.DecoTable()
-    >>> data = engine.calculate(35, 40, dt())  # dive to 35m for 40min
-    >>> list(data)      # doctest:+ELLIPSIS
-    [Step(phase="start", depth=0, time=0, ...]
-    >>> for stop in dt.stops:
+    >>> for stop in deco_table.stops:
     ...     print(stop)
     Stop(depth=18.0, time=1)
     Stop(depth=15.0, time=1)
@@ -61,8 +62,57 @@ The decompression table can be easily calculated
     Stop(depth=9.0, time=5)
     Stop(depth=6.0, time=12)
     Stop(depth=3.0, time=24)
-    >>> print(dt.total)
+
+and total time of dive decompression obligations::
+
+    >>> deco_table.total
     48
+
+Configuring Decompression Model
+-------------------------------
+The default decompression model used by DecoTengu library is
+Buhlmann's :class:`ZH-L16B <ZH_L16B>` model with gradient factors.
+
+    >>> import decotengu
+    >>> engine, deco_table = decotengu.create()
+    >>> engine.add_gas(0, 21)
+    >>> engine.calc.config      # doctest:+ELLIPSIS
+    <decotengu.calc.ZH_L16B object at ...>
+    >>> engine.gf_low
+    0.3
+    >>> engine.gf_high
+    0.85
+
+We can switch to ZH-L16C decompression model easily::
+
+    >>> engine.calc.config = decotengu.ZH_L16C()
+    >>> profile = engine.calculate(35, 40, deco_table())
+    >>> list(profile)            # doctest:+ELLIPSIS
+    [Step...]
+    >>> deco_table.total
+    56
+    >>> deco_table.stops[0]
+    Stop(depth=18.0, time=1)
+    >>> deco_table.stops[-1]
+    Stop(depth=3.0, time=28)
+
+The total dive decompression time is longer due to ZH-L16C being more
+conservative comparing to ZH-L16B.
+
+Gradient factor parameters can be adjusted using ``gf_low`` and ``gf_high``
+attributes::
+
+    >>> engine.gf_low = 0.2    # first stop deeper
+    >>> engine.gf_high = 0.90  # last stop shorter
+    >>> profile = engine.calculate(35, 40, deco_table())
+    >>> list(profile)            # doctest:+ELLIPSIS
+    [Step...]
+    >>> deco_table.total
+    51
+    >>> deco_table.stops[0]
+    Stop(depth=21.0, time=1)
+    >>> deco_table.stops[-1]
+    Stop(depth=3.0, time=25)
 
 """
 
@@ -83,7 +133,7 @@ def create(time_delta=None):
     >>> engine, dt = decotengu.create()
     >>> engine.add_gas(0, 21)
     >>> data = list(engine.calculate(35, 40, dt()))
-    >>> print(dt.total)
+    >>> dt.total
     48
 
     :Parameters:
