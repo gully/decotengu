@@ -79,7 +79,7 @@ class DecoTable(object):
         Create decompression table coroutine to gather decompression stops
         information.
         """
-        stops = self._stops
+        stops = self._stops = OrderedDict()
         while True:
             step = yield
             if step.phase == 'decostop':

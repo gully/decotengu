@@ -74,6 +74,47 @@ class DecoTableTestCase(unittest.TestCase):
         self.assertEquals([258, 300], times[1])
 
 
+    def test_internals_restart(self):
+        """
+        Test deco table mod internals after deco table restart
+
+        The test sends first set of dive steps, restart the table and sends
+        the second set of dive steps. The deco table should be calculated
+        using only first set. This test uses its own deco table and skips
+        the main test case deco table.
+        """
+        s1 = Step(Phase.ASCENT, 25, 0, 3.5, AIR, [], 0.3, None)
+        s2 = Step(Phase.DECOSTOP, 18, 5, 2.8, AIR, [], 0.3, s1)
+        s3 = Step(Phase.DECOSTOP, 18, 10, 2.8, AIR, [], 0.3, s2)
+        s4 = Step(Phase.ASCENT, 15, 100, 2.5, AIR, [], 0.3, s3)
+        s5 = Step(Phase.DECOSTOP, 15, 160, 2.5, AIR, [], 0.3, s4)
+        s6 = Step(Phase.DECOSTOP, 15, 200, 2.5, AIR, [], 0.3, s5)
+        s7 = Step(Phase.DECOSTOP, 15, 250, 2.5, AIR, [], 0.3, s6) # 3min
+        s8 = Step(Phase.ASCENT, 12, 258, 2.2, AIR, [], 0.3, s7)
+        s9 = Step(Phase.DECOSTOP, 12, 300, 2.2, AIR, [], 0.3, s8) # 1min
+        # start of next stop at 9m, to be skipped
+        s10 = Step(Phase.ASCENT, 9, 318, 1.9, AIR, [], 0.3, s9)
+
+        steps1 = (s4, s5, s6, s7, s8, s9, s10)
+        steps2 = (s1, s2, s3, s4, s5, s6, s7, s8, s9, s10)
+
+        dt = DecoTable()
+        dtc = dt()
+        for s in steps1:
+            dtc.send(s)
+
+        # test preconditions
+        assert len(dt._stops) == 2, dt._stops
+        assert tuple(dt._stops) == (15, 12), dt._stops
+
+        # restart
+        dtc = dt()
+        for s in steps2:
+            dtc.send(s)
+        self.assertEquals(3, len(dt._stops), dt._stops)
+        self.assertEquals((18, 15, 12), tuple(dt._stops))
+
+
     def test_deco_stops(self):
         """
         Test deco table mod deco stops summary
