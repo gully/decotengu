@@ -130,11 +130,8 @@ class Engine(object):
         self.ascent_rate = 10.0
         self.descent_rate = 20.0
         self.conveyor = Conveyor()
-        self.conveyor.time_delta = None
 
         self._gas_list = []
-
-        self._sink = None
 
 
     def _to_pressure(self, depth):
