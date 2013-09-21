@@ -18,6 +18,8 @@ copyright = 'DecoTengu Team'
 epub_basename = 'decotengu - {}'.format(version)
 epub_author = 'DecoTengu Team'
 
+todo_include_todos = True
+
 html_theme = 'agogo'
 html_theme_options = {
     'headerbg': '#006bba',

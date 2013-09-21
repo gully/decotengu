@@ -8,13 +8,6 @@ The results of DecoTengu calculations are decompression stops and tissue
 saturation information. Third party applications can use those results for
 dive planning functionality.
  
-Visualization of tissue saturation is possible with dt-plot script (depends
-on R), which allows to
-
-- plot single dive data
-- plot data of two different dives, i.e. to compare two different
-  implementations of an algorithm
-
 The calculations are divided into the following parts
 
 - descent
@@ -46,6 +39,7 @@ Table of Contents
    :maxdepth: 3
 
    api
+   cmd
 
 * :ref:`genindex`
 * :ref:`search`
