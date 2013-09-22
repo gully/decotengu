@@ -59,7 +59,8 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
     """
     def setUp(self):
         self.engine = engine = Engine()
-        engine.calc = TabTissueCalculator()
+        m = engine.model
+        m.calc = TabTissueCalculator(m.N2_HALF_LIFE, m.HE_HALF_LIFE)
         engine._find_first_stop = FirstStopTabFinder()
 
 
@@ -170,7 +171,7 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         max_time = max(a[0][1] for a in self.engine._step_next_ascent.call_args_list)
         # ... as max time should not be used by bisect_find (it is used by
         # recurse_while)
-        self.assertEquals(self.engine.calc.max_time - 18, max_time)
+        self.assertEquals(self.engine.model.calc.max_time - 18, max_time)
 
 
     def test_surface(self):
