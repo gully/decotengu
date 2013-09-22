@@ -138,12 +138,12 @@ print()
 
 stops = deco_table.stops
 if stops:
-    print('Decompression stops ({}):'.format(engine.model))
+    print('Decompression stops ({}):'.format(args.model.upper()))
     for stop in stops:
         print(' {:4.0f}m {:3}min'.format(stop.depth, stop.time))
     print('-' * 13)
     print('Sum: {:5}min'.format(deco_table.total))
 else:
-    print('No decompression dive ({}).'.format(engine.calc.config))
+    print('No decompression dive ({}).'.format(args.model.upper()))
 
 # vim: sw=4:et:ai
