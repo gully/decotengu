@@ -28,6 +28,11 @@ class ValidateReplacement(argparse.Action):
     PARTS = {'tab', 'ascentjump', 'decostep'}
     def __call__(self, parser, args, values, option_string=None):
         parts = set(values.split(','))
+
+        if 'tab' in parts:
+            raise argparse.ArgumentError(self, 'Tabular tissue calculator not' \
+                ' supported yet')
+
         if parts - self.PARTS:
             s = ', '.join(parts - self.PARTS)
             raise argparse.ArgumentError(self,
