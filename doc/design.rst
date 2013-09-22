@@ -11,16 +11,16 @@ Class diagram::
        | ascent_rate = 10           |x---------->| N2_A                |          calc  +------------------+
        | descent_rate = 20          |       [1]  | N2_B                |x-------------->| TissueCalculator |
        | surface_pressure = 1.01325 |            | HE_A                |           [1]  +------------------+
-       +----------------------------+            | HE_B                |                       /_\
-       | add_gas()                  |            | N2_HALF_LIFE        |                        |
-       | calculate()                |            | HE_HALF_LIFE        |                        |
-       +----------------------------+            | gf_low = 0.3        |              +-----------------------+
-                    x                            | gf_high = 0.85      |              |  TabTissueCalculator  |
-                    |                            +---------------------+              +-----------------------+
-                    |                            | init()              |
-                    |                            | load()              |
-                [1] | conveyor                   | gf_limit()          |
-                    v                            +---------------------+
+       +----------------------------+            | HE_B                |                | n2_half_life     |
+       | add_gas()                  |            | N2_HALF_LIFE        |                | he_half_life     |
+       | calculate()                |            | HE_HALF_LIFE        |                |                  |
+       +----------------------------+            | gf_low = 0.3        |                +------------------+
+                    x                            | gf_high = 0.85      |                        /_\
+                    |                            +---------------------+                         |
+                    |                            | init()              |                         |
+                    |                            | load()              |              +-----------------------+
+                [1] | conveyor                   | gf_limit()          |              |  TabTissueCalculator  |
+                    v                            +---------------------+              +-----------------------+
               +------------+                        /_\           /_\
               |  Conveyor  |                         |             |
               +------------+                         |             |

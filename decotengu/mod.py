@@ -92,13 +92,13 @@ class DecoTable(object):
 
 
 @coroutine
-def dive_step_info(calc, target):
+def dive_step_info(model, target):
     """
     Coroutine to convert dive step into rich dive information records.
 
     :Parameters:
-     calc
-        Tissue calculator.
+     model
+        Decompression model instance.
      target
         Coroutine to send dive information records to.
     """
@@ -108,8 +108,8 @@ def dive_step_info(calc, target):
         tissue_pressure = step.tissues
         phase = step.phase
 
-        tl = calc.gf_limit(gf_low, tissue_pressure)
-        tm = calc.gf_limit(1, tissue_pressure)
+        tl = model.gf_limit(gf_low, tissue_pressure)
+        tm = model.gf_limit(1, tissue_pressure)
 
         tissues = tuple(InfoTissue(k, p, l, step.gf, gf)
                 for k, (p, l, gf) in enumerate(zip(tissue_pressure, tm, tl), 1))

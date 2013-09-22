@@ -22,8 +22,8 @@ DecoTengu calculator tests.
 """
 
 from decotengu.engine import GasMix
-from decotengu.calc import eq_schreiner, eq_gf_limit, TissueCalculator
-from decotengu.const import NUM_COMPARTMENTS
+from decotengu.model import eq_schreiner, eq_gf_limit, TissueCalculator, \
+    ZH_L16_GF, ZH_L16B_GF
 
 import unittest
 from unittest import mock
@@ -92,61 +92,71 @@ class GradientFactorLimitTestCase(unittest.TestCase):
 
 
 
-class TissueCalculatorTestCase(unittest.TestCase):
+class ZH_L16_GFTestCase(unittest.TestCase):
     """
-    Tissue calculator tests.
+    Buhlmann ZH-L16 decompression model with gradient factors tests.
     """
-    def test_tissue_init(self):
+    def test_model_init(self):
         """
-        Test tissue calculator tissue initialization
+        Test deco model initialization
         """
-        c = TissueCalculator()
-        t = c.init_tissues(1.013)
-        self.assertEquals(NUM_COMPARTMENTS, len(t))
-        self.assertEquals([0.75092706] * NUM_COMPARTMENTS, t)
+        m = ZH_L16_GF()
+        t = m.init(1.013)
+        self.assertEquals(ZH_L16_GF.NUM_COMPARTMENTS, len(t))
+        self.assertEquals([0.75092706] * ZH_L16_GF.NUM_COMPARTMENTS, t)
 
 
-    def test_tissue_load(self):
+    def test_tissues_load(self):
         """
-        Test tissue calculator tissue gas loading
+        Test deco model tissues gas loading
         """
-        with mock.patch('decotengu.calc.eq_schreiner') as f:
-            f.return_value = 2
-            c = TissueCalculator()
-            v = c._load_tissue(4, 60, AIR, -1, 3, 1)
-            f.assert_called_once_with(4, 60, 0.79, -1, 3, 8.0)
-            self.assertEquals(2, v)
+        m = ZH_L16B_GF()
+        n = m.NUM_COMPARTMENTS
+        c_load = m.calc.load_tissue = mock.MagicMock(side_effect=range(1, 17))
 
+        v = m.load(4, 60, AIR, -1, [0.79] * n)
 
-    def test_all_tissues_load(self):
-        """
-        Test tissue calculator all tissues gas loading
-        """
-        c = TissueCalculator()
-        c._load_tissue = mock.MagicMock(side_effect=range(1, 17))
-        v = c.load_tissues(4, 60, AIR, -1, [0.79] * NUM_COMPARTMENTS)
-
-        self.assertEquals(NUM_COMPARTMENTS, c._load_tissue.call_count)
-        self.assertEquals(tuple(range(NUM_COMPARTMENTS)),
-                tuple(t[0][5] for t in c._load_tissue.call_args_list))
+        self.assertEquals(n, c_load.call_count)
         self.assertEquals(v, tuple(range(1, 17)))
+
+        expected = tuple(range(n))
+        results = tuple(t[0][5] for t in c_load.call_args_list)
+        self.assertEquals(expected, results)
 
 
     def test_gf_limit(self):
         """
-        Test tissue calculator gradient factor limit for all tissues
+        Test deco model gradient factor limit calculation
         """
-        with mock.patch('decotengu.calc.eq_gf_limit') as f:
+        with mock.patch('decotengu.model.eq_gf_limit') as f:
             f.side_effect = list(range(1, 17))
-            c = TissueCalculator()
-            v = c.gf_limit(0.3, list(range(1, 17)))
+            m = ZH_L16B_GF()
+            v = m.gf_limit(0.3, list(range(1, 17)))
 
-            self.assertEquals(NUM_COMPARTMENTS, f.call_count)
-            self.assertEquals(c.config.N2_A,
-                    tuple(t[0][3] for t in f.call_args_list))
-            self.assertEquals(c.config.N2_B,
-                    tuple(t[0][4] for t in f.call_args_list))
+            self.assertEquals(m.NUM_COMPARTMENTS, f.call_count)
+            result = tuple(t[0][3] for t in f.call_args_list)
+            self.assertEquals(m.N2_A, result)
+            result = tuple(t[0][4] for t in f.call_args_list)
+            self.assertEquals(m.N2_B, result)
             self.assertEquals(v, tuple(range(1, 17)))
+
+
+
+class TissueCalculatorTestCase(unittest.TestCase):
+    """
+    Tissue calculator tests.
+    """
+    def test_tissue_load(self):
+        """
+        Test tissue calculator tissue gas loading
+        """
+        with mock.patch('decotengu.model.eq_schreiner') as f:
+            f.return_value = 2
+            m = ZH_L16B_GF
+            c = TissueCalculator(m.N2_HALF_LIFE, m.HE_HALF_LIFE)
+            v = c.load_tissue(4, 60, AIR, -1, 3, 1)
+            f.assert_called_once_with(4, 60, 0.79, -1, 3, 8.0)
+            self.assertEquals(2, v)
 
 
 # vim: sw=4:et:ai

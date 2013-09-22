@@ -18,12 +18,12 @@
 #
 
 """
-Tissue gas loading and pressure limits calculations.
+Buhlmann ZH_L16 decompression model with gradient factors by Eric Baker.
 """
 
 import math
 
-from .const import WATER_VAPOUR_PRESSURE_DEFAULT, NUM_COMPARTMENTS
+from .const import WATER_VAPOUR_PRESSURE_DEFAULT
 
 
 def eq_schreiner(abs_p, time, gas, rate, pressure, half_life,
@@ -79,12 +79,78 @@ def eq_gf_limit(gf, pn2, phe, n2_a_limit, n2_b_limit): # FIXME: include he
     return (p - a * gf) / (gf / b + 1.0 - gf)
 
 
-class Config(object):
+class ZH_L16_GF(object):
+    """
+    Base abstract class for Buhlmann ZH_L16 decompression model with
+    gradient factors by Eric Baker.
+    """
+    NUM_COMPARTMENTS = 16
+    N2_A = None
+    N2_B = None
+    HE_A = None
+    HE_B = None
+    N2_HALF_LIFE = None
+    HE_HALF_LIFE = None
+
     def __init__(self):
-        self.water_vapour_pressure = WATER_VAPOUR_PRESSURE_DEFAULT
+        """
+        Create instance of the model.
+        """
+        super().__init__()
+        self.calc = TissueCalculator(self.N2_HALF_LIFE, self.HE_HALF_LIFE)
 
 
-class ZH_L16B(Config): # source: gfdeco.f by Baker
+    def init(self, surface_pressure):
+        """
+        Initialize pressure of intert gas in all tissues.
+
+        :Parameters:
+         surface_pressure
+            Surface pressure [bar].
+        """
+        p = surface_pressure - self.calc.water_vapour_pressure
+        return [0.7902 * p] * self.NUM_COMPARTMENTS
+
+
+    def load(self, abs_p, time, gas, rate, tissue_pressure):
+        """
+        Change gas loading of all tissues.
+
+        :Parameters:
+         abs_p
+            Absolute pressure [bar] (current depth).
+         time
+            Time of exposure [second] (i.e. time of ascent).
+         gas
+            Gas mix configuration.
+         rate
+            Pressure rate change [bar/min].
+         tissue_pressure
+            Pressure of intert gas in each of tissue [bar].
+        """
+        load = self.calc.load_tissue
+        tp = (load(abs_p, time, gas, rate, tp, k)
+                for k, tp in enumerate(tissue_pressure))
+        return tuple(tp)
+
+
+    def gf_limit(self, gf, tissue_pressure):
+        """
+        Calculate gradient pressure limit.
+
+        :Parameters:
+         gf
+            Gradient factor.
+         tissue_pressure
+            Pressure of all tissues [bar].
+        """
+        assert gf > 0 and gf <= 1.5
+        # FIXME: include he
+        data = zip(tissue_pressure, self.N2_A, self.N2_B)
+        return tuple(eq_gf_limit(gf, tp, 0, av, bv) for tp, av, bv in data)
+
+
+class ZH_L16B_GF(ZH_L16_GF): # source: gfdeco.f by Baker
     N2_A = (
         1.1696, 1.0000, 0.8618, 0.7562, 0.6667, 0.5600, 0.4947, 0.4500,
         0.4187, 0.3798, 0.3497, 0.3223, 0.2850, 0.2737, 0.2523, 0.2327,
@@ -111,7 +177,7 @@ class ZH_L16B(Config): # source: gfdeco.f by Baker
     )
 
 
-class ZH_L16C(Config): # source: ostc firmware code
+class ZH_L16C_GF(ZH_L16_GF): # source: ostc firmware code
     N2_A = (
         1.2599, 1.0000, 0.8618, 0.7562, 0.6200, 0.5043, 0.4410, 0.4000,
         0.3750, 0.3500, 0.3295, 0.3065, 0.2835, 0.2610, 0.2480, 0.2327,
@@ -142,14 +208,17 @@ class TissueCalculator(object):
     """
     Tissue calculator to calculate all tissues gas loading.
     """
-    def __init__(self):
+    def __init__(self, n2_half_life, he_half_life):
         """
         Create tissue calcuator.
         """
-        self.config = ZH_L16B()
+        super().__init__()
+        self.water_vapour_pressure = WATER_VAPOUR_PRESSURE_DEFAULT
+        self.n2_half_life = n2_half_life
+        self.he_half_life = he_half_life
 
 
-    def _load_tissue(self, abs_p, time, gas, rate, pressure, tissue_no):
+    def load_tissue(self, abs_p, time, gas, rate, pressure, tissue_no):
         """
         Calculate gas loading of a tissue.
 
@@ -167,56 +236,8 @@ class TissueCalculator(object):
          tissue_no
             Tissue number.
         """
-        hl = self.config.N2_HALF_LIFE[tissue_no]
+        hl = self.n2_half_life[tissue_no]
         return eq_schreiner(abs_p, time, gas.n2 / 100, rate, pressure, hl)
-
-
-    def init_tissues(self, surface_pressure):
-        """
-        Initialize pressure of all tissues.
-
-        :Parameters:
-         surface_pressure
-            Surface pressure [bar].
-        """
-        return [0.7902 * (surface_pressure - self.config.water_vapour_pressure)] * NUM_COMPARTMENTS
-
-
-    def load_tissues(self, abs_p, time, gas, rate, tissue_pressure):
-        """
-        Change gas loading of all tissues.
-
-        :Parameters:
-         abs_p
-            Absolute pressure [bar] (current depth).
-         time
-            Time of exposure [second] (i.e. time of ascent).
-         gas
-            Gas mix configuration.
-         rate
-            Pressure rate change [bar/min].
-         tissue_pressure
-            Pressure of each tissue [bar].
-        """
-        tp = (self._load_tissue(abs_p, time, gas, rate, tp, k)
-                for k, tp in enumerate(tissue_pressure))
-        return tuple(tp)
-
-
-    def gf_limit(self, gf, tissue_pressure):
-        """
-        Calculate gradient pressure limit.
-
-        :Parameters:
-         gf
-            Gradient factor.
-         tissue_pressure
-            Pressure of all tissues [bar].
-        """
-        assert gf > 0 and gf <= 1.5
-        # FIXME: include he
-        data = zip(tissue_pressure, self.config.N2_A, self.config.N2_B)
-        return tuple(eq_gf_limit(gf, tp, 0, av, bv) for tp, av, bv in data)
 
 
 # vim: sw=4:et:ai

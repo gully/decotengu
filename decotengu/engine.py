@@ -27,7 +27,7 @@ from functools import partial
 from collections import namedtuple
 import logging
 
-from .calc import TissueCalculator
+from .model import ZH_L16B_GF
 from .conveyor import Conveyor
 from .ft import recurse_while, bisect_find
 from .flow import split
@@ -123,7 +123,7 @@ class Engine(object):
 
     def __init__(self):
         super().__init__()
-        self.calc = TissueCalculator()
+        self.model = ZH_L16B_GF()
         self.surface_pressure = 1.01325
         self.gf_low = 0.3
         self.gf_high = 0.85
@@ -171,7 +171,7 @@ class Engine(object):
         """
         if gf is None:
             gf = self.gf_low
-        return max(self.calc.gf_limit(gf, tp))
+        return max(self.model.gf_limit(gf, tp))
 
 
     def _inv_ascent(self, step):
@@ -320,7 +320,7 @@ class Engine(object):
          tp_start
             Initial tissues pressure.
         """
-        tp = self.calc.load_tissues(abs_p, time, gas, 0, tp_start)
+        tp = self.model.load(abs_p, time, gas, 0, tp_start)
         return tp
 
 
@@ -340,7 +340,7 @@ class Engine(object):
             Initial tissues pressure.
         """
         rate = self.descent_rate * METER_TO_BAR
-        tp = self.calc.load_tissues(abs_p, time, gas, rate, tp_start)
+        tp = self.model.load(abs_p, time, gas, rate, tp_start)
         return tp
 
 
@@ -360,7 +360,7 @@ class Engine(object):
             Initial tissues pressure.
         """
         rate = -self.ascent_rate * METER_TO_BAR
-        tp = self.calc.load_tissues(abs_p, time, gas, rate, tp_start)
+        tp = self.model.load(abs_p, time, gas, rate, tp_start)
         return tp
 
 
@@ -396,7 +396,7 @@ class Engine(object):
          gas
             Gas mix configuration.
         """
-        start = self.calc.init_tissues(self.surface_pressure)
+        start = self.model.init(self.surface_pressure)
         step = self._step('start', None, 0, 0, gas, start)
         yield step
 

@@ -76,8 +76,8 @@ Buhlmann's :class:`ZH-L16B <ZH_L16B>` model with gradient factors.
     >>> import decotengu
     >>> engine, deco_table = decotengu.create()
     >>> engine.add_gas(0, 21)
-    >>> engine.calc.config      # doctest:+ELLIPSIS
-    <decotengu.calc.ZH_L16B object at ...>
+    >>> engine.model      # doctest:+ELLIPSIS
+    <decotengu.model.ZH_L16B_GF object at ...>
     >>> engine.gf_low
     0.3
     >>> engine.gf_high
@@ -85,7 +85,7 @@ Buhlmann's :class:`ZH-L16B <ZH_L16B>` model with gradient factors.
 
 We can switch to ZH-L16C decompression model easily::
 
-    >>> engine.calc.config = decotengu.ZH_L16C()
+    >>> engine.model = decotengu.ZH_L16C_GF()
     >>> profile = engine.calculate(35, 40, deco_table())
     >>> list(profile)            # doctest:+ELLIPSIS
     [Step...]
@@ -118,7 +118,7 @@ attributes::
 
 from .engine import Engine
 from .mod import DecoTable
-from .calc import ZH_L16B, ZH_L16C
+from .model import ZH_L16B_GF, ZH_L16C_GF
 
 __version__ = '0.1.0'
 
@@ -148,6 +148,6 @@ def create(time_delta=None):
     return engine, dt
 
 
-__all__ = [create, Engine, ZH_L16B, ZH_L16C]
+__all__ = [create, Engine, ZH_L16B_GF, ZH_L16C_GF]
 
 # vim: sw=4:et:ai

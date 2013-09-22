@@ -27,7 +27,7 @@ from decotengu.engine import Engine, EngineError, Phase, Step, GasMix, \
         InfoSample, InfoTissue
 from decotengu.mod import DecoTable, dive_step_info, info_csv_writer, \
         tissue_pressure_validator
-from decotengu.calc import TissueCalculator
+from decotengu.model import ZH_L16B_GF
 from decotengu.flow import coroutine
 
 import unittest
@@ -143,7 +143,7 @@ class DiveStepInfoTestCase(unittest.TestCase):
         """
         Test dive step info mod
         """
-        calc = TissueCalculator()
+        model = ZH_L16B_GF()
         s1 = Step(Phase.CONST, 20, 100, 3.5, AIR, [2.2, 2.3], 0.3, None)
         s2 = Step(Phase.DECOSTOP, 15, 145, 2.5, AIR, [1.2, 1.3], 0.4, s1)
 
@@ -154,7 +154,7 @@ class DiveStepInfoTestCase(unittest.TestCase):
                 v = (yield)
                 data.append(v)
 
-        info = dive_step_info(calc, sink())
+        info = dive_step_info(model, sink())
         info.send(s1)
         info.send(s2)
 

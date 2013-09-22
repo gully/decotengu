@@ -51,7 +51,7 @@ parser.add_argument('--pressure', '-p', dest='pressure', default=None,
 #parser.add_argument('--altitude', '-a', dest='altitude', default=None,
 #        type=int, help='set altitude, i.e. 700m')
 parser.add_argument('--model', '-m', dest='model',
-        default='zh-l16b', choices=('zh-l16b', 'zh-l16c'),
+        default='zh-l16b-gf', choices=('zh-l16b-gf', 'zh-l16c-gf'),
         help='decompression model')
 parser.add_argument('--descent-rate', dest='descent_rate', default=20.0,
         type=float, help='descent rate, i.e. 20 [m/min]')
@@ -74,7 +74,7 @@ if args.verbose:
 
 import decotengu
 from decotengu.routines import AscentJumper, DecoStopStepper, FirstStopTabFinder
-from decotengu.tab import TabTissueCalculator
+#from decotengu.tab import TabTissueCalculator
 from decotengu.mod import dive_step_info, info_csv_writer, \
         tissue_pressure_validator
 
@@ -84,13 +84,13 @@ mods = [deco_table(), tissue_pressure_validator(engine)]
 if args.tissue_file:
     f = open(args.tissue_file, 'w')
     csv_writer = info_csv_writer(f)
-    info = dive_step_info(engine.calc, csv_writer)
+    info = dive_step_info(engine.model, csv_writer)
     mods.append(info)
 
-if args.model == 'zh-l16b':
-    engine.calc.config = decotengu.ZH_L16B()
-elif args.model == 'zh-l16c':
-    engine.calc.config = decotengu.ZH_L16C()
+if args.model == 'zh-l16b-gf':
+    engine.model = decotengu.ZH_L16B_GF()
+elif args.model == 'zh-l16c-gf':
+    engine.model = decotengu.ZH_L16C_GF()
 else:
     assert False, 'unknown decompression model'
 
@@ -138,7 +138,7 @@ print()
 
 stops = deco_table.stops
 if stops:
-    print('Decompression stops ({}):'.format(engine.calc.config))
+    print('Decompression stops ({}):'.format(engine.model))
     for stop in stops:
         print(' {:4.0f}m {:3}min'.format(stop.depth, stop.time))
     print('-' * 13)

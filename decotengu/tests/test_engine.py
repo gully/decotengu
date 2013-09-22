@@ -68,10 +68,10 @@ class EngineTestCase(unittest.TestCase):
         limit = (1.0, 2.0, 1.5, 2.4, 2.1)
 
         self.engine.gf_low = 0.1
-        self.engine.calc.gf_limit = mock.MagicMock(return_value=limit)
+        self.engine.model.gf_limit = mock.MagicMock(return_value=limit)
 
         v = self.engine._max_tissue_pressure(tissues)
-        self.engine.calc.gf_limit.assert_called_once_with(0.1, tissues)
+        self.engine.model.gf_limit.assert_called_once_with(0.1, tissues)
         self.assertEquals(2.4, v)
 
 
@@ -82,10 +82,10 @@ class EngineTestCase(unittest.TestCase):
         tissues = (1.5, 2.5, 2.0, 2.9, 2.6)
         limit = (1.0, 2.0, 1.5, 2.4, 2.1)
 
-        self.engine.calc.gf_limit = mock.MagicMock(return_value=limit)
+        self.engine.model.gf_limit = mock.MagicMock(return_value=limit)
 
         v = self.engine._max_tissue_pressure(tissues, 0.2)
-        self.engine.calc.gf_limit.assert_called_once_with(0.2, tissues)
+        self.engine.model.gf_limit.assert_called_once_with(0.2, tissues)
         self.assertEquals(2.4, v)
 
 
@@ -226,38 +226,38 @@ class EngineTestCase(unittest.TestCase):
         """
         Test tissue loading at constant depth
         """
-        self.engine.calc.load_tissues = mock.MagicMock(return_value=[1.2, 1.3])
+        self.engine.model.load = mock.MagicMock(return_value=[1.2, 1.3])
         v = self.engine._tissue_pressure_const(2.0, 10, AIR, [1.1, 1.1])
 
         # check the rate is 0
-        self.engine.calc.load_tissues.assert_called_once_with(2.0, 10,
+        self.engine.model.load.assert_called_once_with(2.0, 10,
                 AIR, 0, [1.1, 1.1])
 
 
     def test_tissue_load_ascent(self):
         """
-        Test tissue loading after ascent
+        Test tissue gas loading after ascent
         """
         self.engine.ascent_rate = 10
-        self.engine.calc.load_tissues = mock.MagicMock(return_value=[1.2, 1.3])
+        self.engine.model.load = mock.MagicMock(return_value=[1.2, 1.3])
         v = self.engine._tissue_pressure_ascent(2.0, 10, AIR, [1.1, 1.1])
 
         # rate for ascent has to be negative and converted to bars
-        self.engine.calc.load_tissues.assert_called_once_with(2.0, 10,
+        self.engine.model.load.assert_called_once_with(2.0, 10,
                 AIR, -0.9984999999999999, [1.1, 1.1])
         self.assertEquals([1.2, 1.3], v)
 
 
     def test_tissue_load_descent(self):
         """
-        Test tissue loading after descent
+        Test tissue gas loading after descent
         """
         self.engine.descent_rate = 10
-        self.engine.calc.load_tissues = mock.MagicMock(return_value=[1.2, 1.3])
+        self.engine.model.load = mock.MagicMock(return_value=[1.2, 1.3])
         v = self.engine._tissue_pressure_descent(2.0, 10, AIR, [1.1, 1.1])
 
         # rate for descent has to be positive number and converted to bars
-        self.engine.calc.load_tissues.assert_called_once_with(2.0, 10,
+        self.engine.model.load.assert_called_once_with(2.0, 10,
                 AIR, 0.9984999999999999, [1.1, 1.1])
         self.assertEquals([1.2, 1.3], v)
 
