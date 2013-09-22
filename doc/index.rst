@@ -40,6 +40,7 @@ Table of Contents
 
    api
    cmd
+   design
 
 * :ref:`genindex`
 * :ref:`search`
