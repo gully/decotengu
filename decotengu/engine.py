@@ -25,6 +25,7 @@ DecoTengu dive decompression engine.
 
 from functools import partial
 from collections import namedtuple
+import math
 import logging
 
 from .model import ZH_L16B_GF
@@ -630,6 +631,17 @@ class Engine(object):
          mods
             Collection of deco engine mods.
         """
+        time_delta = self.conveyor.time_delta
+        if time_delta < 0.1:
+            logger.warn('possible calculation problems: time delta below 0.1' \
+                    ' not supported')
+        elif time_delta < 60 and math.modf(60 / time_delta)[0] != 0:
+            logger.warn('possible calculation problems: time delta does not' \
+                    ' divide 60 evenly without a reminder')
+        elif time_delta >= 60 and time_delta % 60 != 0:
+            logger.warn('possible calculation problems: time delta modulo 60' \
+                ' not zero')
+
         if len(self._gas_list) == 0:
             raise ConfigError('No gas mixes configured')
 

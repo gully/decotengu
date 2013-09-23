@@ -60,8 +60,11 @@ parser.add_argument('--model', '-m', dest='model',
         help='decompression model')
 parser.add_argument('--descent-rate', dest='descent_rate', default=20.0,
         type=float, help='descent rate, i.e. 20 [m/min]')
-parser.add_argument('--time-delta', '-t', dest='time_delta', default=None,
-        type=float, help='time between dive steps, i.e. 60, 0.5 [s]')
+parser.add_argument(
+    '--time-delta', '-t', dest='time_delta', default=None, type=float,
+    help='slice dive time into chunks to create dive steps every time delta' \
+        ' value, i.e. 60, 0.5 [s]; no slicing by default'
+)
 #parser.add_argument('--no-descent', '-nd', dest='descent',
 #        default=True, type=bool, help='decompression model')
 parser.add_argument('--tissue-file', '-f', dest='tissue_file',
@@ -76,6 +79,8 @@ args = parser.parse_args()
 
 if args.verbose:
     logging.basicConfig(level=logging.DEBUG)
+else:
+    logging.basicConfig(level=logging.WARN)
 
 import decotengu
 from decotengu.routines import AscentJumper, DecoStopStepper, FirstStopTabFinder
