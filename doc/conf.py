@@ -25,5 +25,7 @@ html_theme_options = {
     'headerbg': '#006bba',
     'footerbg': '#006bba',
 }
+html_style = 'decotengu.css'
+html_static_path = ['static']
 
 # vim: sw=4:et:ai

@@ -1,0 +1,7 @@
+@import url('agogo.css');
+
+div.diagram pre {
+    background: #eeeeee;
+    padding: 20px;
+    line-height: 95%;
+}
