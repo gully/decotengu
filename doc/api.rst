@@ -17,4 +17,8 @@ DecoTengu Classes and Functions
 
 .. autoclass:: decotengu.ZH_L16C_GF
 
+.. autoclass:: decotengu.engine.Step
+.. autoclass:: decotengu.engine.GasMix
+.. autoclass:: decotengu.engine.DecoStop
+
 .. vim: sw=4:et:ai

@@ -48,53 +48,53 @@ InfoTissue = namedtuple('InfoTissue', 'no pressure limit gf gf_limit')
 Phase = namedtuple('Phase', 'START DESCENT CONST ASCENT DECOSTOP')('start',
     'descent', 'const', 'ascent', 'decostop')
 
-#
-# Dive step.
-# 
-# phase
-#   Dive phase.
-# depth
-#   Depth of dive [m].
-# time
-#   Time of dive [s].
-# pressure
-#   Pressure at depth [bar].
-# gas
-#   Gas mix.
-# tissues
-#   Tissues gas loading (tuple of 16 numbers - pressure for each compartment)
-# gf
-#   Gradient factor value.
-# prev
-#   Previous dive step
-#
 Step = namedtuple('Step', 'phase depth time pressure gas tissues gf prev')
 Step.__repr__ = lambda s: 'Step(phase="{}", depth={}, time={}, pressure={:.4f},' \
     ' gf={:.4f})'.format(s.phase, s.depth, s.time, s.pressure, s.gf)
+Step.__doc__ = """
+Dive step.
 
-#
-# Gas mix.
-#
-# depth
-#   Gas mix switch depth.
-# o2
-#   O2 percentage.
-# n2
-#   N2 percentage.
-# he
-#   Helium percentage.
-#
+phase
+  Dive phase.
+depth
+  Depth of dive [m].
+time
+  Time of dive [s].
+pressure
+  Pressure at depth [bar].
+gas
+  Gas mix configuration.
+tissues
+  Tissues gas loading (tuple of 16 numbers - pressure for each compartment)
+gf
+  Gradient factor value.
+prev
+  Previous dive step.
+"""
+
 GasMix = namedtuple('GasMix', 'depth o2 n2 he') 
+GasMix.__doc__ = """
+Gas mix configuration.
 
-#
-# Dive decompression stop.
-#
-# depth
-#   Depth of decompression stop [m].
-# time
-#   Length of decompression stops [min].
-#
-DecoStop = namedtuple('Stop', 'depth time')
+depth
+  Gas mix switch depth.
+o2
+  O2 percentage.
+n2
+  N2 percentage.
+he
+  Helium percentage.
+"""
+
+DecoStop = namedtuple('DecoStop', 'depth time')
+DecoStop.__doc__ = """
+Dive decompression stop.
+
+depth
+  Depth of decompression stop [m].
+time
+  Length of decompression stops [min].
+"""
 
 
 class EngineError(Exception):
