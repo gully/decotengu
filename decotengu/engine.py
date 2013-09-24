@@ -149,7 +149,7 @@ class Engine(object):
 
     def _to_depth(self, time, rate):
         """
-        Calculate depth travelled in time at given ascent rate.
+        Convert time into depth using depth change rate.
 
         :Parameters:
          time
