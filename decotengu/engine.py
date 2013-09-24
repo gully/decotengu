@@ -160,6 +160,21 @@ class Engine(object):
         return time * rate / 60
 
 
+    def _to_time(self, depth, rate):
+        """
+        Convert depth into time using depth change rate.
+
+        The time is returned in seconds.
+
+        :Parameters:
+         depth
+            Depth in meters.
+         rate
+            Rate of depth change [m/min].
+        """
+        return depth / rate * 60
+
+
     def _inv_ascent(self, step):
         """
         Return true if ascent from a depth is possible.
@@ -190,7 +205,8 @@ class Engine(object):
          gf
             Gradient factor value for next decompression stop.
         """
-        data = self._tissue_pressure_ascent(step.pressure, 18, gas, step.data)
+        ts_3m = self._to_time(3, self.ascent_rate)
+        data = self._tissue_pressure_ascent(step.pressure, ts_3m, gas, step.data)
         max_tp = self.model.pressure_limit(data, gf=gf)
         return self._to_pressure(step.depth - 3) <= max_tp
 
@@ -387,7 +403,7 @@ class Engine(object):
         step = self._step('start', None, 0, 0, gas, data)
         yield step
 
-        time = depth / self.descent_rate * 60
+        time = self._to_time(depth, self.descent_rate)
         logger.debug('descent for {}s'.format(time))
         belt = self.conveyor.trays(0, 0, time, self.descent_rate)
         for tray in belt:
@@ -560,7 +576,8 @@ class Engine(object):
                 step = self._step_next(step, tray.d_time, gas, phase='decostop')
                 yield step
 
-            step = self._step_next_ascent(step, 18, gas, gf + gf_step)
+            ts_3m = self._to_time(3, self.ascent_rate)
+            step = self._step_next_ascent(step, ts_3m, gas, gf + gf_step)
             yield step
 
 

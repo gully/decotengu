@@ -62,13 +62,22 @@ class EngineTestCase(unittest.TestCase):
         self.assertAlmostEquals(v, 3.197)
 
 
-    def test_time_depth(self):
+    def test_to_depth(self):
         """
-        Test deco engine depth calculation using time
+        Test deco engine time to depth conversion
         """
         self.engine.ascent_rate = 10
         v = self.engine._to_depth(18, 5)
         self.assertAlmostEquals(v, 1.5)
+
+
+    def test_to_time(self):
+        """
+        Test deco engine depth to time conversion
+        """
+        self.engine.ascent_rate = 10
+        v = self.engine._to_time(1.5, 5)
+        self.assertAlmostEquals(v, 18)
 
 
     def test_ascent_invariant(self):
