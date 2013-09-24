@@ -23,6 +23,7 @@ Engine class.
 """
 
 from decotengu.engine import Engine, Phase, Step, GasMix
+from decotengu.model import Data
 from decotengu.tab import TabTissueCalculator
 from decotengu.routines import AscentJumper, FirstStopTabFinder, DecoStopStepper
 
@@ -30,6 +31,16 @@ import unittest
 from unittest import mock
 
 AIR = GasMix(0, 21, 79, 0)
+
+def _step(phase, depth, time, gas=AIR, prev=None, data=None):
+    engine = Engine()
+    p = engine._to_pressure(depth)
+    if data is None:
+        data = mock.MagicMock()
+        data.gf = 0.3
+    step = Step(phase, depth, time, p, gas, data, prev)
+    return step
+
 
 class AscentJumperTestCase(unittest.TestCase):
     """
@@ -43,8 +54,9 @@ class AscentJumperTestCase(unittest.TestCase):
         engine.conveyor.time_delta = 60 # FIXME: this should be automatic
         engine._free_ascent = AscentJumper()
 
-        start = Step(Phase.ASCENT, 30, 1200, 4, AIR, [3.2, 4.1], 0.3, None)
-        stop = Step(Phase.ASCENT, 5, 1200 + 120, 2, AIR, [3.2, 4.1], 0.3, None)
+        data = None
+        start = _step(Phase.ASCENT, 30, 1200, data=data)
+        stop = _step(Phase.ASCENT, 5, 1200 + 120, data=data)
         steps = list(engine._free_ascent(start, stop, AIR))
         self.assertEquals(2, len(steps))
         self.assertEquals([20.0, 10.0], [s.depth for s in steps])
@@ -68,14 +80,18 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
     @mock.patch('decotengu.routines.bisect_find')
     def test_level_from_30m(self, f_bf, f_rw):
         """
-        Test first stop tabular finder levelling at multiply of 3m (from 30m)
+        Test first stop tabular finder leveling at multiply of 3m (from 30m)
         """
-        self.engine._tissue_pressure_ascent = mock.MagicMock(return_value=[3.1, 4.0])
+        data = Data([3.1, 4.0], 0.3)
+        self.engine._tissue_pressure_ascent = mock.MagicMock(return_value=data)
         self.engine._step_next_ascent = mock.MagicMock()
 
-        start = Step(Phase.CONST, 30, 1200, 4, AIR, [3.2, 3.1], 0.3, None)
-        step = Step(Phase.ASCENT, 21, 1200, 4, AIR, [2.2, 2.1], 0.3, start)
-        first_stop = Step(Phase.ASCENT, 16, 1200, 4, AIR, [2.2, 2.1], 0.3, step)
+        data = Data([3.2, 3.1], 0.3)
+        start = _step(Phase.CONST, 30, 1200, 4, AIR, data=data)
+        data = Data([2.2, 2.1], 0.3)
+        step = _step(Phase.ASCENT, 21, 1200, data=data, prev=start)
+        data = Data([2.2, 2.1], 0.3)
+        first_stop = _step(Phase.ASCENT, 16, 1200, data=data, prev=step)
 
         f_rw.return_value = step
         f_bf.return_value = 2
@@ -102,9 +118,12 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         self.engine._tissue_pressure_ascent = mock.MagicMock(return_value=[3.1, 4.0])
         self.engine._step_next_ascent = mock.MagicMock()
 
-        start = Step(Phase.CONST, 29, 1200, 4, AIR, [3.2, 3.1], 0.3, None)
-        step = Step(Phase.ASCENT, 21, 1200, 4, AIR, [2.2, 2.1], 0.3, start)
-        first_stop = Step(Phase.ASCENT, 16, 1200, 4, AIR, [2.2, 2.1], 0.3, step)
+        data = Data([3.2, 3.1], 0.3)
+        start = _step(Phase.CONST, 29, 1200, data=data)
+        data = Data([2.2, 2.1], 0.3)
+        step = _step(Phase.ASCENT, 21, 1200, data=data, prev=start)
+        data = Data([2.2, 2.1], 0.3)
+        first_stop = _step(Phase.ASCENT, 16, 1200, data=data, prev=step)
 
         f_rw.return_value = step
         f_bf.return_value = 2
@@ -115,8 +134,10 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
 
         self.assertTrue(f_rw.called)
         self.assertTrue(f_bf.called)
-        self.engine._tissue_pressure_ascent.assert_called_once_with(4, 12, AIR,
-                [3.2, 3.1])
+        data = Data([3.2, 3.1], 0.3)
+        self.engine._tissue_pressure_ascent.assert_called_once_with(
+            3.9089, 12, AIR, data
+        )
 
         # from `step` to `first_stop` -> 6m, 36s
         self.engine._step_next_ascent.assert_called_once_with(step, 36, AIR)
@@ -128,11 +149,14 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         """
         Test first stop tabular finder when in deco already
         """
-        self.engine._tissue_pressure_ascent = mock.MagicMock(return_value=[3.1, 4.0])
+        data = Data([3.1, 4.0], 0.3)
+        self.engine._tissue_pressure_ascent = mock.MagicMock(
+            return_value=data
+        )
         self.engine._step_next_ascent = mock.MagicMock()
 
-        start = Step(Phase.CONST, 21, 1200, 4, AIR, [3.2, 3.1], 0.3, None)
-        step = Step(Phase.ASCENT, 21, 1200, 4, AIR, [3.2, 3.1], 0.3, None)
+        start = _step(Phase.CONST, 21, 1200)
+        step = _step(Phase.ASCENT, 21, 1200)
 
         f_rw.return_value = step
         f_bf.return_value = 0 # in deco already
@@ -158,8 +182,8 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
                 side_effect=[True, True, False,
                     True, False]) # debug calls "bisect check"
 
-        start = Step(Phase.CONST, 30, 1200, 4, AIR, [3.2, 3.1], 0.3, None)
-        step = Step(Phase.ASCENT, 27, 1200, 4, AIR, [3.2, 3.1], 0.3, start)
+        start = _step(Phase.CONST, 30, 1200)
+        step = _step(Phase.ASCENT, 27, 1200, prev=start)
 
         f_rw.return_value = step
 
@@ -178,8 +202,9 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         """
         Test first stop tabular finder when no deco required
         """
+        self.engine._inv_ascent = mock.MagicMock()
         self.engine.surface_pressure = 1
-        start = Step(Phase.ASCENT, 30, 1200, 4, AIR, [1.0, 1.0], 0.3, None)
+        start = _step(Phase.ASCENT, 30, 1200)
 
         stop = self.engine._find_first_stop(start, AIR)
         self.assertEquals(0, stop.depth)
@@ -201,7 +226,8 @@ class DecoStopStepperTestCase(unittest.TestCase):
         engine.surface_pressure = 1
         engine._deco_ascent = DecoStopStepper()
 
-        first_stop = Step(Phase.ASCENT, 9, 1200, 1.9, AIR, [2.8, 2.8], 0.3, None)
+        data = Data([2.8, 2.8], 0.3)
+        first_stop = _step(Phase.ASCENT, 9, 1200, data=data)
         gf_step = 0.18333333333333335
         steps = list(engine._deco_ascent(first_stop, 0, AIR, 0.3, gf_step))
 
@@ -210,12 +236,12 @@ class DecoStopStepperTestCase(unittest.TestCase):
 
         self.assertEquals(9, steps[0].depth)
         self.assertEquals('decostop', steps[0].phase)
-        self.assertAlmostEquals(0.30, steps[0].gf)
+        self.assertAlmostEquals(0.30, steps[0].data.gf)
         self.assertEquals(3, steps[-2].depth)
         self.assertEquals('decostop', steps[-2].phase)
         self.assertEquals(0, steps[-1].depth)
         self.assertEquals('ascent', steps[-1].phase)
-        self.assertAlmostEquals(0.85, steps[-1].gf)
+        self.assertAlmostEquals(0.85, steps[-1].data.gf)
 
         # stops at 9m, 6m and 3m and include last step at 0m
         self.assertEquals(4, len(set(s.depth for s in steps)))
@@ -233,15 +259,15 @@ class DecoStopStepperTestCase(unittest.TestCase):
         engine._deco_ascent = DecoStopStepper()
         pressure = engine._to_pressure
 
-        first_stop = Step(Phase.ASCENT, 15, 1200, pressure(15), AIR,
-                [2.5] * 3, 0.3, None)
+        data = Data([2.5] * 3, 0.3)
+        first_stop = _step(Phase.ASCENT, 15, 1200, data=data)
 
         steps = list(engine._deco_ascent(first_stop, 7, AIR, 0.3, 0.11))
         self.assertEquals(6, len(steps))
 
         self.assertEquals(15, steps[0].depth)
         self.assertEquals(1260, steps[0].time)
-        self.assertEquals(0.30, steps[0].gf)
+        self.assertEquals(0.30, steps[0].data.gf)
 
         self.assertEquals(12, steps[1].depth)
         self.assertEquals(1278, steps[1].time)
@@ -254,7 +280,7 @@ class DecoStopStepperTestCase(unittest.TestCase):
         # last stop at 6m due to depth limit
         self.assertEquals(6, steps[5].depth)
         self.assertEquals(1434, steps[5].time)
-        self.assertEquals(0.63, steps[5].gf)
+        self.assertEquals(0.63, steps[5].data.gf)
 
 
 # vim: sw=4:et:ai

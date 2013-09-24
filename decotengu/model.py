@@ -21,9 +21,22 @@
 Buhlmann ZH_L16 decompression model with gradient factors by Eric Baker.
 """
 
+from collections import namedtuple
 import math
 
 from .const import WATER_VAPOUR_PRESSURE_DEFAULT
+
+Data = namedtuple('Data', 'tissues gf')
+Data.__doc__ = """
+Data for Buhlmann ZH-L16 decompression model with gradient factors.
+
+:Attributes:
+ tissues
+    Tissues gas loading. Tuple of numbers, tissue pressure of inert gas in
+    each tissue compartment.
+ gf
+    Gradient factor value.
+"""
 
 
 def eq_schreiner(abs_p, time, gas, rate, pressure, half_life,
@@ -98,6 +111,8 @@ class ZH_L16_GF(object):
         """
         super().__init__()
         self.calc = TissueCalculator(self.N2_HALF_LIFE, self.HE_HALF_LIFE)
+        self.gf_low = 0.3
+        self.gf_high = 0.85
 
 
     def init(self, surface_pressure):
@@ -109,10 +124,11 @@ class ZH_L16_GF(object):
             Surface pressure [bar].
         """
         p = surface_pressure - self.calc.water_vapour_pressure
-        return [0.7902 * p] * self.NUM_COMPARTMENTS
+        data = Data([0.7902 * p] * self.NUM_COMPARTMENTS, self.gf_low)
+        return data
 
 
-    def load(self, abs_p, time, gas, rate, tissue_pressure):
+    def load(self, abs_p, time, gas, rate, data):
         """
         Change gas loading of all tissues.
 
@@ -125,29 +141,30 @@ class ZH_L16_GF(object):
             Gas mix configuration.
          rate
             Pressure rate change [bar/min].
-         tissue_pressure
-            Pressure of intert gas in each of tissue [bar].
+         data
+            Decompression model data.
         """
         load = self.calc.load_tissue
-        tp = (load(abs_p, time, gas, rate, tp, k)
-                for k, tp in enumerate(tissue_pressure))
-        return tuple(tp)
+        tp = tuple(load(abs_p, time, gas, rate, tp, k)
+                for k, tp in enumerate(data.tissues))
+        data = Data(tp, data.gf)
+        return data
 
 
-    def gf_limit(self, gf, tissue_pressure):
+    def gf_limit(self, gf, data):
         """
         Calculate gradient pressure limit.
 
         :Parameters:
          gf
             Gradient factor.
-         tissue_pressure
-            Pressure of all tissues [bar].
+         data
+            Decompression model data.
         """
         assert gf > 0 and gf <= 1.5
         # FIXME: include he
-        data = zip(tissue_pressure, self.N2_A, self.N2_B)
-        return tuple(eq_gf_limit(gf, tp, 0, av, bv) for tp, av, bv in data)
+        tissues = zip(data.tissues, self.N2_A, self.N2_B)
+        return tuple(eq_gf_limit(gf, tp, 0, av, bv) for tp, av, bv in tissues)
 
 
 class ZH_L16B_GF(ZH_L16_GF): # source: gfdeco.f by Baker

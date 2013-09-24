@@ -48,52 +48,55 @@ InfoTissue = namedtuple('InfoTissue', 'no pressure limit gf gf_limit')
 Phase = namedtuple('Phase', 'START DESCENT CONST ASCENT DECOSTOP')('start',
     'descent', 'const', 'ascent', 'decostop')
 
-Step = namedtuple('Step', 'phase depth time pressure gas tissues gf prev')
-Step.__repr__ = lambda s: 'Step(phase="{}", depth={}, time={}, pressure={:.4f},' \
-    ' gf={:.4f})'.format(s.phase, s.depth, s.time, s.pressure, s.gf)
+Step = namedtuple('Step', 'phase depth time pressure gas data prev')
+Step.__repr__ = lambda s: 'Step(phase="{}", depth={}, time={},' \
+    ' pressure={:.4f}, gf={:.4f})'.format(
+        s.phase, s.depth, s.time, s.pressure, s.data.gf
+    )
 Step.__doc__ = """
 Dive step.
 
-phase
-  Dive phase.
-depth
-  Depth of dive [m].
-time
-  Time of dive [s].
-pressure
-  Pressure at depth [bar].
-gas
-  Gas mix configuration.
-tissues
-  Tissues gas loading (tuple of 16 numbers - pressure for each compartment)
-gf
-  Gradient factor value.
-prev
-  Previous dive step.
+:Attributes:
+ phase
+    Dive phase.
+ depth
+    Depth of dive [m].
+ time
+    Time of dive [s].
+ pressure
+    Pressure at depth [bar].
+ gas
+    Gas mix configuration.
+ data
+    Decompression model data.
+ prev
+    Previous dive step.
 """
 
 GasMix = namedtuple('GasMix', 'depth o2 n2 he') 
 GasMix.__doc__ = """
 Gas mix configuration.
 
-depth
-  Gas mix switch depth.
-o2
-  O2 percentage.
-n2
-  N2 percentage.
-he
-  Helium percentage.
+:Attributes:
+ depth
+    Gas mix switch depth.
+ o2
+    O2 percentage.
+ n2
+    N2 percentage.
+ he
+    Helium percentage.
 """
 
 DecoStop = namedtuple('DecoStop', 'depth time')
 DecoStop.__doc__ = """
 Dive decompression stop.
 
-depth
-  Depth of decompression stop [m].
-time
-  Length of decompression stops [min].
+:Attributes
+ depth
+    Depth of decompression stop [m].
+ time
+    Length of decompression stops [min].
 """
 
 
@@ -126,8 +129,6 @@ class Engine(object):
         super().__init__()
         self.model = ZH_L16B_GF()
         self.surface_pressure = 1.01325
-        self.gf_low = 0.3
-        self.gf_high = 0.85
         self.ascent_rate = 10.0
         self.descent_rate = 20.0
         self.conveyor = Conveyor()
@@ -159,20 +160,21 @@ class Engine(object):
         return time * rate / 60
 
 
-    def _max_tissue_pressure(self, tp, gf=None):
+    def _max_tissue_pressure(self, data, gf=None):
         """
-        Calculate maximum tissue pressure limit using gradient factor
-        value.
+        Calculate maximum tissue pressure limit using decompression model
+        data.
 
         :Parameters:
-         tp
-            List of tissues pressure.
+         data
+            Decompression model data.
          gf
             Gradient factor value, GF low by default.
         """
+        # FIXME: make it model independent
         if gf is None:
-            gf = self.gf_low
-        return max(self.model.gf_limit(gf, tp))
+            gf = self.model.gf_low
+        return max(self.model.gf_limit(gf, data))
 
 
     def _inv_ascent(self, step):
@@ -186,7 +188,7 @@ class Engine(object):
          step
             Dive step containing pressure information.
         """
-        return step.pressure > self._max_tissue_pressure(step.tissues)
+        return step.pressure > self._max_tissue_pressure(step.data)
 
 
     def _inv_deco_stop(self, step, gas, gf):
@@ -205,12 +207,12 @@ class Engine(object):
          gf
             Gradient factor value for next decompression stop.
         """
-        tp = self._tissue_pressure_ascent(step.pressure, 18, gas, step.tissues)
-        max_tp = self._max_tissue_pressure(tp, gf=gf)
+        data = self._tissue_pressure_ascent(step.pressure, 18, gas, step.data)
+        max_tp = self._max_tissue_pressure(data, gf=gf)
         return self._to_pressure(step.depth - 3) <= max_tp
 
 
-    def _step(self, phase, prev, depth, time, gas, tissues, gf=None):
+    def _step(self, phase, prev, depth, time, gas, data):
         """
         Create dive step record.
 
@@ -230,18 +232,14 @@ class Engine(object):
             a dive).
          gas
             Gas mix configuration.
-         tissues
-            Current tissues gas loadings.
-         gf
-            Gradient factor value for pressure limit calculations.
+         data
+            Decompression model data.
         """
-        if gf is None:
-            gf = self.gf_low
-        return Step(phase, depth, time, self._to_pressure(depth), gas, tissues,
-                gf, prev)
+        p = self._to_pressure(depth)
+        return Step(phase, depth, time, p, gas, data, prev) 
 
 
-    def _step_next(self, step, time, gas, gf=None, phase='const'):
+    def _step_next(self, step, time, gas, phase='const'):
         """
         Calculate next dive step at constant depth and advanced by
         specified amount of time.
@@ -253,16 +251,16 @@ class Engine(object):
             Time spent at current depth [s].
          gas
             Gas mix configuration.
-         gf
-            Gradient factor value for pressure limit calculation.
+         data
+            Decompression model data.
          phase
             Dive phase.
         """
-        tp = self._tissue_pressure_const(step.pressure, time, gas, step.tissues)
-        return self._step(phase, step, step.depth, step.time + time, gas, tp, gf)
+        data = self._tissue_pressure_const(step.pressure, time, gas, step.data)
+        return self._step(phase, step, step.depth, step.time + time, gas, data)
 
 
-    def _step_next_descent(self, step, time, gas, gf=None, phase='descent'):
+    def _step_next_descent(self, step, time, gas, phase='descent'):
         """
         Calculate next dive step when descent is performed for specified
         period of time.
@@ -274,20 +272,21 @@ class Engine(object):
             Time to descent [s].
          gas
             Gas mix configuration.
-         gf
-            Gradient factor value for pressure limit calculation.
          phase
             Dive phase.
         """
-        tp = self._tissue_pressure_descent(step.pressure, time, gas, step.tissues)
+        data = self._tissue_pressure_descent(step.pressure, time, gas, step.data)
         depth = step.depth + self._to_depth(time, self.descent_rate)
-        return self._step(phase, step, depth, step.time + time, gas, tp, gf)
+        return self._step(phase, step, depth, step.time + time, gas, data)
 
 
     def _step_next_ascent(self, step, time, gas, gf=None, phase='ascent'):
         """
         Calculate next dive step when ascent is performed for specified
         period of time.
+
+        FIXME: due to ``gf`` parameter this method is deco model dependant,
+               this has to be improved
 
         :Parameters:
          step
@@ -296,17 +295,22 @@ class Engine(object):
             Time to ascent [s].
          gas
             Gas mix configuration.
-         gf
-            Gradient factor value for pressure limit calculation.
+         data
+            Decompression model data.
          phase
             Dive phase.
         """
-        tp = self._tissue_pressure_ascent(step.pressure, time, gas, step.tissues)
+        data = self._tissue_pressure_ascent(step.pressure, time, gas, step.data)
         depth = step.depth - self._to_depth(time, self.ascent_rate)
-        return self._step(phase, step, depth, step.time + time, gas, tp, gf)
+        step = self._step(phase, step, depth, step.time + time, gas, data)
+        if gf is not None:
+            # FIXME: make it model independent
+            data = data._replace(gf=gf)
+            step = step._replace(data=data)
+        return step
 
 
-    def _tissue_pressure_const(self, abs_p, time, gas, tp_start):
+    def _tissue_pressure_const(self, abs_p, time, gas, data):
         """
         Calculate tissues gas loading after exposure for specified time at
         constant pressure.
@@ -318,14 +322,13 @@ class Engine(object):
             Time at pressure in seconds.
          gas
             Gas mix configuration.
-         tp_start
-            Initial tissues pressure.
+         data
+            Decompression model data.
         """
-        tp = self.model.load(abs_p, time, gas, 0, tp_start)
-        return tp
+        return self.model.load(abs_p, time, gas, 0, data)
 
 
-    def _tissue_pressure_descent(self, abs_p, time, gas, tp_start):
+    def _tissue_pressure_descent(self, abs_p, time, gas, data):
         """
         Calculate tissues gas loading after descent from pressure for
         specified amount of time.
@@ -337,12 +340,12 @@ class Engine(object):
             Time of descent in seconds.
          gas
             Gas mix configuration.
-         tp_start
-            Initial tissues pressure.
+         data
+            Decompression model data.
         """
         rate = self.descent_rate * METER_TO_BAR
-        tp = self.model.load(abs_p, time, gas, rate, tp_start)
-        return tp
+        data = self.model.load(abs_p, time, gas, rate, data)
+        return data
 
 
     def _tissue_pressure_ascent(self, abs_p, time, gas, tp_start):
@@ -397,8 +400,8 @@ class Engine(object):
          gas
             Gas mix configuration.
         """
-        start = self.model.init(self.surface_pressure)
-        step = self._step('start', None, 0, 0, gas, start)
+        data = self.model.init(self.surface_pressure)
+        step = self._step('start', None, 0, 0, gas, data)
         yield step
 
         time = depth / self.descent_rate * 60
@@ -505,10 +508,10 @@ class Engine(object):
                     .format(step.depth, step.time, stop.depth, stop.time)
 
             dstr = ' '.join(str(v1 - v2) for v1, v2 in
-                    zip(step.tissues, stop.tissues))
+                    zip(step.data.tissues, stop.data.tissues))
 
             assert all(abs(v1 - v2) < EPSILON
-                for v1, v2 in zip(step.tissues, stop.tissues)), dstr
+                for v1, v2 in zip(step.data.tissues, stop.data.tissues)), dstr
 
 
     def _deco_ascent(self, first_stop, depth, gas, gf_start, gf_step):
@@ -540,7 +543,6 @@ class Engine(object):
             next stops.
         """
         step = first_stop
-        tp = step.tissues
 
         assert round(step.depth, 10) % 3 == 0 and step.depth > 0, step.depth
         assert abs(step.depth - depth) > EPSILON, '{} vs. {}' \
@@ -556,13 +558,13 @@ class Engine(object):
             gf = gf_start + k_stop * gf_step
 
             inv_f = partial(self._inv_deco_stop, gas=gas, gf=gf + gf_step)
-            l_fg = partial(self._step_next, time=max_time * 60, gas=gas, gf=gf)
-            l_step = recurse_while(inv_f, l_fg, step)
+            l_step_next_f = partial(self._step_next, time=max_time * 60, gas=gas)
+            l_step = recurse_while(inv_f, l_step_next_f, step)
             logger.debug('deco stop: linear find finished at {}'.format(l_step))
 
-            b_fg = lambda k, step: True if k == 0 else \
+            b_step_next_f = lambda k, step: True if k == 0 else \
                     inv_f(self._step_next(step, k * 60, gas, gf))
-            k = bisect_find(max_time + 1, b_fg, l_step)
+            k = bisect_find(max_time + 1, b_step_next_f, l_step)
 
             t = round(l_step.time - step.time + (k + 1) * 60)
             logger.debug('deco stop: search completed {}m, {}s, n2={.n2}%,' \
@@ -572,8 +574,7 @@ class Engine(object):
             time = step.time
             belt = self.conveyor.trays(step.depth, time, time + t, 0)
             for tray in belt:
-                step = self._step_next(step, tray.d_time, gas, gf,
-                        phase='decostop')
+                step = self._step_next(step, tray.d_time, gas, phase='decostop')
                 yield step
 
             step = self._step_next_ascent(step, 18, gas, gf + gf_step)
@@ -694,15 +695,15 @@ class Engine(object):
         if deco:
             assert round(step.depth, 10) % 3 == 0 and step.depth > 0, step.depth
             n_stops = step.depth / 3
-            gf_step = (self.gf_high - self.gf_low) / n_stops
+            gf_step = (self.model.gf_high - self.model.gf_low) / n_stops
             logger.debug('deco engine: gf step={:.4}'.format(gf_step))
             first_stop = step.depth
             for depth, gas in depths[k:]:
-                gf = self.gf_low + (first_stop - step.depth) / 3 * gf_step
+                gf = self.model.gf_low + (first_stop - step.depth) / 3 * gf_step
                 for step in self._deco_ascent(step, depth, gas, gf, gf_step): 
                     sink.send(step)
                     yield step
-            logger.debug('deco engine: gf at surface={:.4f}'.format(step.gf))
+            logger.debug('deco engine: gf at surface={:.4f}'.format(step.data.gf))
 
 
 # vim: sw=4:et:ai

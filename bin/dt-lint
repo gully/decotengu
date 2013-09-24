@@ -104,8 +104,8 @@ elif args.model == 'zh-l16c-gf':
 else:
     assert False, 'unknown decompression model'
 
-engine.gf_low = args.gf_low / 100
-engine.gf_high = args.gf_high / 100
+engine.model.gf_low = args.gf_low / 100
+engine.model.gf_high = args.gf_high / 100
 
 if args.pressure is not None:
     engine.surface_pressure = int(args.pressure) / 1000
@@ -135,8 +135,8 @@ print('Dive profile: {:3}m for {}min'.format(args.depth, args.time))
 print('Descent rate: {}m/min'.format(engine.descent_rate))
 print('Ascent rate: {}m/min'.format(engine.ascent_rate))
 print()
-print('GF Low: {}%'.format(int(engine.gf_low * 100)))
-print('GF High: {}%'.format(int(engine.gf_high * 100)))
+print('GF Low: {}%'.format(int(engine.model.gf_low * 100)))
+print('GF High: {}%'.format(int(engine.model.gf_high * 100)))
 print('Surface pressure: {:.2f} millibar'.format(engine.surface_pressure * 1000))
 print()
 

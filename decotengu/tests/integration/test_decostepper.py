@@ -37,8 +37,8 @@ class DecoStepperTestCase(unittest.TestCase):
         """
         engine, dt = create()
         engine._deco_ascent = DecoStopStepper()
-        engine.gf_low = 0.2
-        engine.gf_high = 0.9
+        engine.model.gf_low = 0.2
+        engine.model.gf_high = 0.9
         engine.add_gas(0, 27)
         engine.add_gas(22, 50)
         engine.add_gas(6, 100)

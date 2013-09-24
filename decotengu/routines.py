@@ -61,16 +61,15 @@ class AscentJumper(DecoRoutine):
                 ' to {1.depth}m ({1.time}s)'.format(start, stop))
 
         belt = conveyor.trays(start.depth, start.time, stop.time, -ascent_rate)
-        tp = start.tissues
         step = start
         ascent_rate = engine.ascent_rate
         to_depth = engine._to_depth
         for tray in belt:
             depth = tray.depth - to_depth(tray.d_time, ascent_rate) # jump
             abs_p = engine._to_pressure(depth)
-            tp = model.load(abs_p, tray.d_time, gas, 0, tp)
+            data = model.load(abs_p, tray.d_time, gas, 0, step.data)
             step = engine._step(
-                Phase.DECOSTOP, step, depth, tray.time + tray.d_time, gas, tp
+                Phase.DECOSTOP, step, depth, tray.time + tray.d_time, gas, data
             )
             yield step
 
@@ -93,20 +92,18 @@ class FirstStopTabFinder(DecoRoutine):
         logger.debug('tabular search: start at {}m, {}s'.format(start.depth,
             start.time))
 
-        tp_start = start.tissues
+        data = start.data
         depth = int(start.depth / 3) * 3
         t = int(start.depth - depth) * 6
         time_start = start.time + t
 
         if t > 0:
-            tp_start = engine._tissue_pressure_ascent(start.pressure, t,
-                    gas, tp_start)
+            data = engine._tissue_pressure_ascent(start.pressure, t, gas, data)
 
         logger.debug('tabular search: restart at {}m, {}s ({}s)'.format(depth,
             time_start, t))
 
-        step = engine._step(Phase.ASCENT, start, depth, time_start, gas,
-                tp_start)
+        step = engine._step(Phase.ASCENT, start, depth, time_start, gas, data)
 
         # ascent using max depth allowed by tabular calculator; use None to
         # indicate that surface is hit
@@ -126,8 +123,6 @@ class FirstStopTabFinder(DecoRoutine):
 
         time_start = step.time
         depth_start = step.depth
-        abs_p_start = step.pressure
-        tp_start = step.tissues
 
         logger.debug('tabular search: at {}m, {}s'.format(depth_start, time_start))
 
@@ -179,7 +174,7 @@ class DecoStopStepper(DecoRoutine):
             gf = gf_start + k_stop * gf_step
 
             # stay 1 min
-            step = engine._step_next(step, 60, gas, gf=gf, phase=Phase.DECOSTOP)
+            step = engine._step_next(step, 60, gas, phase=Phase.DECOSTOP)
 
             logger.debug('stepper: {}m {}s, gas={.o2}, gf={:.4f}' \
                 .format(step.depth, step.time, gas, gf))

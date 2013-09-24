@@ -56,12 +56,12 @@ to obtain all information about decompression stops::
 
     >>> for stop in deco_table.stops:
     ...     print(stop)
-    Stop(depth=18.0, time=1)
-    Stop(depth=15.0, time=1)
-    Stop(depth=12.0, time=5)
-    Stop(depth=9.0, time=5)
-    Stop(depth=6.0, time=12)
-    Stop(depth=3.0, time=24)
+    DecoStop(depth=18.0, time=1)
+    DecoStop(depth=15.0, time=1)
+    DecoStop(depth=12.0, time=5)
+    DecoStop(depth=9.0, time=5)
+    DecoStop(depth=6.0, time=12)
+    DecoStop(depth=3.0, time=24)
 
 and total time of dive decompression obligations::
 
@@ -78,9 +78,9 @@ Buhlmann's :class:`ZH-L16B <ZH_L16B>` model with gradient factors.
     >>> engine.add_gas(0, 21)
     >>> engine.model      # doctest:+ELLIPSIS
     <decotengu.model.ZH_L16B_GF object at ...>
-    >>> engine.gf_low
+    >>> engine.model.gf_low
     0.3
-    >>> engine.gf_high
+    >>> engine.model.gf_high
     0.85
 
 We can switch to ZH-L16C decompression model easily::
@@ -92,9 +92,9 @@ We can switch to ZH-L16C decompression model easily::
     >>> deco_table.total
     56
     >>> deco_table.stops[0]
-    Stop(depth=18.0, time=1)
+    DecoStop(depth=18.0, time=1)
     >>> deco_table.stops[-1]
-    Stop(depth=3.0, time=28)
+    DecoStop(depth=3.0, time=28)
 
 The total dive decompression time is longer due to ZH-L16C being more
 conservative comparing to ZH-L16B.
@@ -102,17 +102,17 @@ conservative comparing to ZH-L16B.
 Gradient factor parameters can be adjusted using ``gf_low`` and ``gf_high``
 attributes::
 
-    >>> engine.gf_low = 0.2    # first stop deeper
-    >>> engine.gf_high = 0.90  # last stop shorter
+    >>> engine.model.gf_low = 0.2    # first stop deeper
+    >>> engine.model.gf_high = 0.90  # last stop shorter
     >>> profile = engine.calculate(35, 40, deco_table())
     >>> list(profile)            # doctest:+ELLIPSIS
     [Step...]
     >>> deco_table.total
     51
     >>> deco_table.stops[0]
-    Stop(depth=21.0, time=1)
+    DecoStop(depth=21.0, time=1)
     >>> deco_table.stops[-1]
-    Stop(depth=3.0, time=25)
+    DecoStop(depth=3.0, time=25)
 
 """
 

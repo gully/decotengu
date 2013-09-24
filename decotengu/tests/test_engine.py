@@ -22,6 +22,7 @@ Tests for DecoTengu dive decompression engine.
 """
 
 from decotengu.engine import Engine, Phase, Step, GasMix, ConfigError
+from decotengu.model import Data
 
 import unittest
 from unittest import mock
@@ -29,6 +30,16 @@ from unittest import mock
 AIR = GasMix(depth=0, o2=21, n2=79, he=0)
 EAN50 = GasMix(depth=22, o2=50, n2=50, he=0)
 O2 = GasMix(depth=6, o2=100, n2=0, he=0)
+
+def _step(phase, depth, time, gas=AIR, prev=None, data=None):
+    engine = Engine()
+    p = engine._to_pressure(depth)
+    if data is None:
+        data = mock.MagicMock()
+        data.gf = 0.3
+    step = Step(phase, depth, time, p, gas, data, prev)
+    return step
+
 
 class EngineTestCase(unittest.TestCase):
     """
@@ -67,7 +78,7 @@ class EngineTestCase(unittest.TestCase):
         tissues = (1.5, 2.5, 2.0, 2.9, 2.6)
         limit = (1.0, 2.0, 1.5, 2.4, 2.1)
 
-        self.engine.gf_low = 0.1
+        self.engine.model.gf_low = 0.1
         self.engine.model.gf_limit = mock.MagicMock(return_value=limit)
 
         v = self.engine._max_tissue_pressure(tissues)
@@ -93,7 +104,7 @@ class EngineTestCase(unittest.TestCase):
         """
         Test ascent invariant
         """
-        step = Step(Phase.CONST, 40, 120, 3.0, AIR, [], 0.3, None)
+        step = Step(Phase.CONST, 40, 120, 3.0, AIR, None, None)
         self.engine._max_tissue_pressure = mock.MagicMock(return_value=3.1)
         v = self.engine._inv_ascent(step)
         self.assertFalse(v)
@@ -103,7 +114,7 @@ class EngineTestCase(unittest.TestCase):
         """
         Test ascent invariant (at limit)
         """
-        step = Step(Phase.CONST, 40, 120, 3.1, AIR, [], 0.3, None)
+        step = Step(Phase.CONST, 40, 120, 3.1, AIR, None, None)
         self.engine._max_tissue_pressure = mock.MagicMock(return_value=3.1)
         v = self.engine._inv_ascent(step)
         self.assertFalse(v)
@@ -113,7 +124,8 @@ class EngineTestCase(unittest.TestCase):
         """
         Test decompression stop invariant
         """
-        step = Step(Phase.ASCENT, 18, 120, 2.8, AIR, [1.8, 1.8], 0.3, None)
+        data = Data([1.8, 1.8], 0.3)
+        step = _step(Phase.ASCENT, 18, 120, data=data)
         self.engine._tissue_pressure_ascent = mock.MagicMock(
             return_value=[2.6, 2.6])
         self.engine._max_tissue_pressure = mock.MagicMock(return_value=2.6)
@@ -132,31 +144,15 @@ class EngineTestCase(unittest.TestCase):
         """
         Test creation of dive step record
         """
-        self.engine.gf_low = 0.2
-        step = self.engine._step(Phase.ASCENT, None, 30, 1200, AIR, [0.1, 0.2])
+        data = Data([0.1, 0.2], 0.21)
+        step = self.engine._step(Phase.ASCENT, None, 30, 1200, AIR, data)
         self.assertEquals('ascent', step.phase)
         self.assertEquals(30, step.depth)
         self.assertEquals(1200, step.time)
         self.assertEquals(4.00875, step.pressure)
         self.assertEquals(AIR, step.gas)
-        self.assertEquals([0.1, 0.2], step.tissues)
-        self.assertEquals(0.2, step.gf)
-        self.assertIs(None, step.prev)
-
-
-    def test_dive_step_gf(self):
-        """
-        Test creation of dive step record (with gf)
-        """
-        self.engine.gf_low = 0.2
-        step = self.engine._step(Phase.CONST, None, 30, 1200, AIR, [0.1, 0.2], 0.21)
-        self.assertEquals('const', step.phase)
-        self.assertEquals(30, step.depth)
-        self.assertEquals(1200, step.time)
-        self.assertEquals(4.00875, step.pressure)
-        self.assertEquals(AIR, step.gas)
-        self.assertEquals([0.1, 0.2], step.tissues)
-        self.assertEquals(0.21, step.gf)
+        self.assertEquals([0.1, 0.2], step.data.tissues)
+        self.assertEquals(0.21, step.data.gf)
         self.assertIs(None, step.prev)
 
 
@@ -164,20 +160,21 @@ class EngineTestCase(unittest.TestCase):
         """
         Test creation of next dive step record
         """
-        start = Step(Phase.ASCENT, 20, 120, 3.0, AIR, [2.8, 2.8], 0.3, None)
+        start = Step(Phase.ASCENT, 20, 120, 3.0, AIR, None, None)
 
-        self.engine._tissue_pressure_const = mock.MagicMock(
-                return_value=[3.0, 3.0])
+        data = mock.MagicMock()
+        self.engine._tissue_pressure_const = mock.MagicMock(return_value=data)
 
         step = self.engine._step_next(start, 30, AIR)
         self.assertEquals('const', step.phase)
         self.assertEquals(20, step.depth)
         self.assertEquals(150, step.time)
         self.assertEquals(AIR, step.gas)
-        self.assertEquals([3.0, 3.0], step.tissues)
+        self.assertEquals(data, step.data)
         self.assertIs(start, step.prev)
-        self.engine._tissue_pressure_const.assert_called_once_with(3.0, 30,
-                AIR, [2.8, 2.8])
+        self.engine._tissue_pressure_const.assert_called_once_with(
+            3.0, 30, AIR, None
+        )
 
 
     def test_step_descent(self):
@@ -185,41 +182,43 @@ class EngineTestCase(unittest.TestCase):
         Test creation of next dive step record (descent)
         """
         self.engine.descent_rate = 10
-        start = Step(Phase.CONST, 20, 120, 3.0, AIR, [2.8, 2.8], 0.3, None)
+        data = mock.MagicMock()
+        start = Step(Phase.CONST, 20, 120, 3.0, AIR, None, None)
 
-        self.engine._tissue_pressure_descent = mock.MagicMock(
-                return_value=[3.1, 3.1])
+        self.engine._tissue_pressure_descent = mock.MagicMock(return_value=data)
 
         step = self.engine._step_next_descent(start, 30, AIR)
         self.assertEquals('descent', step.phase)
         self.assertEquals(25, step.depth)
         self.assertEquals(150, step.time)
         self.assertEquals(AIR, step.gas)
-        self.assertEquals([3.1, 3.1], step.tissues)
+        self.assertEquals(data, step.data)
         self.assertIs(start, step.prev)
-        self.engine._tissue_pressure_descent.assert_called_once_with(3.0,
-                30, AIR, [2.8, 2.8])
+        self.engine._tissue_pressure_descent.assert_called_once_with(
+            3.0, 30, AIR, None
+        )
 
 
     def test_step_ascent(self):
         """
         Test creation of next dive step record (ascent)
         """
-        start = Step(Phase.ASCENT, 20, 120, 3.0, AIR, [2.8, 2.8], 0.3, None)
+        data = mock.MagicMock()
+        start = Step(Phase.ASCENT, 20, 120, 3.0, AIR, None, None)
 
-        self.engine._tissue_pressure_ascent = mock.MagicMock(
-                return_value=[2.6, 2.6])
+        self.engine._tissue_pressure_ascent = mock.MagicMock(return_value=data)
 
         step = self.engine._step_next_ascent(start, 30, AIR)
         self.assertEquals('ascent', step.phase)
         self.assertEquals(15.0, step.depth)
         self.assertEquals(150, step.time)
         self.assertEquals(AIR, step.gas)
-        self.assertEquals([2.6, 2.6], step.tissues)
+        self.assertEquals(data, step.data)
         self.assertIs(start, step.prev)
 
-        self.engine._tissue_pressure_ascent.assert_called_once_with(3.0,
-                30, AIR, [2.8, 2.8])
+        self.engine._tissue_pressure_ascent.assert_called_once_with(
+            3.0, 30, AIR, None
+        )
 
 
     def test_tissue_load(self):
@@ -266,11 +265,11 @@ class EngineTestCase(unittest.TestCase):
         """
         Test diving constant depth (no time delta)
         """
-        step = Step(Phase.ASCENT, 20, 120, 2, AIR, [1.9, 1.9], 0.3, None)
-
+        step = _step(Phase.ASCENT, 20, 120)
         self.engine.conveyor.time_delta = None
 
-        assert self.engine.conveyor.time_delta is None, self.engine.conveyor.time_delta
+        assert self.engine.conveyor.time_delta is None, \
+                self.engine.conveyor.time_delta
 
         steps = list(self.engine._dive_const(step, 121, AIR))
         self.assertEquals(1, len(steps))
@@ -284,8 +283,7 @@ class EngineTestCase(unittest.TestCase):
         """
         Test diving constant depth
         """
-        step = Step(Phase.ASCENT, 20, 120, 2, AIR, [1.9, 1.9], 0.3, None)
-
+        step = _step(Phase.ASCENT, 20, 120)
         self.engine.conveyor.time_delta = 60
 
         steps = list(self.engine._dive_const(step, 180, AIR))
@@ -347,7 +345,7 @@ class EngineTestCase(unittest.TestCase):
         """
         Test first deco stop finder
         """
-        start = Step(Phase.ASCENT, 31, 1200, 4, AIR, [1.0, 1.0], 0.3, None)
+        start = _step(Phase.ASCENT, 31, 1200)
         self.engine._step_next_ascent = mock.MagicMock()
 
         f_bf.return_value = 6 # 31m -> 30m - 18m == 12m
@@ -362,7 +360,7 @@ class EngineTestCase(unittest.TestCase):
         """
         Test first deco stop finder when starting depth is deco stop
         """
-        start = Step(Phase.ASCENT, 12, 1200, 2.2, AIR, [1.0, 1.0], 0.3, None)
+        start = _step(Phase.ASCENT, 12, 1200)
         self.engine._step_next_ascent = mock.MagicMock()
 
         f_bf.return_value = 0 # the 12m is depth of deco stop
@@ -377,7 +375,7 @@ class EngineTestCase(unittest.TestCase):
         Test if first deco stop finder calculates proper amount of steps (depth=0m)
         """
         self.engine._step_next_ascent = mock.MagicMock()
-        start = Step(Phase.ASCENT, 31, 1200, 4, AIR, [1.0, 1.0], 0.3, None)
+        start = _step(Phase.ASCENT, 31, 1200)
 
         f_bf.return_value = 5
         self.engine._find_first_stop(start, 0, AIR)
@@ -393,10 +391,10 @@ class EngineTestCase(unittest.TestCase):
         pressure = self.engine._to_pressure
         self.engine.conveyor.time_delta = 60
 
-        start = Step(Phase.ASCENT, 31, 1200, pressure(31), AIR,
-                [1.0, 1.0], 0.3, None)
-        stop = Step(Phase.ASCENT, 10, 1326, pressure(10), AIR,
-                [1.33538844660, 1.22340240386], 0.3, None)
+        data = Data([1.0, 1.0], 0.3)
+        start = Step(Phase.ASCENT, 31, 1200, pressure(31), AIR, data, None)
+        data = Data([1.33538844660, 1.22340240386], 0.3)
+        stop = Step(Phase.ASCENT, 10, 1326, pressure(10), AIR, data, None)
         steps = list(self.engine._free_ascent(start, stop, AIR))
 
         self.assertEquals(3, len(steps))
@@ -417,12 +415,13 @@ class EngineTestCase(unittest.TestCase):
         pressure = self.engine._to_pressure
         self.engine.conveyor.time_delta = None
 
-        assert self.engine.conveyor.time_delta is None, self.engine.conveyor.time_delta
+        assert self.engine.conveyor.time_delta is None, \
+                self.engine.conveyor.time_delta
 
-        start = Step(Phase.ASCENT, 31, 1200, pressure(31), AIR,
-                [1.0, 1.0], 0.3, None)
-        stop = Step(Phase.ASCENT, 10, 1326, pressure(10), AIR,
-                [1.33538844660, 1.22340240386], 0.3, None)
+        data = Data([1.0, 1.0], 0.3)
+        start = Step(Phase.ASCENT, 31, 1200, pressure(31), AIR, data, None)
+        data = Data([1.33538844660, 1.22340240386], 0.3)
+        stop = Step(Phase.ASCENT, 10, 1326, pressure(10), AIR, data, None)
         steps = list(self.engine._free_ascent(start, stop, AIR))
 
         self.assertEquals(1, len(steps))
@@ -437,18 +436,19 @@ class EngineTestCase(unittest.TestCase):
         Test ascent with decompression stops
         """
         pressure = self.engine._to_pressure
-        self.engine.gf_low = 0.30
-        self.engine.gf_high = 0.85
+        self.engine.model.gf_low = 0.30
+        self.engine.model.gf_high = 0.85
         self.engine.conveyor.time_delta = None
-        first_stop = Step(Phase.ASCENT, 15, 1200, pressure(15), AIR,
-                [2.5] * 3, 0.3, None)
+
+        data = Data([2.5] * 3, 0.3)
+        first_stop = _step(Phase.ASCENT, 15, 1200, data=data)
 
         steps = list(self.engine._deco_ascent(first_stop, 0, AIR, 0.3, 0.11))
         self.assertEquals(10, len(steps))
 
         self.assertEquals(15, steps[0].depth)
         self.assertEquals(1260, steps[0].time)
-        self.assertEquals(0.30, steps[0].gf)
+        self.assertEquals(0.30, steps[0].data.gf)
 
         self.assertEquals(12, steps[1].depth)
         self.assertEquals(1278, steps[1].time)
@@ -462,26 +462,26 @@ class EngineTestCase(unittest.TestCase):
 
         self.assertEquals(0, steps[9].depth)
         self.assertEquals(1710, steps[9].time)
-        self.assertAlmostEquals(0.85, steps[9].gf)
+        self.assertAlmostEquals(0.85, steps[9].data.gf)
 
 
     def test_deco_ascent_depth(self):
         """
         Test ascent with decompression stops with depth limit
         """
-        pressure = self.engine._to_pressure
-        self.engine.gf_low = 0.30
-        self.engine.gf_high = 0.85
+        self.engine.model.gf_low = 0.30
+        self.engine.model.gf_high = 0.85
         self.engine.conveyor.time_delta = None
-        first_stop = Step(Phase.ASCENT, 15, 1200, pressure(15), AIR,
-                [2.5] * 3, 0.3, None)
+
+        data = Data([2.5] * 3, 0.3)
+        first_stop = _step(Phase.ASCENT, 15, 1200, data=data)
 
         steps = list(self.engine._deco_ascent(first_stop, 7, AIR, 0.3, 0.11))
         self.assertEquals(6, len(steps))
 
         self.assertEquals(15, steps[0].depth)
         self.assertEquals(1260, steps[0].time)
-        self.assertEquals(0.30, steps[0].gf)
+        self.assertEquals(0.30, steps[0].data.gf)
 
         self.assertEquals(12, steps[1].depth)
         self.assertEquals(1278, steps[1].time)
@@ -494,7 +494,7 @@ class EngineTestCase(unittest.TestCase):
         # last stop at 6m due to depth limit
         self.assertEquals(6, steps[5].depth)
         self.assertEquals(1434, steps[5].time)
-        self.assertEquals(0.63, steps[5].gf)
+        self.assertEquals(0.63, steps[5].data.gf)
 
 
     def test_calculation_no_gas_error(self):
@@ -510,10 +510,10 @@ class EngineTestCase(unittest.TestCase):
         """
         Test deco engine dive profile calculation without deco
         """
-        s1 = Step(Phase.START, 0, 0, 1, AIR, (0.7, 0.7), 0.3, None)
-        s2 = Step(Phase.DESCENT, 25, 150, 2.5, AIR, (1.5, 1.5), 0.3, s1)
-        s3 = Step(Phase.CONST, 25, 1050, 2.5, AIR, (2.0, 2.0), 0.3, s2)
-        s4 = Step(Phase.ASCENT, 0, 1200, 1.0, AIR, (1.0, 1.0), 0.3, s3)
+        s1 = _step(Phase.START, 0, 0)
+        s2 = _step(Phase.DESCENT, 25, 150, prev=s1)
+        s3 = _step(Phase.CONST, 25, 1050, prev=s2)
+        s4 = _step(Phase.ASCENT, 0, 1200, prev=s3)
         self.engine._dive_descent = mock.MagicMock(return_value=[s1, s2])
         self.engine._dive_const = mock.MagicMock(return_value=[s3])
         self.engine._find_first_stop = mock.MagicMock()
@@ -534,10 +534,10 @@ class EngineTestCase(unittest.TestCase):
         """
         Test deco engine dive profile calculation with deco
         """
-        s1 = Step(Phase.START, 0, 0, 1, AIR, (0.7, 0.7), 0.3, None)
-        s2 = Step(Phase.DESCENT, 45, 270, 5.5, AIR, (3.0, 3.0), 0.3, s1)
-        s3 = Step(Phase.CONST, 45, 2070, 5.5, AIR, (4.5, 4.5), 0.3, s2)
-        s4 = Step(Phase.ASCENT, 21, 2214, 3.1, AIR, (3.0, 3.0), 0.3, s3)
+        s1 = _step(Phase.START, 0, 0, data=Data((0.7, 0.7), 0.3))
+        s2 = _step(Phase.DESCENT, 45, 270, prev=s1, data=Data((3.0, 3.0), 0.3))
+        s3 = _step(Phase.CONST, 45, 2070, prev=s2, data=Data((4.5, 4.5), 0.3))
+        s4 = _step(Phase.ASCENT, 21, 2214, prev=s3, data=Data((3.0, 3.0), 0.3))
         self.engine._dive_descent = mock.MagicMock(return_value=[s1, s2])
         self.engine._dive_const = mock.MagicMock(return_value=[s3])
         self.engine._find_first_stop = mock.MagicMock(return_value=s4)
@@ -557,10 +557,10 @@ class EngineTestCase(unittest.TestCase):
         Test deco engine dive profile calculation with stop at gas switch
         """
         self.engine.add_gas(12, 80)
-        s1 = Step(Phase.START, 0, 0, 1, AIR, (0.7, 0.7), 0.3, None)
-        s2 = Step(Phase.DESCENT, 45, 270, 5.5, AIR, (3.0, 3.0), 0.3, s1)
-        s3 = Step(Phase.CONST, 45, 2070, 5.5, AIR, (4.5, 4.5), 0.3, s2)
-        s4 = Step(Phase.ASCENT, 12, 2214, 3.1, AIR, (3.0, 3.0), 0.3, s3)
+        s1 = _step(Phase.START, 0, 0)
+        s2 = _step(Phase.DESCENT, 45, 270, prev=s1)
+        s3 = _step(Phase.CONST, 45, 2070, prev=s2)
+        s4 = _step(Phase.ASCENT, 12, 2214, prev=s3)
         self.engine._dive_descent = mock.MagicMock(return_value=[s1, s2])
         self.engine._dive_const = mock.MagicMock(return_value=[s3])
         self.engine._inv_ascent = mock.MagicMock(side_effect=[True, False])
@@ -585,16 +585,12 @@ class EngineTestCase(unittest.TestCase):
         self.engine.add_gas(22, 50)
         self.engine.add_gas(6, 100)
 
-        s1 = Step(Phase.START, 0, 0, 1, AIR, (0.7, 0.7), 0.3, None)
-        s2 = Step(Phase.DESCENT, 25, 150, 2.5, AIR, (1.5, 1.5), 0.3, s1)
-        s3 = Step(Phase.CONST, 25, 1050, 2.5, AIR, (2.0, 2.0), 0.3, s2)
-
-        # gas switches
-        s4 = Step(Phase.ASCENT, 22, 1068, 1.0, AIR, (1.0, 1.0), 0.3, s3)
-        s5 = Step(Phase.ASCENT, 6, 1164, 1.0, 0.50, (1.0, 1.0), 0.3, s4)
-
-        # surface
-        s6 = Step(Phase.ASCENT, 0, 1200, 1.0, 0.00, (1.0, 1.0), 0.3, s5)
+        s1 = _step(Phase.START, 0, 0)
+        s2 = _step(Phase.DESCENT, 25, 150, prev=s1)
+        s3 = _step(Phase.CONST, 25, 1050, prev=s2)
+        s4 = _step(Phase.ASCENT, 22, 1068, prev=s3) # 1st gas switch
+        s5 = _step(Phase.ASCENT, 6, 1164, prev=s4) # 2nd gas switch
+        s6 = _step(Phase.ASCENT, 0, 1200, prev=s5) # surface
 
         self.engine._dive_descent = mock.MagicMock(return_value=[s1, s2])
         self.engine._dive_const = mock.MagicMock(return_value=[s3])
@@ -619,20 +615,13 @@ class EngineTestCase(unittest.TestCase):
         self.engine.add_gas(22, 50)
         self.engine.add_gas(6, 100)
 
-        s1 = Step(Phase.START, 0, 0, 1, AIR, (0.7, 0.7), 0.3, None)
-        s2 = Step(Phase.DESCENT, 25, 150, 3.5, AIR, (1.5, 1.5), 0.3, s1)
-        s3 = Step(Phase.CONST, 25, 1050, 3.5, AIR, (2.0, 2.0), 0.3, s2)
-
-        
-        # gas switch
-        s4 = Step(Phase.ASCENT, 22, 1068, 3.2, AIR, (1.0, 1.0), 0.3, s3)
-        # first deco stop
-        s5 = Step(Phase.ASCENT, 15, 1110, 2.5, AIR, (1.0, 1.0), 0.3, s4)
-        # gas switch
-        s6 = Step(Phase.ASCENT, 6, 1164, 1.6, 0.50, (1.0, 1.0), 0.3, s5)
-
-        # surface
-        s7 = Step(Phase.ASCENT, 0, 1200, 1.0, 0.00, (1.0, 1.0), 0.3, s6)
+        s1 = _step(Phase.START, 0, 0)
+        s2 = _step(Phase.DESCENT, 25, 150, prev=s1)
+        s3 = _step(Phase.CONST, 25, 1050, prev=s2)
+        s4 = _step(Phase.ASCENT, 22, 1068, prev=s3) # gas switch
+        s5 = _step(Phase.ASCENT, 15, 1110, prev=s4) # first deco stop
+        s6 = _step(Phase.ASCENT, 6, 1164, prev=s5) # gas switch
+        s7 = _step(Phase.ASCENT, 0, 1200, prev=s6) # surface
 
         self.engine._dive_descent = mock.MagicMock(return_value=[s1, s2])
         self.engine._dive_const = mock.MagicMock(return_value=[s3])

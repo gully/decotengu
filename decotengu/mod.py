@@ -104,17 +104,18 @@ def dive_step_info(model, target):
     """
     while True:
         step = yield
-        gf_low = step.gf
-        tissue_pressure = step.tissues
+        gf_low = step.data.gf
+        data = step.data
         phase = step.phase
 
-        tl = model.gf_limit(gf_low, tissue_pressure)
-        tm = model.gf_limit(1, tissue_pressure)
+        tl = model.gf_limit(gf_low, data)
+        tm = model.gf_limit(1, data)
 
-        tissues = tuple(InfoTissue(k, p, l, step.gf, gf)
-                for k, (p, l, gf) in enumerate(zip(tissue_pressure, tm, tl), 1))
-        sample = InfoSample(step.depth, step.time, step.pressure, step.gas,
-                tissues, phase)
+        tissues = tuple(InfoTissue(k, p, l, data.gf, gf)
+                for k, (p, l, gf) in enumerate(zip(data.tissues, tm, tl), 1))
+        sample = InfoSample(
+                step.depth, step.time, step.pressure, step.gas, tissues, phase
+        )
 
         target.send(sample)
 
@@ -169,7 +170,7 @@ def tissue_pressure_validator(engine):
     while True:
         step = yield
 
-        limit = engine._max_tissue_pressure(step.tissues, gf=step.gf)
+        limit = engine._max_tissue_pressure(step.data, step.data.gf)
         if step.pressure < limit: # ok when step.pressure >= limit
             raise EngineError('Tissue pressure validation error at {}' \
                     ' (limit={})'.format(step, limit))

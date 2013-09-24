@@ -27,7 +27,7 @@ from decotengu.engine import Engine, EngineError, Phase, Step, GasMix, \
         InfoSample, InfoTissue
 from decotengu.mod import DecoTable, dive_step_info, info_csv_writer, \
         tissue_pressure_validator
-from decotengu.model import ZH_L16B_GF
+from decotengu.model import ZH_L16B_GF, Data
 from decotengu.flow import coroutine
 
 import unittest
@@ -43,15 +43,15 @@ class DecoTableTestCase(unittest.TestCase):
         """
         Set up deco table tests data.
         """
-        s1 = Step(Phase.CONST, 25, 40, 1.9, AIR, [], 0.3, None)
-        s2 = Step(Phase.ASCENT, 15, 100, 2.5, AIR, [], 0.3, s1)
-        s3 = Step(Phase.DECOSTOP, 15, 160, 2.5, AIR, [], 0.3, s2)
-        s4 = Step(Phase.DECOSTOP, 15, 200, 2.5, AIR, [], 0.3, s3)
-        s5 = Step(Phase.DECOSTOP, 15, 250, 2.5, AIR, [], 0.3, s4) # 3min
-        s6 = Step(Phase.ASCENT, 12, 258, 2.2, AIR, [], 0.3, s5)
-        s7 = Step(Phase.DECOSTOP, 12, 300, 2.2, AIR, [], 0.3, s6) # 1min
+        s1 = Step(Phase.CONST, 25, 40, 1.9, AIR, None, None)
+        s2 = Step(Phase.ASCENT, 15, 100, 2.5, AIR, None, s1)
+        s3 = Step(Phase.DECOSTOP, 15, 160, 2.5, AIR, None, s2)
+        s4 = Step(Phase.DECOSTOP, 15, 200, 2.5, AIR, None, s3)
+        s5 = Step(Phase.DECOSTOP, 15, 250, 2.5, AIR, None, s4) # 3min
+        s6 = Step(Phase.ASCENT, 12, 258, 2.2, AIR, None, s5)
+        s7 = Step(Phase.DECOSTOP, 12, 300, 2.2, AIR, None, s6) # 1min
         # start of next stop at 9m, to be skipped
-        s8 = Step(Phase.ASCENT, 9, 318, 1.9, AIR, [], 0.3, s7)
+        s8 = Step(Phase.ASCENT, 9, 318, 1.9, AIR, None, s7)
 
         stops = (s1, s2, s3, s4, s5, s6, s7, s8)
 
@@ -83,17 +83,17 @@ class DecoTableTestCase(unittest.TestCase):
         using only first set. This test uses its own deco table and skips
         the main test case deco table.
         """
-        s1 = Step(Phase.ASCENT, 25, 0, 3.5, AIR, [], 0.3, None)
-        s2 = Step(Phase.DECOSTOP, 18, 5, 2.8, AIR, [], 0.3, s1)
-        s3 = Step(Phase.DECOSTOP, 18, 10, 2.8, AIR, [], 0.3, s2)
-        s4 = Step(Phase.ASCENT, 15, 100, 2.5, AIR, [], 0.3, s3)
-        s5 = Step(Phase.DECOSTOP, 15, 160, 2.5, AIR, [], 0.3, s4)
-        s6 = Step(Phase.DECOSTOP, 15, 200, 2.5, AIR, [], 0.3, s5)
-        s7 = Step(Phase.DECOSTOP, 15, 250, 2.5, AIR, [], 0.3, s6) # 3min
-        s8 = Step(Phase.ASCENT, 12, 258, 2.2, AIR, [], 0.3, s7)
-        s9 = Step(Phase.DECOSTOP, 12, 300, 2.2, AIR, [], 0.3, s8) # 1min
+        s1 = Step(Phase.ASCENT, 25, 0, 3.5, AIR, None, None)
+        s2 = Step(Phase.DECOSTOP, 18, 5, 2.8, AIR, None, s1)
+        s3 = Step(Phase.DECOSTOP, 18, 10, 2.8, AIR, None, s2)
+        s4 = Step(Phase.ASCENT, 15, 100, 2.5, AIR, None, s3)
+        s5 = Step(Phase.DECOSTOP, 15, 160, 2.5, AIR, None, s4)
+        s6 = Step(Phase.DECOSTOP, 15, 200, 2.5, AIR, None, s5)
+        s7 = Step(Phase.DECOSTOP, 15, 250, 2.5, AIR, None, s6) # 3min
+        s8 = Step(Phase.ASCENT, 12, 258, 2.2, AIR, None, s7)
+        s9 = Step(Phase.DECOSTOP, 12, 300, 2.2, AIR, None, s8) # 1min
         # start of next stop at 9m, to be skipped
-        s10 = Step(Phase.ASCENT, 9, 318, 1.9, AIR, [], 0.3, s9)
+        s10 = Step(Phase.ASCENT, 9, 318, 1.9, AIR, None, s9)
 
         steps1 = (s4, s5, s6, s7, s8, s9, s10)
         steps2 = (s1, s2, s3, s4, s5, s6, s7, s8, s9, s10)
@@ -144,8 +144,10 @@ class DiveStepInfoTestCase(unittest.TestCase):
         Test dive step info mod
         """
         model = ZH_L16B_GF()
-        s1 = Step(Phase.CONST, 20, 100, 3.5, AIR, [2.2, 2.3], 0.3, None)
-        s2 = Step(Phase.DECOSTOP, 15, 145, 2.5, AIR, [1.2, 1.3], 0.4, s1)
+        d = Data([2.2, 2.3], 0.3)
+        s1 = Step(Phase.CONST, 20, 100, 3.5, AIR, d, None)
+        d = Data([1.2, 1.3], 0.4)
+        s2 = Step(Phase.DECOSTOP, 15, 145, 2.5, AIR, d, s1)
 
         data = []
         @coroutine
@@ -237,9 +239,9 @@ class TissuePressureValidatorTestCase(unittest.TestCase):
         engine = Engine()
 
         # 2.157535, so pressure limit for 30% raises error and for 90% is OK
-        engine.gf_low = 0.3
-        s = Step(Phase.CONST, 25, 3, 1.3127, AIR, [1.263320, 2.157535], 0.9,
-                None)
+        engine.model.gf_low = 0.3
+        data = Data([1.263320, 2.157535], 0.9)
+        s = Step(Phase.CONST, 25, 3, 1.3127, AIR, data, None)
 
         mod = tissue_pressure_validator(engine)
         mod.send(s)
@@ -250,8 +252,8 @@ class TissuePressureValidatorTestCase(unittest.TestCase):
         Test dive step tissue pressure validator error
         """
         engine = Engine()
-        s = Step(Phase.CONST, 25, 3, 1.3127, AIR, [2.263320, 2.957535], 0.9,
-                None)
+        data = Data([2.263320, 2.957535], 0.9)
+        s = Step(Phase.CONST, 25, 3, 1.3127, AIR, data, None)
 
         mod = tissue_pressure_validator(engine)
         self.assertRaises(EngineError, mod.send, s)

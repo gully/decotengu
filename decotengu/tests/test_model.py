@@ -23,7 +23,7 @@ DecoTengu calculator tests.
 
 from decotengu.engine import GasMix
 from decotengu.model import eq_schreiner, eq_gf_limit, TissueCalculator, \
-    ZH_L16_GF, ZH_L16B_GF
+    ZH_L16_GF, ZH_L16B_GF, Data
 
 import unittest
 from unittest import mock
@@ -101,9 +101,10 @@ class ZH_L16_GFTestCase(unittest.TestCase):
         Test deco model initialization
         """
         m = ZH_L16_GF()
-        t = m.init(1.013)
-        self.assertEquals(ZH_L16_GF.NUM_COMPARTMENTS, len(t))
-        self.assertEquals([0.75092706] * ZH_L16_GF.NUM_COMPARTMENTS, t)
+        data = m.init(1.013)
+        tissues = data.tissues
+        self.assertEquals(ZH_L16_GF.NUM_COMPARTMENTS, len(tissues))
+        self.assertEquals([0.75092706] * ZH_L16_GF.NUM_COMPARTMENTS, tissues)
 
 
     def test_tissues_load(self):
@@ -114,10 +115,11 @@ class ZH_L16_GFTestCase(unittest.TestCase):
         n = m.NUM_COMPARTMENTS
         c_load = m.calc.load_tissue = mock.MagicMock(side_effect=range(1, 17))
 
-        v = m.load(4, 60, AIR, -1, [0.79] * n)
+        data = Data([0.79] * n, None)
+        v = m.load(4, 60, AIR, -1, data)
 
         self.assertEquals(n, c_load.call_count)
-        self.assertEquals(v, tuple(range(1, 17)))
+        self.assertEquals(v, Data(tuple(range(1, 17)), None))
 
         expected = tuple(range(n))
         results = tuple(t[0][5] for t in c_load.call_args_list)
@@ -131,7 +133,7 @@ class ZH_L16_GFTestCase(unittest.TestCase):
         with mock.patch('decotengu.model.eq_gf_limit') as f:
             f.side_effect = list(range(1, 17))
             m = ZH_L16B_GF()
-            v = m.gf_limit(0.3, list(range(1, 17)))
+            v = m.gf_limit(0.3, Data(list(range(1, 17)), None))
 
             self.assertEquals(m.NUM_COMPARTMENTS, f.call_count)
             result = tuple(t[0][3] for t in f.call_args_list)

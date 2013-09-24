@@ -39,8 +39,8 @@ class EngineTestCase(unittest.TestCase):
         time_delta = [None, 60, 0.1]
         for t in time_delta:
             engine, dt = create(time_delta=t)
-            engine.gf_low = 0.2
-            engine.gf_high = 0.9
+            engine.model.gf_low = 0.2
+            engine.model.gf_high = 0.9
             engine.add_gas(0, 27)
             engine.add_gas(24, 50)
             engine.add_gas(6, 100)
@@ -65,8 +65,8 @@ class EngineTestCase(unittest.TestCase):
         times = {21: 22, 22: 22, 24: 21}
         for delta, depth in itertools.product(time_delta, mix_depth):
             engine, dt = create(time_delta=delta)
-            engine.gf_low = 0.2
-            engine.gf_high = 0.9
+            engine.model.gf_low = 0.2
+            engine.model.gf_high = 0.9
             engine.add_gas(0, 21)
             engine.add_gas(depth, 50)
             engine.add_gas(6, 100)
