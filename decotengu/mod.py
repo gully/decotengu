@@ -170,7 +170,7 @@ def tissue_pressure_validator(engine):
     while True:
         step = yield
 
-        limit = engine._max_tissue_pressure(step.data, step.data.gf)
+        limit = engine.model.pressure_limit(step.data, step.data.gf)
         if step.pressure < limit: # ok when step.pressure >= limit
             raise EngineError('Tissue pressure validation error at {}' \
                     ' (limit={})'.format(step, limit))

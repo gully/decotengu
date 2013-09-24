@@ -160,23 +160,6 @@ class Engine(object):
         return time * rate / 60
 
 
-    def _max_tissue_pressure(self, data, gf=None):
-        """
-        Calculate maximum tissue pressure limit using decompression model
-        data.
-
-        :Parameters:
-         data
-            Decompression model data.
-         gf
-            Gradient factor value, GF low by default.
-        """
-        # FIXME: make it model independent
-        if gf is None:
-            gf = self.model.gf_low
-        return max(self.model.gf_limit(gf, data))
-
-
     def _inv_ascent(self, step):
         """
         Return true if ascent from a depth is possible.
@@ -188,7 +171,7 @@ class Engine(object):
          step
             Dive step containing pressure information.
         """
-        return step.pressure > self._max_tissue_pressure(step.data)
+        return step.pressure > self.model.pressure_limit(step.data)
 
 
     def _inv_deco_stop(self, step, gas, gf):
@@ -208,7 +191,7 @@ class Engine(object):
             Gradient factor value for next decompression stop.
         """
         data = self._tissue_pressure_ascent(step.pressure, 18, gas, step.data)
-        max_tp = self._max_tissue_pressure(data, gf=gf)
+        max_tp = self.model.pressure_limit(data, gf=gf)
         return self._to_pressure(step.depth - 3) <= max_tp
 
 

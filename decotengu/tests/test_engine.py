@@ -71,41 +71,12 @@ class EngineTestCase(unittest.TestCase):
         self.assertAlmostEquals(v, 1.5)
 
 
-    def test_max_tissue_pressure(self):
-        """
-        Test calculation of maximum allowed tissue pressure (default gf)
-        """
-        tissues = (1.5, 2.5, 2.0, 2.9, 2.6)
-        limit = (1.0, 2.0, 1.5, 2.4, 2.1)
-
-        self.engine.model.gf_low = 0.1
-        self.engine.model.gf_limit = mock.MagicMock(return_value=limit)
-
-        v = self.engine._max_tissue_pressure(tissues)
-        self.engine.model.gf_limit.assert_called_once_with(0.1, tissues)
-        self.assertEquals(2.4, v)
-
-
-    def test_max_tissue_pressure_gf(self):
-        """
-        Test calculation of maximum allowed tissue pressure (with gf)
-        """
-        tissues = (1.5, 2.5, 2.0, 2.9, 2.6)
-        limit = (1.0, 2.0, 1.5, 2.4, 2.1)
-
-        self.engine.model.gf_limit = mock.MagicMock(return_value=limit)
-
-        v = self.engine._max_tissue_pressure(tissues, 0.2)
-        self.engine.model.gf_limit.assert_called_once_with(0.2, tissues)
-        self.assertEquals(2.4, v)
-
-
     def test_ascent_invariant(self):
         """
         Test ascent invariant
         """
         step = Step(Phase.CONST, 40, 120, 3.0, AIR, None, None)
-        self.engine._max_tissue_pressure = mock.MagicMock(return_value=3.1)
+        self.engine.model.pressure_limit = mock.MagicMock(return_value=3.1)
         v = self.engine._inv_ascent(step)
         self.assertFalse(v)
 
@@ -115,7 +86,7 @@ class EngineTestCase(unittest.TestCase):
         Test ascent invariant (at limit)
         """
         step = Step(Phase.CONST, 40, 120, 3.1, AIR, None, None)
-        self.engine._max_tissue_pressure = mock.MagicMock(return_value=3.1)
+        self.engine.model.pressure_limit = mock.MagicMock(return_value=3.1)
         v = self.engine._inv_ascent(step)
         self.assertFalse(v)
 
@@ -128,12 +99,12 @@ class EngineTestCase(unittest.TestCase):
         step = _step(Phase.ASCENT, 18, 120, data=data)
         self.engine._tissue_pressure_ascent = mock.MagicMock(
             return_value=[2.6, 2.6])
-        self.engine._max_tissue_pressure = mock.MagicMock(return_value=2.6)
+        self.engine.model.pressure_limit = mock.MagicMock(return_value=2.6)
         self.engine._to_pressure = mock.MagicMock(return_value=2.5)
 
         v = self.engine._inv_deco_stop(step, AIR, gf=0.4)
 
-        self.engine._max_tissue_pressure.assert_called_once_with(
+        self.engine.model.pressure_limit.assert_called_once_with(
             [2.6, 2.6], gf=0.4)
         self.engine._to_pressure.assert_called_once_with(15)
 

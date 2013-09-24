@@ -126,6 +126,36 @@ class ZH_L16_GFTestCase(unittest.TestCase):
         self.assertEquals(expected, results)
 
 
+    @mock.patch('decotengu.model.eq_gf_limit')
+    def test_pressure_limit(self, f):
+        """
+        Test calculation of pressure limit (default gf)
+        """
+        m = ZH_L16B_GF()
+        data = Data((1.5, 2.5, 2.0, 2.9, 2.6), 0.3)
+        limit = (1.0, 2.0, 1.5, 2.4, 2.1)
+        f.side_effect = limit
+
+        m.gf_low = 0.1
+
+        v = m.pressure_limit(data)
+        self.assertEquals(2.4, v)
+
+
+    @mock.patch('decotengu.model.eq_gf_limit')
+    def test_pressure_limit_gf(self, f):
+        """
+        Test calculation of pressure limit (with gf)
+        """
+        m = ZH_L16B_GF()
+        data = Data((1.5, 2.5, 2.0, 2.9, 2.6), 0.2)
+        limit = (1.0, 2.0, 1.5, 2.4, 2.1)
+        f.side_effect = limit
+
+        v = m.pressure_limit(data, gf=0.2)
+        self.assertEquals(2.4, v)
+
+
     def test_gf_limit(self):
         """
         Test deco model gradient factor limit calculation
@@ -134,7 +164,6 @@ class ZH_L16_GFTestCase(unittest.TestCase):
             f.side_effect = list(range(1, 17))
             m = ZH_L16B_GF()
             v = m.gf_limit(0.3, Data(list(range(1, 17)), None))
-
             self.assertEquals(m.NUM_COMPARTMENTS, f.call_count)
             result = tuple(t[0][3] for t in f.call_args_list)
             self.assertEquals(m.N2_A, result)

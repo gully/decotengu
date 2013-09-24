@@ -151,6 +151,26 @@ class ZH_L16_GF(object):
         return data
 
 
+    def pressure_limit(self, data, gf=None):
+        """
+        Calculate pressure limit using decompression model data.
+
+        The pressure limit dictates the shallowest depth a diver can reach
+        without decompression sickness. If pressure limit is 3 bar, then
+        diver should not go shallower than 20m.
+
+        FIXME: the method call is gradient factor specific, it has to be
+               made decompression model independent
+
+        :Parameters:
+         data
+            Decompression model data.
+         gf
+            Gradient factor value, GF low by default.
+        """
+        return max(self.gf_limit(gf, data))
+
+
     def gf_limit(self, gf, data):
         """
         Calculate gradient pressure limit.
@@ -161,10 +181,16 @@ class ZH_L16_GF(object):
          data
             Decompression model data.
         """
+        # FIXME: make it model independent
+        if gf is None:
+            gf = self.gf_low
         assert gf > 0 and gf <= 1.5
+
         # FIXME: include he
         tissues = zip(data.tissues, self.N2_A, self.N2_B)
         return tuple(eq_gf_limit(gf, tp, 0, av, bv) for tp, av, bv in tissues)
+
+
 
 
 class ZH_L16B_GF(ZH_L16_GF): # source: gfdeco.f by Baker
