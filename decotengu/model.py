@@ -18,7 +18,82 @@
 #
 
 """
-Buhlmann ZH_L16 decompression model with gradient factors by Eric Baker.
+Introduction
+--------------
+The DecoTengu implements Buhlmann decompression model ZH-L16 with gradient
+factors by Eric Baker, which we will refer to as ZH-L16-GF.
+
+The initial version of the Buhlmann decompression model (ZH-L16A) was
+found not safe enough, its parameters were revised and two new, more
+conservative versions were developed - ZH-L16B and ZH-L16C. Adding gradient
+factors, DecoTengu supports two decompression models
+
+ZH-L16B-GF
+    used for dive table calculations
+
+ZH-L16C-GF
+    used for real-time dive computer calculations
+
+Parameters
+----------
+The Buhlmann decompression model describes human body as 16 tissue
+compartments. For an inert gas and for each of the compartments the model
+assigns the following parameters
+
+A
+    Buhlmann coefficient A.
+B
+    Buhlmann coefficient B.
+half life
+    Gas half life time value.
+
+The gradient factors extension defines two parameters expressed as
+percentage
+
+low
+    Controls how deep first decompression stop should start. The smaller
+    value, the deeper first decompression stop.
+high
+    Controls the time of decompression stops. The higher value, the
+    shorter decompression time.
+
+Equations
+---------
+The parameters mentioned in previous section are used by two equations
+implemented by functions
+
+:func:`eq_schreiner`
+    Schreiner equation for gas loading calculation.
+
+:func:`eq_gf_limit`
+    Buhlmann equation extended by Eric Baker with gradient factors. It is
+    used for ascent ceiling calculation.
+
+Calculations
+------------
+Pressure of inert gas in each of tissue compartments is calculated using
+:func:`Schreiner equation <eq_schreiner>`. The :func:`ZH_L16_GF.load`
+method calculates gas loading of all tissue compartments for descent,
+ascent and at constant depth.
+
+The ceiling of ascent for each of tissue compartments is calculated with
+:func:`eq_gf_limit` function. The :func:`ZH_L16_GF.pressure_limit` method
+uses :func:`eq_gf_limit` function to calculate pressure of ascent ceiling
+for a diver.
+
+Using :func:`ZH_L16_GF.pressure_limit` method we can determine
+
+- depth of first decompression stop - a diver cannot ascent from the bottom
+  shallower than ascent ceiling
+- length of decompression stop - a diver cannot ascent from decompression
+  stop until depth of ascent ceiling decreases
+
+References
+----------
+* Baker, Eric "`Understanding M-values <mvalues.pdf>`_"
+* Baker, Eric "`Clearing Up The Confusion About "Deep Stops" <decostops.pdf>`_"
+* Baker, Eric `<decolessons.pdf>`_
+* Powell, Mark "Deco for Divers"
 """
 
 from collections import namedtuple
@@ -28,14 +103,11 @@ from .const import WATER_VAPOUR_PRESSURE_DEFAULT
 
 Data = namedtuple('Data', 'tissues gf')
 Data.__doc__ = """
-Data for Buhlmann ZH-L16 decompression model with gradient factors.
+Data for ZH-L16-GF decompression model.
 
-:Attributes:
- tissues
-    Tissues gas loading. Tuple of numbers, tissue pressure of inert gas in
-    each tissue compartment.
- gf
-    Gradient factor value.
+:var tissues: Tissues gas loading. Tuple of numbers - tissue pressure of
+              inert gas in each tissue compartment.
+:var gf: Gradient factor value.
 """
 
 
@@ -44,21 +116,15 @@ def eq_schreiner(abs_p, time, gas, rate, pressure, half_life,
     """
     Calculate gas loading using Schreiner equation.
 
-    :Parameters:
-     abs_p
-        Absolute pressure [bar] (current depth).
-     time
-        Time of exposure [s] (i.e. time of ascent).
-     gas
-        Inert gas fraction, i.e. 0.79.
-     rate
-        Pressure rate change [bar/min].
-     pressure
-        Current tissue pressure [bar].
-     half_life
-        Current tissue compartment half-life constant value.
-     wvp
-        Water vapour pressure.
+    The result is pressure of inert gas in tissue compartment.
+
+    :param abs_p: Absolute pressure [bar] (current depth).
+    :param time: Time of exposure [s] (i.e. time of ascent).
+    :param gas: Inert gas fraction, i.e. for air it is 0.79.
+    :param rate: Pressure rate change [bar/min]. Use "-" for ascent.
+    :param pressure: Current tissue pressure [bar].
+    :param half_life: Current tissue compartment half-life constant value.
+    :param wvp: Water vapour pressure.
     """
     assert time > 0, 'time={}'.format(time)
     palv = gas * (abs_p - wvp)
@@ -70,19 +136,15 @@ def eq_schreiner(abs_p, time, gas, rate, pressure, half_life,
 
 def eq_gf_limit(gf, pn2, phe, n2_a_limit, n2_b_limit): # FIXME: include he
     """
-    Calculate gradient pressure limit.
+    Calculate ascent ceiling limit using gradient factor value.
 
-    :Parameters:
-     gf
-        Gradient factor.
-     pn2
-        Current tissue pressure for N2.
-     phe
-        Current tissue pressure for He.
-     n2_a_limit
-        N2 A limit (Buhlmann_).
-     n2_b_limit
-        N2 B limit (Buhlmann_).
+    The returned value is absolute pressure of depth of the ascent ceiling.
+
+    :param gf: Gradient factor value.
+    :param pn2: Current tissue pressure for N2.
+    :param phe: Current tissue pressure for He.
+    :param n2_a_limit: N2 A Buhlmann coefficient.
+    :param n2_b_limit: N2 B Buhlmann coefficient.
 
     """
     assert gf > 0 and gf <= 1.5
@@ -94,8 +156,11 @@ def eq_gf_limit(gf, pn2, phe, n2_a_limit, n2_b_limit): # FIXME: include he
 
 class ZH_L16_GF(object):
     """
-    Base abstract class for Buhlmann ZH_L16 decompression model with
-    gradient factors by Eric Baker.
+    Base abstract class for Buhlmann ZH-L16 decompression model with
+    gradient factors by Eric Baker - ZH-L16B-GF.
+
+    :var gf_low: Gradient factor low parameter.
+    :var gf_high: Gradient factor high parameter.
     """
     NUM_COMPARTMENTS = 16
     N2_A = None
@@ -119,9 +184,7 @@ class ZH_L16_GF(object):
         """
         Initialize pressure of intert gas in all tissues.
 
-        :Parameters:
-         surface_pressure
-            Surface pressure [bar].
+        :param surface_pressure: Surface pressure [bar].
         """
         p = surface_pressure - self.calc.water_vapour_pressure
         data = Data([0.7902 * p] * self.NUM_COMPARTMENTS, self.gf_low)
@@ -130,19 +193,15 @@ class ZH_L16_GF(object):
 
     def load(self, abs_p, time, gas, rate, data):
         """
-        Change gas loading of all tissues.
+        Calculate gas loading for all tissue compartments.
 
-        :Parameters:
-         abs_p
-            Absolute pressure [bar] (current depth).
-         time
-            Time of exposure [second] (i.e. time of ascent).
-         gas
-            Gas mix configuration.
-         rate
-            Pressure rate change [bar/min].
-         data
-            Decompression model data.
+        The method returns decompression data model information.
+
+        :param abs_p: Absolute pressure [bar] (current depth).
+        :param time: Time of exposure [second] (i.e. time of ascent).
+        :param gas: Gas mix configuration.
+        :param rate: Pressure rate change [bar/min].
+        :param data: Decompression model data.
         """
         load = self.calc.load_tissue
         tp = tuple(load(abs_p, time, gas, rate, tp, k)
@@ -153,33 +212,31 @@ class ZH_L16_GF(object):
 
     def pressure_limit(self, data, gf=None):
         """
-        Calculate pressure limit using decompression model data.
+        Calculate pressure of ascent ceiling using decompression model
+        data.
 
-        The pressure limit dictates the shallowest depth a diver can reach
-        without decompression sickness. If pressure limit is 3 bar, then
-        diver should not go shallower than 20m.
+        The pressure is the shallowest depth a diver can reach without
+        decompression sickness. If pressure limit is 3 bar, then diver
+        should not go shallower than 20m.
 
         FIXME: the method call is gradient factor specific, it has to be
                made decompression model independent
 
-        :Parameters:
-         data
-            Decompression model data.
-         gf
-            Gradient factor value, GF low by default.
+        :param data: Decompression model data.
+        :param gf: Gradient factor value, `gf_low` by default.
         """
         return max(self.gf_limit(gf, data))
 
 
     def gf_limit(self, gf, data):
         """
-        Calculate gradient pressure limit.
+        Calculate pressure of ascent ceiling for each tissue compartment.
 
-        :Parameters:
-         gf
-            Gradient factor.
-         data
-            Decompression model data.
+        The method returns a tuple of values - a pressure value for each
+        tissue compartment.
+
+        :param gf: Gradient factor.
+        :param data: Decompression model data.
         """
         # FIXME: make it model independent
         if gf is None:
@@ -192,8 +249,10 @@ class ZH_L16_GF(object):
 
 
 
-
 class ZH_L16B_GF(ZH_L16_GF): # source: gfdeco.f by Baker
+    """
+    ZH-L16B-GF decompression model.
+    """
     N2_A = (
         1.1696, 1.0000, 0.8618, 0.7562, 0.6667, 0.5600, 0.4947, 0.4500,
         0.4187, 0.3798, 0.3497, 0.3223, 0.2850, 0.2737, 0.2523, 0.2327,
@@ -221,6 +280,9 @@ class ZH_L16B_GF(ZH_L16_GF): # source: gfdeco.f by Baker
 
 
 class ZH_L16C_GF(ZH_L16_GF): # source: ostc firmware code
+    """
+    ZH-L16C-GF decompression model.
+    """
     N2_A = (
         1.2599, 1.0000, 0.8618, 0.7562, 0.6200, 0.5043, 0.4410, 0.4000,
         0.3750, 0.3500, 0.3295, 0.3065, 0.2835, 0.2610, 0.2480, 0.2327,
@@ -265,19 +327,12 @@ class TissueCalculator(object):
         """
         Calculate gas loading of a tissue.
 
-        :Parameters:
-         abs_p
-            Absolute pressure [bar] (current depth).
-         time
-            Time of exposure [second] (i.e. time of ascent).
-         gas
-            Gas mix configuration.
-         rate
-            Pressure rate change [bar/min].
-         pressure
-            Current tissue pressure [bar].
-         tissue_no
-            Tissue number.
+        :param abs_p: Absolute pressure [bar] (current depth).
+        :param time: Time of exposure [second] (i.e. time of ascent).
+        :param gas: Gas mix configuration.
+        :param rate: Pressure rate change [bar/min].
+        :param pressure: Current tissue pressure [bar].
+        :param tissue_no: Tissue number.
         """
         hl = self.n2_half_life[tissue_no]
         return eq_schreiner(abs_p, time, gas.n2 / 100, rate, pressure, hl)

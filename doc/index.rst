@@ -40,6 +40,7 @@ Table of Contents
 
    api
    cmd
+   model
    design
 
 * :ref:`genindex`
