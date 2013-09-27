@@ -60,6 +60,7 @@ Data Model
                                +--------+               | time     |
                                | GasMix |               +----------+
                                +--------+
+                               | depth  |
                                | o2     |
                                | n2     |
                                | he     |
