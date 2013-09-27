@@ -65,4 +65,16 @@ Data Model
      | he     |
      +--------+
 
+.. autoclass:: decotengu.engine.Step
+   :noindex:
+
+.. autoclass:: decotengu.engine.GasMix
+   :noindex:
+
+.. autoclass:: decotengu.model.Data
+   :noindex:
+
+.. autoclass:: decotengu.engine.DecoStop
+   :noindex:
+
 .. vim: sw=4:et:ai
