@@ -70,8 +70,8 @@ and total time of dive decompression obligations::
 
 Configuring Decompression Model
 -------------------------------
-The default decompression model used by DecoTengu library is
-Buhlmann's :class:`ZH-L16B <ZH_L16B>` model with gradient factors.
+The default decompression model used by DecoTengu library is Buhlmann's
+:class:`ZH-L16B <ZH_L16B>` model with gradient factors - ZH-L16B-GF::
 
     >>> import decotengu
     >>> engine, deco_table = decotengu.create()
@@ -83,7 +83,7 @@ Buhlmann's :class:`ZH-L16B <ZH_L16B>` model with gradient factors.
     >>> engine.model.gf_high
     0.85
 
-We can switch to ZH-L16C decompression model easily::
+We can switch to ZH-L16C-GF decompression model easily::
 
     >>> engine.model = decotengu.ZH_L16C_GF()
     >>> profile = engine.calculate(35, 40, deco_table())
@@ -96,14 +96,16 @@ We can switch to ZH-L16C decompression model easily::
     >>> deco_table.stops[-1]
     DecoStop(depth=3.0, time=28)
 
-The total dive decompression time is longer due to ZH-L16C being more
-conservative comparing to ZH-L16B.
+Above, the total dive decompression time is longer due to ZH-L16C-GF being
+more conservative comparing to ZH-L16B-GF.
 
 Gradient factor parameters can be adjusted using ``gf_low`` and ``gf_high``
 attributes::
 
-    >>> engine.model.gf_low = 0.2    # first stop deeper
-    >>> engine.model.gf_high = 0.90  # last stop shorter
+    >>> engine.model      # doctest:+ELLIPSIS
+    <decotengu.model.ZH_L16C_GF object at ...>
+    >>> engine.model.gf_low = 0.2    # vs. 0.30 - first stop deeper
+    >>> engine.model.gf_high = 0.90  # vs. 0.85 - last stop shorter
     >>> profile = engine.calculate(35, 40, deco_table())
     >>> list(profile)            # doctest:+ELLIPSIS
     [Step...]
