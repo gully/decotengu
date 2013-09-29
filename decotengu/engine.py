@@ -436,31 +436,34 @@ class Engine(object):
         """
         assert start.depth > depth
 
-        # FIXME: calculate time for 3m ascent, now hardcoded to 18s
+        ts_3m = self._to_time(3, self.ascent_rate)
+
         # round to keep numerical stability when conveyor.time_delta is
         # small
         t = round((start.depth - (depth // 3) * 3) / self.ascent_rate * 60, 10)
-        dt = t % 18
+        dt = t % ts_3m
 
         assert t >= 0
-        assert 0 <= dt < 18, dt
+        assert 0 <= dt < ts_3m, dt
 
-        # bisect search solution range: 0 <= k < n - 1; shallowest possible
-        # first stop at n - 2 (n - 1 in deco zone)
-        n = t // 18 + 1
+        # bisect search solution range: 0 <= k < n - 1, shallowest possible
+        # first stop at n - 2 and n - 1 is in deco zone
+        n = t // ts_3m + 1
 
         logger.debug('find first stop: {}m -> {}m, {}s, n={}, dt={}s' \
                 .format(start.depth, depth, start.time, n, dt))
 
-        # for each k ascent for k * 18 + dt seconds and check if ascent
-        # invariant is not violated; k * 18 + dt formula gives first stop
-        # candidates as multiples of 3m (18s at 10m/min ascent rate is 3m)
+        # for each k ascent for k * t(3m) + dt seconds and check if ascent
+        # invariant is not violated; k * t(3m) + dt formula gives first stop
+        # candidates as multiples of 3m
         f = lambda k, step: True if k == 0 and dt == 0 else \
-                    self._inv_ascent(self._step_next_ascent(step, k * 18 + dt, gas))
+                    self._inv_ascent(
+                        self._step_next_ascent(step, k * ts_3m + dt, gas)
+                    )
         # find largest k, so ascent is possible
         k = bisect_find(n, f, start)
 
-        t = k * 18 + dt
+        t = k * ts_3m + dt
         if t > 0:
             first_stop =  self._step_next_ascent(start, t, gas)
         else:
