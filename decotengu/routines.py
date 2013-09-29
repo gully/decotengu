@@ -88,6 +88,7 @@ class FirstStopTabFinder(DecoRoutine):
     def __call__(self, start, gas):
         engine = self.engine
         model = engine.model
+        ts_3m = engine._to_time(3, engine.ascent_rate)
 
         logger.debug('tabular search: start at {}m, {}s'.format(start.depth,
             start.time))
@@ -130,7 +131,9 @@ class FirstStopTabFinder(DecoRoutine):
         def f(k, step):
             assert k <= len(model.calc._n2_exp_time)
             return True if k == 0 else \
-                engine._inv_ascent(engine._step_next_ascent(step, k * 18, gas))
+                engine._inv_ascent(
+                    engine._step_next_ascent(step, k * ts_3m, gas)
+                )
 
         # FIXME: len(model.calc._n2_exp_time) == model.calc.max_time / 6 so
         #        make it nicer
@@ -139,7 +142,7 @@ class FirstStopTabFinder(DecoRoutine):
         assert k != n # k == n is not used as guarded by recurse_while above
 
         if k > 0:
-            t = k * 18
+            t = k * ts_3m
             step = engine._step_next_ascent(step, t, gas)
 
         logger.debug('tabular search: free from {} to {}, ascent time={}' \
@@ -159,6 +162,7 @@ class DecoStopStepper(DecoRoutine):
     """
     def __call__(self, first_stop, depth, gas, gf_start, gf_step):
         engine = self.engine
+        ts_3m = engine._to_time(3, engine.ascent_rate)
         step = first_stop
 
         assert step.depth % 3 == 0
@@ -182,7 +186,7 @@ class DecoStopStepper(DecoRoutine):
             yield step
 
             if not engine._inv_deco_stop(step, gas, gf + gf_step):
-                step = engine._step_next_ascent(step, 18, gas, gf + gf_step)
+                step = engine._step_next_ascent(step, ts_3m, gas, gf + gf_step)
                 yield step
                 k_stop += 1
 
