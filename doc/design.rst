@@ -19,17 +19,17 @@ Core Calculation
            x                 x                | gf_low = 0.3        |    +------------------+
            |                 |                | gf_high = 0.85      |    | TissueCalculator |
            .                 |                +---------------------+    +------------------+
-           | <<use>>     [1] | conveyor       | init()              |    | n2_half_life     |
+           | <<send>>    [1] | conveyor       | init()              |    | n2_half_life     |
            .                 v                | load()              |    | he_half_life     |
            |           +------------+         | pressure_limit()    |    +------------------+
            v           |  Conveyor  |         +---------------------+
    +---------------+   +------------+            /_\           /_\
-   |   DecoTable   |   | time_delta |             |             |
-   +---------------+   +------------+             |             |
-   | stops         |                      +------------+   +------------+
-   | tissues       |                      | ZH_L16B_GF |   | ZH_L16C_GF |
+   | <<coroutine>> |   | time_delta |             |             |
+   |   DecoTable   |   +------------+             |             |
    +---------------+                      +------------+   +------------+
-
+   | stops         |                      | ZH_L16B_GF |   | ZH_L16C_GF |
+   | tissues       |                      +------------+   +------------+
+   +---------------+
 
 Data Model
 ----------
