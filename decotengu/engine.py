@@ -42,11 +42,32 @@ logger = logging.getLogger('decotengu.engine')
 InfoSample = namedtuple('InfoSample', 'depth time pressure gas tissues phase')
 InfoTissue = namedtuple('InfoTissue', 'no pressure limit gf gf_limit')
 
-#
-# Dive phase. 
-#
-Phase = namedtuple('Phase', 'START DESCENT CONST ASCENT DECOSTOP')('start',
-    'descent', 'const', 'ascent', 'decostop')
+class Phase(object):
+    """
+    Dive phase enumeration.
+
+    The dive phases are
+
+    START
+        Start of a dive. It happens at begining of the dive (time=0min,
+        depth=0min). Only one dive step can exist with such dive phase.
+    DESCENT
+        Descent during dive - current dive step is deeper than previous one.
+    CONST
+        Constant depth during dive - current dive step is at the same depth as
+        previous one.
+    ASCENT
+        Ascent during dive - current dive step is shallower than previous one.
+    DECOSTOP
+        Decompression stop. Current dive step is at the same depth as previous
+        one and ascent is not possible until allowed by decompression model.
+    """
+    START = 'start'
+    DESCENT = 'descent'
+    CONST = 'const'
+    ASCENT = 'ascent'
+    DECOSTOP = 'decostop'
+
 
 Step = namedtuple('Step', 'phase depth time pressure gas data prev')
 Step.__repr__ = lambda s: 'Step(phase="{}", depth={}, time={},' \

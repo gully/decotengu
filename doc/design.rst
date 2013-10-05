@@ -84,9 +84,10 @@ The DecoTengu data model is responsible for keeping results of DecoTengu
 calculations.
 
 The :class:`DecoTengu engine <decotengu.Engine>` class creates dive steps
-(:class:`Step class <decotengu.engine.Step>`) i.e. descent step, bottom
-time step, etc. The dive steps provide information about time of a dive,
-pressure at depth, gas mix used or decompression model data.
+(:class:`Step class <decotengu.engine.Step>`) i.e. descent step or ascent
+step (see :ref:`design-dive-phase`). The dive steps provide information
+about time of a dive, pressure at depth, gas mix used or decompression
+model data.
 
 The decompression model data (:class:`Data class <decotengu.model.Data>`)
 is created by decompression model implementation and it carries information
@@ -115,21 +116,21 @@ instances of :class:`DecoStop class <decotengu.engine.DecoStop>`.
            .                       .
            |                       |
            v                       v
-      +----------+  data      +----------+   <<use>>  +-------------+
-      |   Data   |<----------x|   Step   |<-.-.-.-.-.-|  DecoTable  |
-      +----------+  [1]       +----------+            +-------------+
-      | tissues  |            | phase    |                   |
-      | gf       |            | depth    |                   .
-      +-----------            | time     |                   | <<create>>
-                              | pressure |                   .
-                              +----------+                   |
-                                   x                         v
-                                   |                    +----------+
-                                   |                    | DecoStop |
-                               [1] | gas                +----------+
-                                   v                    | depth    |
-                               +--------+               | time     |
-                               | GasMix |               +----------+
+      +----------+  data      +--------------+   <<use>>  +-------------+
+      |   Data   |<----------x|   Step       |<-.-.-.-.-.-|  DecoTable  |
+      +----------+  [1]       +--------------+            +-------------+
+      | tissues  |            | phase: Phase |                   |
+      | gf       |            | depth        |                   .
+      +-----------            | time         |                   | <<create>>
+                              | pressure     |                   .
+                              +--------------+                   |
+                                   x                             v
+                                   |                        +----------+
+                                   |                        | DecoStop |
+                               [1] | gas                    +----------+
+                                   v                        | depth    |
+                               +--------+                   | time     |
+                               | GasMix |                   +----------+
                                +--------+
                                | depth  |
                                | o2     |
@@ -148,5 +149,29 @@ instances of :class:`DecoStop class <decotengu.engine.DecoStop>`.
 
 .. autoclass:: decotengu.engine.DecoStop
    :noindex:
+
+.. _design-dive-phase:
+
+Dive Phases
+-----------
+A dive consists of various phases, i.e. ascent or descent. The dive phases
+in DecoTengu are modeled by :class:`Phase enumeration
+<decotengu.engine.Phase>`.
+
+.. code::
+   :class: diagram
+
+   +-----------------------+
+   |       <<enum>>        |
+   |        Phase          |
+   +-----------------------+
+   | START = 'start'       |
+   | DESCENT = 'descent'   |
+   | CONST = 'const'       |
+   | ASCENT = 'ascent'     |
+   | DECOSTOP = 'decostop' |
+   +-----------------------+
+
+.. autoclass:: decotengu.engine.Phase
 
 .. vim: sw=4:et:ai
