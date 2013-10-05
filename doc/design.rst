@@ -3,33 +3,80 @@ Design
 
 Core Calculation
 ----------------
+The central class of DecoTengu library design is :class:`Engine
+<decotengu.Engine>` class (DecoTengu engine). It is used to start
+calculations and is responsible to pass data between various classes of
+the library.
+
+The :class:`decotengu.model.ZH_L16_GF` abstract class implements ZH-L16
+Buhlmann decompression model with gradient factors by Eric Baker
+(ZH-L16-GF). It receives pressure of depth and time information to
+calculate tissues gas loading and is used by DecoTengu engine to
+calculate ascent ceiling limits.
+
+The decompression model calculates tissues gas loading with
+:class:`tissue calculator <decotengu.model.TissueCalculator>`, which uses
+Schreiner equation (see also :ref:`model-equations`). The
+:class:`TissueCalculator <decotengu.model.TissueCalculator>` class is
+designed to be a separate class from decompression model class, so it can
+be replaced with alternative implementations (i.e. which use precomputed
+values of `log` and `exp` functions).
+
+The DecoTengu engine sends data to an instance of :class:`DecoTable
+<decotengu.mod.DecoTable>` class, which extracts decompression information
+from received data. It is designed as Python coroutine.
+
+The :class:`Conveyor <decotengu.conveyor.Conveyor>` class is used to divide
+dive time to perform calculations in multiple steps, i.e. to obtain
+decompression model calculation every minute.
+
+The attributes of core calculation classes usually keep various
+configuration aspects of DecoTengu library (i.e. ascent rate, surface
+pressure), but they never keep any state of calculation process. The state
+of calculations is carried by DecoTengu data model, see
+:ref:`design-data-model`.
+
 .. code::
    :class: diagram
 
    +----------------------------+             +---------------------+
-   |          Engine            |             |      ZH_L16_GF      |
-   +----------------------------+      model  +---------------------+
-   | ascent_rate = 10           |x----------->| N2_A                |
-   | descent_rate = 20          |        [1]  | N2_B                |
-   | surface_pressure = 1.01325 |             | HE_A                |x------------
-   +----------------------------+             | HE_B                |            |
-   | add_gas()                  |             | N2_HALF_LIFE        |            |
-   | calculate()                |             | HE_HALF_LIFE        |        [1] | calc
-   +----------------------------+             +---------------------+            v
-           x                 x                | gf_low = 0.3        |    +------------------+
-           |                 |                | gf_high = 0.85      |    | TissueCalculator |
-           .                 |                +---------------------+    +------------------+
-           | <<send>>    [1] | conveyor       | init()              |    | n2_half_life     |
-           .                 v                | load()              |    | he_half_life     |
-           |           +------------+         | pressure_limit()    |    +------------------+
-           v           |  Conveyor  |         +---------------------+
-   +---------------+   +------------+            /_\           /_\
-   | <<coroutine>> |   | time_delta |             |             |
+   |          Engine            |             |    <<abstract>>     |
+   +----------------------------+             |      ZH_L16_GF      |
+   | ascent_rate = 10           |      model  +---------------------+
+   | descent_rate = 20          |x----------->| N2_A                |
+   | surface_pressure = 1.01325 |        [1]  | N2_B                |
+   +----------------------------+             | HE_A                |x------------
+   | add_gas()                  |             | HE_B                |            |
+   | calculate()                |             | N2_HALF_LIFE        |            |
+   +----------------------------+             | HE_HALF_LIFE        |        [1] | calc
+           x                 x                +---------------------+            v
+           |                 |                | gf_low = 0.3        |    +------------------+
+           .                 |                | gf_high = 0.85      |    | TissueCalculator |
+           | <<send>>    [1] | conveyor       +---------------------+    +------------------+
+           .                 v                | init()              |    | n2_half_life     |
+           |           +------------+         | load()              |    | he_half_life     |
+           v           |  Conveyor  |         | pressure_limit()    |    +------------------+
+   +---------------+   +------------+         +---------------------+
+   | <<coroutine>> |   | time_delta |            /_\           /_\
    |   DecoTable   |   +------------+             |             |
+   +---------------+                              |             |
+   | stops         |                      +------------+   +------------+
+   | tissues       |                      | ZH_L16B_GF |   | ZH_L16C_GF |
    +---------------+                      +------------+   +------------+
-   | stops         |                      | ZH_L16B_GF |   | ZH_L16C_GF |
-   | tissues       |                      +------------+   +------------+
-   +---------------+
+
+.. autoclass:: decotengu.engine.Engine
+   :noindex:
+
+.. autoclass:: decotengu.model.ZH_L16_GF
+   :noindex:
+
+.. autoclass:: decotengu.model.TissueCalculator
+
+.. autoclass:: decotengu.mod.DecoTable
+
+.. autoclass:: decotengu.conveyor.Conveyor
+
+.. _design-data-model:
 
 Data Model
 ----------

@@ -57,6 +57,8 @@ high
     Controls the time of decompression stops. The higher value, the
     shorter decompression time.
 
+.. _model-equations:
+
 Equations
 ---------
 The parameters mentioned in previous section are used by two equations
