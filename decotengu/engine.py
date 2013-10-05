@@ -77,47 +77,31 @@ Step.__repr__ = lambda s: 'Step(phase="{}", depth={}, time={},' \
 Step.__doc__ = """
 Dive step.
 
-:Attributes:
- phase
-    Dive phase.
- depth
-    Depth of dive [m].
- time
-    Time of dive [s].
- pressure
-    Pressure at depth [bar].
- gas
-    Gas mix configuration.
- data
-    Decompression model data.
- prev
-    Previous dive step.
+:var phase: Dive phase.
+:var depth: Depth of dive [m].
+:var time: Time of dive [s].
+:var pressure: Pressure at depth [bar].
+:var gas: Gas mix configuration.
+:var data: Decompression model data.
+:var prev: Previous dive step.
 """
 
 GasMix = namedtuple('GasMix', 'depth o2 n2 he') 
 GasMix.__doc__ = """
 Gas mix configuration.
 
-:Attributes:
- depth
-    Gas mix switch depth.
- o2
-    O2 percentage.
- n2
-    N2 percentage.
- he
-    Helium percentage.
+:var depth: Gas mix switch depth.
+:var o: O2 percentage.
+:var n: N2 percentage.
+:var he: Helium percentage.
 """
 
 DecoStop = namedtuple('DecoStop', 'depth time')
 DecoStop.__doc__ = """
 Dive decompression stop.
 
-:Attributes
- depth
-    Depth of decompression stop [m].
- time
-    Length of decompression stops [min].
+:var depth: Depth of decompression stop [m].
+:var time: Length of decompression stops [min].
 """
 
 
@@ -161,9 +145,7 @@ class Engine(object):
         """
         Convert depth in meters to absolute pressure in bars.
 
-        :Parameters:
-         depth
-            Depth in meters.
+        :param depth: Depth in meters.
         """
         return depth * METER_TO_BAR + self.surface_pressure
 
@@ -172,11 +154,8 @@ class Engine(object):
         """
         Convert time into depth using depth change rate.
 
-        :Parameters:
-         time
-            Time in seconds.
-         rate
-            Rate of depth change [m/min].
+        :param time: Time in seconds.
+        :param rate: Rate of depth change [m/min].
         """
         return time * rate / 60
 
@@ -187,11 +166,8 @@ class Engine(object):
 
         The time is returned in seconds.
 
-        :Parameters:
-         depth
-            Depth in meters.
-         rate
-            Rate of depth change [m/min].
+        :param depth: Depth in meters.
+        :param rate: Rate of depth change [m/min].
         """
         return depth / rate * 60
 
@@ -203,9 +179,7 @@ class Engine(object):
         Step's pressure is compared to maximum allowed tissue pressure. The
         latter is calculated using configured gradient factor low value.
 
-        :Parameters:
-         step
-            Dive step containing pressure information.
+        :param step: Dive step containing pressure information.
         """
         return step.pressure > self.model.pressure_limit(step.data)
 
@@ -218,13 +192,9 @@ class Engine(object):
         (using gradient factor value) and it is checked that ascent to next
         stop is not possible.
 
-        :Parameters:
-         step
-            Dive step - current decompression stop.
-         gas
-            Gas mix configuration.
-         gf
-            Gradient factor value for next decompression stop.
+        :param step: Dive step - current decompression stop.
+        :param gas: Gas mix configuration.
+        :param gf: Gradient factor value for next decompression stop.
         """
         ts_3m = self._to_time(3, self.ascent_rate)
         data = self._tissue_pressure_ascent(step.pressure, ts_3m, gas, step.data)
@@ -240,20 +210,13 @@ class Engine(object):
         The configured GF low value is used if gradient factor not
         specified.
 
-        :Parameters:
-         phase
-            Dive phase (see Phase enum).
-         prev
-            Previous dive step.
-         depth
-            Depth of dive step.
-         time
-            Time at which dive step is recorded (in seconds since start of
-            a dive).
-         gas
-            Gas mix configuration.
-         data
-            Decompression model data.
+        :param phase: Dive phase (see Phase enum).
+        :param prev: Previous dive step.
+        :param depth: Depth of dive step.
+        :param time: Time at which dive step is recorded (in seconds since start
+                     of a dive).
+        :param gas: Gas mix configuration.
+        :param data: Decompression model data.
         """
         p = self._to_pressure(depth)
         return Step(phase, depth, time, p, gas, data, prev) 
@@ -264,17 +227,11 @@ class Engine(object):
         Calculate next dive step at constant depth and advanced by
         specified amount of time.
 
-        :Parameters:
-         step
-            Current dive step.
-         time
-            Time spent at current depth [s].
-         gas
-            Gas mix configuration.
-         data
-            Decompression model data.
-         phase
-            Dive phase.
+        :param step: Current dive step.
+        :param time: Time spent at current depth [s].
+        :param gas: Gas mix configuration.
+        :param data: Decompression model data.
+        :param phase: Dive phase.
         """
         data = self._tissue_pressure_const(step.pressure, time, gas, step.data)
         return self._step(phase, step, step.depth, step.time + time, gas, data)
@@ -285,15 +242,10 @@ class Engine(object):
         Calculate next dive step when descent is performed for specified
         period of time.
 
-        :Parameters:
-         step
-            Current dive step.
-         time
-            Time to descent [s].
-         gas
-            Gas mix configuration.
-         phase
-            Dive phase.
+        :param step: Current dive step.
+        :param time: Time to descent [s].
+        :param gas: Gas mix configuration.
+        :param phase: Dive phase.
         """
         data = self._tissue_pressure_descent(step.pressure, time, gas, step.data)
         depth = step.depth + self._to_depth(time, self.descent_rate)
@@ -308,17 +260,11 @@ class Engine(object):
         FIXME: due to ``gf`` parameter this method is deco model dependant,
                this has to be improved
 
-        :Parameters:
-         step
-            Current dive step.
-         time
-            Time to ascent [s].
-         gas
-            Gas mix configuration.
-         data
-            Decompression model data.
-         phase
-            Dive phase.
+        :param step: Current dive step.
+        :param time: Time to ascent [s].
+        :param gas: Gas mix configuration.
+        :param data: Decompression model data.
+        :param phase: Dive phase.
         """
         data = self._tissue_pressure_ascent(step.pressure, time, gas, step.data)
         depth = step.depth - self._to_depth(time, self.ascent_rate)
@@ -335,15 +281,10 @@ class Engine(object):
         Calculate tissues gas loading after exposure for specified time at
         constant pressure.
 
-        :Parameters:
-         abs_p
-            The pressure indicating the depth [bar].
-         time
-            Time at pressure in seconds.
-         gas
-            Gas mix configuration.
-         data
-            Decompression model data.
+        :param abs_p: The pressure indicating the depth [bar].
+        :param time: Time at pressure in seconds.
+        :param gas: Gas mix configuration.
+        :param data: Decompression model data.
         """
         return self.model.load(abs_p, time, gas, 0, data)
 
@@ -353,15 +294,10 @@ class Engine(object):
         Calculate tissues gas loading after descent from pressure for
         specified amount of time.
 
-        :Parameters:
-         abs_p
-            Starting pressure indicating the depth [bar].
-         time
-            Time of descent in seconds.
-         gas
-            Gas mix configuration.
-         data
-            Decompression model data.
+        :param abs_p: Starting pressure indicating the depth [bar].
+        :param time: Time of descent in seconds.
+        :param gas: Gas mix configuration.
+        :param data: Decompression model data.
         """
         rate = self.descent_rate * METER_TO_BAR
         data = self.model.load(abs_p, time, gas, rate, data)
@@ -373,15 +309,10 @@ class Engine(object):
         Calculate tissues gas loading after ascent from pressure for
         specified amount of time.
 
-        :Parameters:
-         abs_p
-            Starting pressure indicating the depth [bar].
-         time
-            Time of ascent in seconds.
-         gas
-            Gas mix configuration.
-         tp_start
-            Initial tissues pressure.
+        :param abs_p: Starting pressure indicating the depth [bar].
+        :param time: Time of ascent in seconds.
+        :param gas: Gas mix configuration.
+        :param tp_start: Initial tissues pressure.
         """
         rate = -self.ascent_rate * METER_TO_BAR
         tp = self.model.load(abs_p, time, gas, rate, tp_start)
@@ -394,13 +325,10 @@ class Engine(object):
 
         Collection of dive steps is returned.
 
-        :Parameters:
-         start
-            Starting dive step.
-         time
-            Duration of dive at depth indicated by starting dive step [s]. 
-         gas
-            Gas mix configuration.
+        :param start: Starting dive step.
+        :param time: Duration of dive at depth indicated by starting dive
+                     step [s]. 
+        :param gas: Gas mix configuration.
         """
         step = start
         duration = start.time + time
@@ -414,11 +342,8 @@ class Engine(object):
         """
         Dive descent from surface to specified depth.
 
-        :Parameters:
-         depth
-            Destination depth.
-         gas
-            Gas mix configuration.
+        :param depth: Destination depth.
+        :param gas: Gas mix configuration.
         """
         data = self.model.init(self.surface_pressure)
         step = self._step('start', None, 0, 0, gas, data)
@@ -447,13 +372,9 @@ class Engine(object):
         which does not breach the ascent limit imposed by maximum tissue
         pressure limit. The depth is divisble by 3.
 
-        :Parameters:
-         start
-            Starting dive step indicating current depth.
-         depth
-            Depth limit - surface or gas switch depth.
-         gas
-            Gas mix configuration.
+        :param start: Starting dive step indicating current depth.
+        :param depth: Depth limit - surface or gas switch depth.
+        :param gas: Gas mix configuration.
         """
         assert start.depth > depth
 
@@ -505,13 +426,9 @@ class Engine(object):
         It is caller resposibility to provide the destination step outside
         of decompression zone.
 
-        :Parameters:
-         start
-            Dive step indicating current depth.
-         stop
-            Dive step indicating destination depth.
-         gas
-            Gas mix configuration.
+        :param start: Dive step indicating current depth.
+        :param stop: Dive step indicating destination depth.
+        :param gas: Gas mix configuration.
         """
         logger.debug('ascent from {0.depth}m ({0.time}s)'
                 ' to {1.depth}m ({1.time}s)'.format(start, stop))
@@ -552,18 +469,12 @@ class Engine(object):
         until it is allowed to ascent to next stop (see _inv_ascent
         method).
 
-        :Parameters:
-         first_stop
-            Dive stop indicating first decompression stop.
-         depth
-            Destination depth.
-         gas
-            Gas mix configuration.
-         gf_start
-            Gradient factor start value for the first stop.
-         gf_step
-            Gradient factor step to calculate gradient factor value for
-            next stops.
+        :param first_stop: Dive stop indicating first decompression stop.
+        :param depth: Destination depth.
+        :param gas: Gas mix configuration.
+        :param gf_start: Gradient factor start value for the first stop.
+        :param gf_step: Gradient factor step to calculate gradient factor
+                        value for next stops.
         """
         step = first_stop
 
@@ -623,11 +534,8 @@ class Engine(object):
         #. Third or later gas mix switch depth should be shallower than last
            one.
 
-        :Parameters:
-         depth
-            Switch depth of gas mix.
-         o2
-            O2 percentage.
+        :param depth: Switch depth of gas mix.
+        :param o: O2 percentage.
         """
         if len(self._gas_list) == 0 and depth != 0:
             raise ValueError('First gas mix switch depth should be at 0m')
@@ -648,13 +556,9 @@ class Engine(object):
 
         Time spent at maximum depth does not include descent.
 
-        :Parameters:
-         depth
-            Maximum depth [m].
-         time
-            Time spent at maximum depth [min].
-         mods
-            Collection of deco engine mods.
+        :param depth: Maximum depth [m].
+        :param time: Time spent at maximum depth [min].
+        :param mods: Collection of deco engine mods.
         """
         time_delta = self.conveyor.time_delta
         if time_delta is not None:
