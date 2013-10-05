@@ -50,10 +50,10 @@ half life
 The gradient factors extension defines two parameters expressed as
 percentage
 
-low
+gf low
     Controls how deep first decompression stop should start. The smaller
     value, the deeper first decompression stop.
-high
+gf high
     Controls the time of decompression stops. The higher value, the
     shorter decompression time.
 
@@ -92,10 +92,10 @@ Using :func:`ZH_L16_GF.pressure_limit` method we can determine
 
 References
 ----------
-* Baker, Eric "`Understanding M-values <mvalues.pdf>`_"
-* Baker, Eric "`Clearing Up The Confusion About "Deep Stops" <decostops.pdf>`_"
-* Baker, Eric `<decolessons.pdf>`_
-* Powell, Mark "Deco for Divers"
+* Baker, Eric :download:`Understanding M-values <mvalues.pdf>`.
+* Baker, Eric :download:`Clearing Up The Confusion About "Deep Stops" <deepstops.pdf>`.
+* Baker, Eric :download:`Deco Lessons <decolessons.pdf>`.
+* Powell, Mark "Deco for Divers".
 """
 
 from collections import namedtuple
