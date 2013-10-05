@@ -80,6 +80,29 @@ of calculations is carried by DecoTengu data model, see
 
 Data Model
 ----------
+The DecoTengu data model is responsible for keeping results of DecoTengu
+calculations.
+
+The :class:`DecoTengu engine <decotengu.Engine>` class creates dive steps
+(:class:`Step class <decotengu.engine.Step>`) i.e. descent step, bottom
+time step, etc. The dive steps provide information about time of a dive,
+pressure at depth, gas mix used or decompression model data.
+
+The decompression model data (:class:`Data class <decotengu.model.Data>`)
+is created by decompression model implementation and it carries information
+specific to that decompression model, i.e.  pressure of inert gas in
+tissues or current gradient factor value in case
+of ZH-L16-GF decompression model.
+
+The gas mix information is modeled as :class:`GasMix
+<decotengu.engine.GasMix>` class and beside gas components percentage,
+which should sum to `100%`, it has switch depth attribute, which indicates
+the deepest depth at which gas mix can be used.
+
+The decompression stops information is extracted from dive steps by
+:class:`decompression table coroutine <decotengu.mod.DecoTable>` as
+instances of :class:`DecoStop class <decotengu.engine.DecoStop>`.
+
 .. code::
    :class: diagram
 
