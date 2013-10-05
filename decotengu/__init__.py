@@ -138,9 +138,7 @@ def create(time_delta=None):
     >>> dt.total
     48
 
-    :Parameters:
-     time_delta
-        Time between dive steps.
+    :param time_delta: Time between dive steps.
     """
     engine = Engine()
     engine.conveyor.time_delta = time_delta

@@ -96,11 +96,8 @@ def dive_step_info(model, target):
     """
     Coroutine to convert dive step into rich dive information records.
 
-    :Parameters:
-     model
-        Decompression model instance.
-     target
-        Coroutine to send dive information records to.
+    :param model: Decompression model instance.
+    :param target: Coroutine to send dive information records to.
     """
     while True:
         step = yield
@@ -125,11 +122,8 @@ def info_csv_writer(f, target=None):
     """
     Write rich dive information records into a CSV file.
 
-    :Parameters:
-     f
-        File object.
-     target
-        Optional coroutine to forward dive information records to.
+    :param f: File object.
+    :param target: Optional coroutine to forward dive information records to.
     """
     header = [
         'depth', 'time', 'pressure', 'gas_o2', 'gas_n2', 'gas_he', 'tissue_no',
@@ -163,9 +157,7 @@ def tissue_pressure_validator(engine):
     The validator verifies that maximum allowed tissue pressure of a dive
     step is not over pressure limit.
 
-    :Parameters:
-     engine
-        DecoTengu engine object.
+    :param engine: DecoTengu engine object.
     """
     while True:
         step = yield

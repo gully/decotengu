@@ -68,9 +68,7 @@ class Conveyor(object):
     >>> print('next point in time {}'.format(tray.time + tray.d_time))
     next point in time 230
 
-    :Attributes:
-     time_delta
-        Time delta to calculate points in time.
+    :var time_delta: Time delta to calculate points in time.
     """
     def __init__(self):
         """
@@ -83,15 +81,10 @@ class Conveyor(object):
         """
         Return collection of tray tuples.
 
-        :Parameters:
-         start_depth
-            Starting depth [m].
-         start_time
-            Starting time [s].
-         end_time
-            Ending time [s].
-         rate
-            Rate at which depth changes [m/min].
+        :param start_depth: Starting depth [m].
+        :param start_time: Starting time [s].
+        :param end_time: Ending time [s].
+        :param rate: Rate at which depth changes [m/min].
         """
         if self.time_delta is None:
             d_time = end_time - start_time

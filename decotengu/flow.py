@@ -41,9 +41,7 @@ def split(*tc):
     Coroutines to receive a value and send it to all coroutines specified
     in ``tc`` list.
 
-    :Parameters:
-     tc
-        List of target coroutines.
+    :param tc: List of target coroutines.
     """
     while True:
         v = yield

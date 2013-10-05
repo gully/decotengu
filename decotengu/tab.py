@@ -40,23 +40,14 @@ def eq_schreiner_t(abs_p, time, gas, rate, pressure, half_life, texp,
     Calculate gas loading using Schreiner equation and precomputed values
     of exp and ln functions.
 
-    :Parameters:
-     abs_p
-        Absolute pressure [bar] (current depth).
-     time
-        Time of exposure [s] (i.e. time of ascent).
-     gas
-        Inert gas fraction, i.e. 0.79.
-     rate
-        Pressure rate change [bar/min].
-     pressure
-        Current tissue pressure [bar].
-     half_life
-        Current tissue compartment half-life constant value.
-     texp
-        Value of exp function for current tissue and time of exposure.
-     wvp
-        Water vapour pressure.
+    :param abs_p: Absolute pressure [bar] (current depth).
+    :param time: Time of exposure [s] (i.e. time of ascent).
+    :param gas: Inert gas fraction, i.e. 0.79.
+    :param rate: Pressure rate change [bar/min].
+    :param pressure: Current tissue pressure [bar].
+    :param half_life: Current tissue compartment half-life constant value.
+    :param texp: Value of exp function for current tissue and time of exposure.
+    :param wvp: Water vapour pressure.
     """
     palv = gas * (abs_p - wvp)
     t = time / 60.0
@@ -78,24 +69,17 @@ class TabTissueCalculator(TissueCalculator):
     Calculate tissue gas loading using precomputed values for exp and ln
     functions.
 
-    :Attributes:
-     _exp_time
-        Collection of precomputed values for exp function between 3m and
-        max depth change (every 3m, 6s at 10m/min) allowed by the
-        calculator.
-     _exp_1m
-        Precomputed values for exp function for 1m (6s at 10m/min) depth
-        change.
-     _exp_2m
-        Precomputed values for exp function for 2m (12s at 10m/min) depth
-        change.
-     _exp_10m
-        Precomputed values for exp function for 10m (1min at 10m/min) depth
-        change.
-     max_depth
-        Maximum depth change allowed by the calculator.
-     max_time
-        Maximum time change allowed by the calculator.
+    :var _exp_time: Collection of precomputed values for exp function
+                    between 3m and max depth change (every 3m, 6s at
+                    10m/min) allowed by the calculator.
+    :var _exp_: Precomputed values for exp function for 1m (6s at 10m/min)
+                depth change.
+    :var _exp_: Precomputed values for exp function for 2m (12s at 10m/min)
+                depth change.
+    :var _exp_: Precomputed values for exp function for 10m (1min at
+                10m/min) depth change.
+    :var max_depth: Maximum depth change allowed by the calculator.
+    :var max_time: Maximum time change allowed by the calculator.
     """
     def __init__(self, n2_half_life, he_half_life):
         """
@@ -125,19 +109,12 @@ class TabTissueCalculator(TissueCalculator):
         """
         Calculate gas loading of a tissue.
 
-        :Parameters:
-         abs_p
-            Absolute pressure [bar] (current depth).
-         time
-            Time of exposure [second] (i.e. time of ascent).
-         gas
-            Gas mix configuration.
-         rate
-            Pressure rate change [bar/min].
-         pressure
-            Current tissue pressure [bar].
-         tissue_no
-            Tissue number.
+        :var abs_p: Absolute pressure [bar] (current depth).
+        :var time: Time of exposure [second] (i.e. time of ascent).
+        :var gas: Gas mix configuration.
+        :var rate: Pressure rate change [bar/min].
+        :var pressure: Current tissue pressure [bar].
+        :var tissue_no: Tissue number.
         """
         hl = self.n2_half_life[tissue_no]
         if time == 60:

@@ -39,14 +39,10 @@ def recurse_while(predicate, f, start):
 
     If `f` is never executed then `start` value is returned.
 
-    :Parameters:
-     predicate
-        Predicate function guarding execution.
-     f
-        Function to execute. Value returned by the function is passed as
-        argument for next invocation.
-     start
-        Value passed as argument during first execution of `f` function.
+    :param predicate: Predicate function guarding execution.
+    :param f: Function to execute. Value returned by the function is passed
+              as argument for next invocation.
+    :param start: Value passed as argument during first execution of `f` function.
     """
     x = None
     while predicate(start):
@@ -66,15 +62,10 @@ def bisect_find(n, f, *args, **kw):
     There must be at least one k for which f(k) is False (i.e. n - 1). If
     not, then ValueError exception is raised.
 
-    :Parameters:
-     n
-        Range for k, so 0 <= k < n - 1.
-     f
-        Invariant function accepting k.
-     *args
-        Additional positional parameters of f.
-     **kw
-        Additional named parameters of f.
+    :param n: Range for k, so 0 <= k < n - 1.
+    :param f: Invariant function accepting k.
+    :param *args: Additional positional parameters of f.
+    :param **kw: Additional named parameters of f.
     """
     lo = 0
     hi = n
