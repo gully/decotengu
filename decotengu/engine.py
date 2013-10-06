@@ -122,6 +122,19 @@ class DecoRoutine(object):
 
 
 class Engine(object):
+    """
+    DecoTengu decompression engine.
+
+    Use decompression engine to calculate dive profile, dive and
+    decompression information.
+
+    :var model: Decompression model.
+    :var surface_pressure: Surface pressure [bar].
+    :var ascent_rate: Ascent rate during a dive [m/min].
+    :var descent_rate: Descent rate during a dive [m/min].
+    :var conveyor: Conveyor used to divide dive into multiple steps.
+    :var _gas_list: List of gas mixes.
+    """
     PARTS = {
         '_deco_ascent',
         '_dive_const',
@@ -535,7 +548,7 @@ class Engine(object):
            one.
 
         :param depth: Switch depth of gas mix.
-        :param o: O2 percentage.
+        :param o2: O2 percentage.
         """
         if len(self._gas_list) == 0 and depth != 0:
             raise ValueError('First gas mix switch depth should be at 0m')
@@ -552,13 +565,13 @@ class Engine(object):
 
     def calculate(self, depth, time, *mods):
         """
-        Calculate dive profile.
+        Start dive calculations for specified dive depth and bottom time.
 
-        Time spent at maximum depth does not include descent.
+        The method returns an iterator of dive steps.
 
         :param depth: Maximum depth [m].
-        :param time: Time spent at maximum depth [min].
-        :param mods: Collection of deco engine mods.
+        :param time: Bottom time [min].
+        :param mods: Collection of decompression engine mods.
         """
         time_delta = self.conveyor.time_delta
         if time_delta is not None:

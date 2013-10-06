@@ -127,7 +127,7 @@ __version__ = '0.1.0'
 
 def create(time_delta=None):
     """
-    Create deco engine with decompression table.
+    Create decompression engine with decompression table.
 
     Usage
 
