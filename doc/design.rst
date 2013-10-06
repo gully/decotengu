@@ -96,36 +96,36 @@ instances of :class:`DecoStop class <decotengu.engine.DecoStop>`.
 .. code::
    :class: diagram
 
-   +---------------+         +------------+
-   |   ZH_L16_GF   |         |   Engine   |
-   +---------------+         +------------+
-           |                       |
-           .                       .
-           | <<create>>            | <<create>>
-           .                       .
-           |                       |
-           v                       v
+   +---------------+           +------------+
+   |   ZH_L16_GF   |           |   Engine   |
+   +---------------+           +------------+
+           |                         |
+           .                         .
+           | <<create>>              | <<create>>
+           .                         .
+           |                         |
+           v                         v
       +----------+  data      +--------------+   <<use>>  +-------------+
-      |   Data   |<----------x|   Step       |<-.-.-.-.-.-|  DecoTable  |
+      |   Data   |<----------x|     Step     |<-.-.-.-.-.-|  DecoTable  |
       +----------+  [1]       +--------------+            +-------------+
       | tissues  |            | phase: Phase |                   |
       | gf       |            | depth        |                   .
       +-----------            | time         |                   | <<create>>
                               | pressure     |                   .
                               +--------------+                   |
-                                   x                             v
-                                   |                        +----------+
-                                   |                        | DecoStop |
-                               [1] | gas                    +----------+
-                                   v                        | depth    |
-                               +--------+                   | time     |
-                               | GasMix |                   +----------+
-                               +--------+
-                               | depth  |
-                               | o2     |
-                               | n2     |
-                               | he     |
-                               +--------+
+                                     x                           v
+                                     |                      +----------+
+                                     |                      | DecoStop |
+                                 [1] | gas                  +----------+
+                                     v                      | depth    |
+                                 +--------+                 | time     |
+                                 | GasMix |                 +----------+
+                                 +--------+
+                                 | depth  |
+                                 | o2     |
+                                 | n2     |
+                                 | he     |
+                                 +--------+
 
 .. _design-dive-phase:
 
