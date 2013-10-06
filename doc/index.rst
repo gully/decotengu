@@ -38,7 +38,7 @@ Table of Contents
 .. toctree::
    :maxdepth: 3
 
-   api
+   usage
    cmd
    model
    design
