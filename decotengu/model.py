@@ -92,10 +92,12 @@ Using :func:`ZH_L16_GF.pressure_limit` method we can determine
 
 References
 ----------
-* Baker, Eric :download:`Understanding M-values <mvalues.pdf>`.
-* Baker, Eric :download:`Clearing Up The Confusion About "Deep Stops" <deepstops.pdf>`.
-* Baker, Eric :download:`Deco Lessons <decolessons.pdf>`.
-* Powell, Mark "Deco for Divers".
+* Baker, Eric. :download:`*Understanding M-values* <mvalues.pdf>`
+* Baker, Eric. :download:`*Clearing Up The Confusion About "Deep Stops"* <deepstops.pdf>`
+* Baker, Eric. :download:`*Untitled, known as "Deco Lessons"* <decolessons.pdf>`
+* Powell, Mark. *Deco for Divers*, United Kingdom, 2010
+* `HeinrichsWeikamp <http://www.heinrichsweikamp.com/>`_. `OSTC dive computer
+  source code <https://bitbucket.org/heinrichsweikamp/ostc2_code>`_.
 """
 
 from collections import namedtuple
