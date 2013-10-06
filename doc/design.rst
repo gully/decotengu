@@ -64,17 +64,6 @@ of calculations is carried by DecoTengu data model, see
    | tissues       |                      | ZH_L16B_GF |   | ZH_L16C_GF |
    +---------------+                      +------------+   +------------+
 
-.. autoclass:: decotengu.engine.Engine
-   :noindex:
-
-.. autoclass:: decotengu.model.ZH_L16_GF
-   :noindex:
-
-.. autoclass:: decotengu.model.TissueCalculator
-
-.. autoclass:: decotengu.mod.DecoTable
-
-.. autoclass:: decotengu.conveyor.Conveyor
 
 .. _design-data-model:
 
@@ -138,18 +127,6 @@ instances of :class:`DecoStop class <decotengu.engine.DecoStop>`.
                                | he     |
                                +--------+
 
-.. autoclass:: decotengu.engine.Step
-   :noindex:
-
-.. autoclass:: decotengu.engine.GasMix
-   :noindex:
-
-.. autoclass:: decotengu.model.Data
-   :noindex:
-
-.. autoclass:: decotengu.engine.DecoStop
-   :noindex:
-
 .. _design-dive-phase:
 
 Dive Phases
@@ -171,7 +148,5 @@ in DecoTengu are modeled by :class:`Phase enumeration
    | ASCENT = 'ascent'     |
    | DECOSTOP = 'decostop' |
    +-----------------------+
-
-.. autoclass:: decotengu.engine.Phase
 
 .. vim: sw=4:et:ai

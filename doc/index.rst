@@ -42,6 +42,7 @@ Table of Contents
    cmd
    model
    design
+   api
 
 * :ref:`genindex`
 * :ref:`search`
