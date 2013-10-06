@@ -1,7 +1,39 @@
 @import url('agogo.css');
 
 div.diagram pre {
-    background: #eeeeee;
     padding: 20px;
     line-height: 95%;
+    background: #eeeeec;
+    border-top: solid #dddddd 2px;
+    border-bottom: solid #dddddd 2px;
+}
+
+dl.class, dl.function {
+    padding: 5px;
+    margin: 10px;
+}
+
+dl.class > dt {
+    border: solid black 1px;
+    padding: 5px;
+}
+
+dl.method > dt {
+    border-bottom: solid black 1px;
+    padding: 5px;
+}
+
+dl.function > dt {
+    border: solid black 1px;
+    padding: 5px;
+}
+
+div.section > table.longtable {
+    border: 0px;
+    margin-bottom: 30px;
+}
+
+div.section > table.longtable td {
+    border: solid black 1px;
+    padding: 5px;
 }

@@ -6,8 +6,10 @@ import decotengu
 sys.path.append(os.path.abspath('.'))
 sys.path.append(os.path.abspath('doc'))
 
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.todo',
-    'sphinx.ext.viewcode']
+extensions = [
+    'sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'sphinx.ext.doctest',
+    'sphinx.ext.todo', 'sphinx.ext.viewcode'
+]
 project = 'decotengu'
 source_suffix = '.rst'
 master_doc = 'index'
