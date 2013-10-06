@@ -18,7 +18,8 @@ dive planning functionality.
 
 The DecoTengu library is licensed under terms of GPL license, version 3, see
 `COPYING <http://git.savannah.gnu.org/cgit/decotengu.git/plain/COPYING>`_
-file for details.
+file for details. As stated in the license, there is no warranty, so any
+diving while using data provided by the library is on diver's own risk.
 
 Table of Contents
 -----------------
