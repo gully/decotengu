@@ -6,6 +6,9 @@
 | `BUGS <http://savannah.nongnu.org/bugs/?group=decotengu>`_
 | `SOURCE CODE <http://git.savannah.gnu.org/cgit/decotengu.git>`_
 
+Introduction
+============
+
 DecoTengu is Python decompression library to experiment with various
 implementations of Buhlmann decompression model with Eric Baker's gradient
 factors (other decompression models might be possible in the future). Basic
@@ -14,7 +17,7 @@ parts can be replaced with different code routines.
 
 The results of DecoTengu calculations are decompression stops and tissue
 saturation information. Third party applications can use those results for
-dive planning functionality.
+data analysis purposes or dive planning functionality.
 
 The DecoTengu library is licensed under terms of GPL license, version 3, see
 `COPYING <http://git.savannah.gnu.org/cgit/decotengu.git/plain/COPYING>`_
@@ -35,6 +38,5 @@ Table of Contents
 
 * :ref:`genindex`
 * :ref:`search`
-
 
 .. vim: sw=4:et:ai
