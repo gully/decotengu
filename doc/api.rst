@@ -12,6 +12,7 @@ Main API
    decotengu.engine.Step
    decotengu.engine.GasMix
    decotengu.engine.DecoStop
+   decotengu.conveyor.Conveyor
 
 .. autofunction:: decotengu.create
 
@@ -24,6 +25,9 @@ Main API
 .. autoclass:: decotengu.engine.Step
 .. autoclass:: decotengu.engine.GasMix
 .. autoclass:: decotengu.engine.DecoStop
+
+.. autoclass:: decotengu.conveyor.Conveyor
+   :members:
 
 Decompression Model
 -------------------
@@ -56,17 +60,13 @@ Decompression Model
 
 .. autofunction:: decotengu.model.eq_gf_limit
 
-Other
------
+Dive Phases
+-----------
 .. fixme: we need to automate this!
 .. autosummary::
 
    decotengu.engine.Phase
-   decotengu.conveyor.Conveyor
 
 .. autoclass:: decotengu.engine.Phase
-
-.. autoclass:: decotengu.conveyor.Conveyor
-   :members:
 
 .. vim: sw=4:et:ai
