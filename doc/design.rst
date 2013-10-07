@@ -1,8 +1,8 @@
 Design
 ======
 
-Core Calculation
-----------------
+Core Calculations
+-----------------
 The central class of DecoTengu library design is :class:`Engine
 <decotengu.Engine>` class (DecoTengu engine). It is used to start
 calculations and is responsible to pass data between various classes of

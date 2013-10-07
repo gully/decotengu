@@ -1,7 +1,7 @@
 Classes and Functions
 =====================
 
-Main API
+Core API
 --------
 .. fixme: we need to automate this!
 .. autosummary::
