@@ -21,6 +21,8 @@
 DecoTengu data flow procesing functions and coroutines.
 """
 
+from functools import wraps
+
 
 def coroutine(func):
     """
@@ -38,7 +40,7 @@ def coroutine(func):
 @coroutine
 def split(*tc):
     """
-    Coroutines to receive a value and send it to all coroutines specified
+    Coroutine to receive a value and send it to all coroutines specified
     in ``tc`` list.
 
     :param tc: List of target coroutines.
@@ -47,6 +49,20 @@ def split(*tc):
         v = yield
         for c in tc:
             c.send(v)
+
+
+
+def sender(f, target):
+    """
+    Decorate generator `f` to send data to coroutine `target`.
+    """
+    @wraps(f)
+    def _send(*a, **kw):
+        data = f(*a, **kw)
+        for v in data:
+            target.send(v)
+            yield v
+    return _send
 
 
 # vim: sw=4:et:ai
