@@ -18,11 +18,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+#
+# DecoTengu library support script.
+#
+
 import argparse
 import logging
 import re
 import sys
 
+#
+# Arguments parsing
+#
 
 class ValidateReplacement(argparse.Action):
     PARTS = {'tab', 'ascentjump', 'decostep'}
@@ -38,7 +45,6 @@ class ValidateReplacement(argparse.Action):
             raise argparse.ArgumentError(self,
                 'Invalid part replacement(s): {}'.format(s))
         setattr(args, self.dest, tuple(sorted(parts)))
-
 
 
 parser = argparse.ArgumentParser(description='DecoTengu 0.1.0.')
@@ -85,6 +91,10 @@ if args.verbose:
 else:
     logging.basicConfig(level=logging.WARN)
 
+#
+# Create DecoTengu objects and configure
+#
+
 import decotengu
 from decotengu.routines import AscentJumper, DecoStopStepper, FirstStopTabFinder
 #from decotengu.tab import TabTissueCalculator
@@ -130,6 +140,10 @@ if 'decostep' in args.parts:
     engine._deco_ascent = DecoStopStepper(engine)
 #engine._find_first_stop = FirstStopTabFinder()
 #engine.calc = TabTissueCalculator()
+
+#
+# Execute calculations and provide summary
+#
 
 f = sender(engine.calculate, *pipeline)
 data = f(args.depth, args.time)
