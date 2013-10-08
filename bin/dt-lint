@@ -96,8 +96,8 @@ else:
 #
 
 import decotengu
-from decotengu.routines import AscentJumper, DecoStopStepper, FirstStopTabFinder
-#from decotengu.tab import TabTissueCalculator
+from decotengu.alt.tab import TabTissueCalculator, FirstStopTabFinder
+from decotengu.alt.naive import AscentJumper, DecoStopStepper
 from decotengu.output import DiveStepInfoGenerator, csv_writer
 from decotengu.flow import sender
 

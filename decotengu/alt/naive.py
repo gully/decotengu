@@ -18,31 +18,31 @@
 #
 
 """
-Alternative implementations of various parts of DecoTengu's Engine class.
+Naive decompression code.
 
-The supported routines
+The implemented algorithms
 
 - ascent jump - go to next depth, then calculate tissue saturation for
   time, which would take to get from previous to next depth (can be used
   when trying to avoid Schreiner equation)
-- first stop tabular finder - search for first deco stop using tabular
-  tissue calculator
 - deco stop stepper - perform dive decompression using 1min intervals
 
+The algorithms are quite inefficient, usually O(n) while O(log(n))
+algorithm could be used. They are implemented in DecoTengu only for
+comparison purposes.
 """
 
 from functools import partial
 import logging
 
-from .engine import Phase
-from .ft import recurse_while, bisect_find
+from ..engine import Phase
 
-logger = logging.getLogger('decotengu.routines')
+logger = logging.getLogger(__name__)
 
 class AscentJumper(object):
     """
     Ascent by jumping (teleporting).
-    
+
     Simulate ascent by jumping to shallower depth and stay there for
     appropriate amount of time. The depth jump and time are determined by
     ascent rate, i.e. for 10m/min the depth jump is 10m and time is 1 minute.
@@ -63,6 +63,11 @@ class AscentJumper(object):
 
 
     def __call__(self, start, stop, gas):
+        """
+        Ascent from start to stop using specified gas mix.
+
+        .. seealso:: `decotengu.Engine._free_ascent`
+        """
         logger.debug('executing ascent jumper')
         engine = self.engine
         ascent_rate = engine.ascent_rate
@@ -87,96 +92,6 @@ class AscentJumper(object):
 
 
 
-class FirstStopTabFinder(object):
-    """
-    Find deco stop using tabular tissue calculator.
-
-    Using tabular tissue calculator allows to avoid usage of costly exp
-    function. Other mathematical functions like log or round are not used
-    as well.
-
-    Ascent rate is assumed to be 10m/min and non-configurable.
-
-    :var engine: DecoTengu decompression engine.
-    """
-    def __init__(self, engine):
-        """
-        Create tabular first deco stop finder.
-
-        :param engine: DecoTengu decompression engine.
-        """
-        self.engine = engine
-
-
-    def __call__(self, start, gas):
-        logger.debug('executing tabular first deco stop finder')
-
-        engine = self.engine
-        model = engine.model
-        ts_3m = engine._to_time(3, engine.ascent_rate)
-
-        logger.debug('tabular search: start at {}m, {}s'.format(start.depth,
-            start.time))
-
-        data = start.data
-        depth = int(start.depth / 3) * 3
-        t = int(start.depth - depth) * 6
-        time_start = start.time + t
-
-        if t > 0:
-            data = engine._tissue_pressure_ascent(start.pressure, t, gas, data)
-
-        logger.debug('tabular search: restart at {}m, {}s ({}s)'.format(depth,
-            time_start, t))
-
-        step = engine._step(Phase.ASCENT, start, depth, time_start, gas, data)
-
-        # ascent using max depth allowed by tabular calculator; use None to
-        # indicate that surface is hit
-        f_step = lambda step: None if step.depth == 0 else \
-                engine._step_next_ascent(
-                    step, min(model.calc.max_time, step.depth * 6), gas
-                )
-
-        # execute ascent invariant until surface is hit
-        f_inv = lambda step: step is not None and engine._inv_ascent(step)
-
-        # ascent until deco zone or surface is hit (but stay deeper than
-        # first deco stop)
-        step = recurse_while(f_inv, f_step, step)
-        if step.depth == 0:
-            return step
-
-        time_start = step.time
-        depth_start = step.depth
-
-        logger.debug('tabular search: at {}m, {}s'.format(depth_start, time_start))
-
-        # FIXME: copy of code from engine.py _find_first_stop
-        def f(k, step):
-            assert k <= len(model.calc._n2_exp_time)
-            return True if k == 0 else \
-                engine._inv_ascent(
-                    engine._step_next_ascent(step, k * ts_3m, gas)
-                )
-
-        # FIXME: len(model.calc._n2_exp_time) == model.calc.max_time / 6 so
-        #        make it nicer
-        n = len(model.calc._n2_exp_time)
-        k = bisect_find(n, f, step) # narrow first deco stop
-        assert k != n # k == n is not used as guarded by recurse_while above
-
-        if k > 0:
-            t = k * ts_3m
-            step = engine._step_next_ascent(step, t, gas)
-
-        logger.debug('tabular search: free from {} to {}, ascent time={}' \
-                .format(depth_start, step.depth, step.time - time_start))
-
-        return step
-
-
-
 class DecoStopStepper(object):
     """
     Perform dive decompression using 1min intervals.
@@ -197,6 +112,11 @@ class DecoStopStepper(object):
 
 
     def __call__(self, first_stop, depth, gas, gf_start, gf_step):
+        """
+        Perform dive decompression stop using 1min intervals.
+
+        .. seealso:: `decotengu.Engine._deco_ascent`
+        """
         logger.debug('executing deco stepper')
 
         engine = self.engine

@@ -18,15 +18,24 @@
 #
 
 """
-Tabular tissue calculator to calculate tissues gas loading using
-precomputed values of exp and ln functions.
+Tabular decompression calculations using precalculated values of `exp` and
+`log` functions.
+
+Implemented 
+
+- tabular tissue calculator, which uses precalculated values of `exp` and
+  `log` functions
+- first decompression stop finder - required when tabular tissue calculator
+  is used
 """
 
 import math
 import logging
 
-from .model import TissueCalculator
-from .const import WATER_VAPOUR_PRESSURE_DEFAULT
+from ..engine import Phase
+from ..model import TissueCalculator
+from ..const import WATER_VAPOUR_PRESSURE_DEFAULT
+from ..ft import recurse_while, bisect_find
 
 logger = logging.getLogger(__name__)
 
@@ -128,6 +137,96 @@ class TabTissueCalculator(TissueCalculator):
             texp = self._n2_exp_time[idx][tissue_no]
         p = eq_schreiner_t(abs_p, time, gas.n2 / 100, rate, pressure, hl, texp)
         return p
+
+
+
+class FirstStopTabFinder(object):
+    """
+    Find first decompression stop using tabular tissue calculator.
+
+    Using tabular tissue calculator allows to avoid usage of costly `exp`
+    function. Other mathematical functions like `log` or `round` are not
+    used as well.
+
+    Ascent rate is assumed to be 10m/min and non-configurable.
+
+    :var engine: DecoTengu decompression engine.
+    """
+    def __init__(self, engine):
+        """
+        Create tabular first deco stop finder.
+
+        :param engine: DecoTengu decompression engine.
+        """
+        self.engine = engine
+
+
+    def __call__(self, start, gas):
+        logger.debug('executing tabular first deco stop finder')
+
+        engine = self.engine
+        model = engine.model
+        ts_3m = engine._to_time(3, engine.ascent_rate)
+
+        logger.debug('tabular search: start at {}m, {}s'.format(start.depth,
+            start.time))
+
+        data = start.data
+        depth = int(start.depth / 3) * 3
+        t = int(start.depth - depth) * 6
+        time_start = start.time + t
+
+        if t > 0:
+            data = engine._tissue_pressure_ascent(start.pressure, t, gas, data)
+
+        logger.debug('tabular search: restart at {}m, {}s ({}s)'.format(depth,
+            time_start, t))
+
+        step = engine._step(Phase.ASCENT, start, depth, time_start, gas, data)
+
+        # ascent using max depth allowed by tabular calculator; use None to
+        # indicate that surface is hit
+        f_step = lambda step: None if step.depth == 0 else \
+                engine._step_next_ascent(
+                    step, min(model.calc.max_time, step.depth * 6), gas
+                )
+
+        # execute ascent invariant until surface is hit
+        f_inv = lambda step: step is not None and engine._inv_ascent(step)
+
+        # ascent until deco zone or surface is hit (but stay deeper than
+        # first deco stop)
+        step = recurse_while(f_inv, f_step, step)
+        if step.depth == 0:
+            return step
+
+        time_start = step.time
+        depth_start = step.depth
+
+        logger.debug('tabular search: at {}m, {}s'.format(depth_start, time_start))
+
+        # FIXME: copy of code from engine.py _find_first_stop
+        def f(k, step):
+            assert k <= len(model.calc._n2_exp_time)
+            return True if k == 0 else \
+                engine._inv_ascent(
+                    engine._step_next_ascent(step, k * ts_3m, gas)
+                )
+
+        # FIXME: len(model.calc._n2_exp_time) == model.calc.max_time / 6 so
+        #        make it nicer
+        n = len(model.calc._n2_exp_time)
+        k = bisect_find(n, f, step) # narrow first deco stop
+        assert k != n # k == n is not used as guarded by recurse_while above
+
+        if k > 0:
+            t = k * ts_3m
+            step = engine._step_next_ascent(step, t, gas)
+
+        logger.debug('tabular search: free from {} to {}, ascent time={}' \
+                .format(depth_start, step.depth, step.time - time_start))
+
+        return step
 
 
 # vim: sw=4:et:ai

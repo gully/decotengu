@@ -17,35 +17,4 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-"""
-Deco stop stepper integration tests.
-"""
-
-from decotengu import create
-from decotengu.alt.naive import DecoStopStepper
-
-import unittest
-
-class DecoStepperTestCase(unittest.TestCase):
-    """
-    Deco stop stepper integration tests.
-    """
-    def test_deco_stepper(self):
-        """
-        Test deco stop stepper with DecoTengu deco engine
-        """
-        engine, dt = create()
-        engine._deco_ascent = DecoStopStepper(engine)
-        engine.model.gf_low = 0.2
-        engine.model.gf_high = 0.9
-        engine.add_gas(0, 27)
-        engine.add_gas(22, 50)
-        engine.add_gas(6, 100)
-
-        data = list(engine.calculate(40, 35))
-
-        self.assertEquals(7, len(dt.stops))
-        self.assertEquals(16, dt.total)
-
-
 # vim: sw=4:et:ai

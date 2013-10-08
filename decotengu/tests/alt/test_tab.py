@@ -18,14 +18,12 @@
 #
 
 """
-Tests for alternative implementations of various parts of DecoTengu's
-Engine class.
+Tabular tissue calculator tests.
 """
 
-from decotengu.engine import Engine, Phase, Step, GasMix
-from decotengu.model import Data
-from decotengu.tab import TabTissueCalculator
-from decotengu.routines import AscentJumper, FirstStopTabFinder, DecoStopStepper
+from decotengu.alt.tab import eq_schreiner_t, TabTissueCalculator, FirstStopTabFinder
+from decotengu.model import ZH_L16B_GF, ZH_L16C_GF, Data
+from decotengu.engine import Engine, GasMix, Phase, Step
 
 import unittest
 from unittest import mock
@@ -42,26 +40,83 @@ def _step(phase, depth, time, gas=AIR, prev=None, data=None):
     return step
 
 
-class AscentJumperTestCase(unittest.TestCase):
+class SchreinerTabularEquationTestCase(unittest.TestCase):
     """
-    Ascent jumper tests.
+    Schreiner equation tests.
     """
-    def test_ascent_jumper(self):
+    def test_air_ascent(self):
         """
-        Test ascent jumper between 30m and 5m
+        Test Schreiner equation (tabular) - ascent 10m on air
         """
-        engine = Engine()
-        engine.conveyor.time_delta = 60 # FIXME: this should be automatic
-        engine._free_ascent = AscentJumper(engine)
+        # ascent, so rate == -1 bar/min
+        v = eq_schreiner_t(4, 60, 0.79, -1, 3, 5.0, 0.8705505632961241)
+        self.assertAlmostEqual(2.96198, v, 4)
 
-        data = None
-        start = _step(Phase.ASCENT, 30, 1200, data=data)
-        stop = _step(Phase.ASCENT, 5, 1200 + 120, data=data)
-        steps = list(engine._free_ascent(start, stop, AIR))
-        self.assertEquals(2, len(steps))
-        self.assertEquals([20.0, 10.0], [s.depth for s in steps])
-        self.assertEquals([1200 + 60, 1200 + 120], [s.time for s in steps])
 
+    def test_air_descent(self):
+        """
+        Test Schreiner equation (tabular) - descent 10m on air
+        """
+        # rate == 1 bar/min
+        v = eq_schreiner_t(4, 60, 0.79, 1, 3, 5.0, 0.8705505632961241)
+        self.assertAlmostEqual(3.06661, v, 4)
+
+
+
+class TabularTissueCalculatorTestCase(unittest.TestCase):
+    """
+    Tabular tissue calculator.
+    """
+    @mock.patch('decotengu.alt.tab.eq_schreiner_t')
+    def test_tissue_load_24m(self, f):
+        """
+        Test tabular tissue calculator tissue gas loading (>= 3m)
+        """
+        f.return_value = 2
+        m = ZH_L16B_GF()
+        c = TabTissueCalculator(m.N2_HALF_LIFE, m.HE_HALF_LIFE)
+        v = c.load_tissue(4, 144, AIR, -1, 3, 1)
+        f.assert_called_once_with(4, 144, 0.79, -1, 3, 8.0, 0.8122523963562355)
+        self.assertEquals(2, v)
+
+
+    @mock.patch('decotengu.alt.tab.eq_schreiner_t')
+    def test_tissue_load_6m(self, f):
+        """
+        Test tabular tissue calculator tissue gas loading (1m)
+        """
+        f.return_value = 2
+        m = ZH_L16B_GF()
+        c = TabTissueCalculator(m.N2_HALF_LIFE, m.HE_HALF_LIFE)
+        v = c.load_tissue(4, 6, AIR, -1, 3, 1)
+        f.assert_called_once_with(4, 6, 0.79, -1, 3, 8.0, 0.9913730874626621)
+        self.assertEquals(2, v)
+
+
+    @mock.patch('decotengu.alt.tab.eq_schreiner_t')
+    def test_tissue_load_2m(self, f):
+        """
+        Test tabular tissue calculator tissue gas loading (2m)
+        """
+        f.return_value = 2
+        m = ZH_L16B_GF()
+        c = TabTissueCalculator(m.N2_HALF_LIFE, m.HE_HALF_LIFE)
+        v = c.load_tissue(4, 12, AIR, -1, 3, 1)
+        f.assert_called_once_with(4, 12, 0.79, -1, 3, 8.0, 0.9828205985452511)
+        self.assertEquals(2, v)
+
+
+    @mock.patch('decotengu.alt.tab.eq_schreiner_t')
+    def test_tissue_load_10m(self, f):
+        """
+        Test tabular tissue calculator tissue gas loading (10m)
+        """
+        f.return_value = 2
+        m = ZH_L16B_GF()
+        c = TabTissueCalculator(m.N2_HALF_LIFE, m.HE_HALF_LIFE)
+        v = c.load_tissue(4, 60, AIR, -1, 3, 1)
+        f.assert_called_once_with(4, 60, 0.79, -1, 3, 8.0, 0.9170040432046712)
+        self.assertEquals(2, v)
 
 
 
@@ -76,8 +131,8 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         engine._find_first_stop = FirstStopTabFinder(engine)
 
 
-    @mock.patch('decotengu.routines.recurse_while')
-    @mock.patch('decotengu.routines.bisect_find')
+    @mock.patch('decotengu.alt.tab.recurse_while')
+    @mock.patch('decotengu.alt.tab.bisect_find')
     def test_level_from_30m(self, f_bf, f_rw):
         """
         Test first stop tabular finder leveling at multiply of 3m (from 30m)
@@ -109,8 +164,8 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         self.engine._step_next_ascent.assert_called_once_with(step, 36, AIR)
 
 
-    @mock.patch('decotengu.routines.recurse_while')
-    @mock.patch('decotengu.routines.bisect_find')
+    @mock.patch('decotengu.alt.tab.recurse_while')
+    @mock.patch('decotengu.alt.tab.bisect_find')
     def test_level_from_29m(self, f_bf, f_rw):
         """
         Test first stop tabular finder levelling at multiply of 3m (from 29m)
@@ -143,8 +198,8 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         self.engine._step_next_ascent.assert_called_once_with(step, 36, AIR)
 
 
-    @mock.patch('decotengu.routines.recurse_while')
-    @mock.patch('decotengu.routines.bisect_find')
+    @mock.patch('decotengu.alt.tab.recurse_while')
+    @mock.patch('decotengu.alt.tab.bisect_find')
     def test_in_deco(self, f_bf, f_rw):
         """
         Test first stop tabular finder when in deco already
@@ -169,7 +224,7 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         self.assertTrue(f_bf.called)
 
 
-    @mock.patch('decotengu.routines.recurse_while')
+    @mock.patch('decotengu.alt.tab.recurse_while')
     def test_bisect_proper(self, f_rw):
         """
         Test first stop tabular finder proper usage of binary search
@@ -209,78 +264,6 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         stop = self.engine._find_first_stop(start, AIR)
         self.assertEquals(0, stop.depth)
         self.assertEquals(1380, stop.time)
-
-
-
-class DecoStopStepperTestCase(unittest.TestCase):
-    """
-    Decompression stepper tests.
-    """
-    def test_stepper(self):
-        """
-        Test decompression stepper
-        """
-        engine = Engine()
-        engine.gf_low = 0.30
-        engine.gf_high = 0.85
-        engine.surface_pressure = 1
-        engine._deco_ascent = DecoStopStepper(engine)
-
-        data = Data([2.8, 2.8], 0.3)
-        first_stop = _step(Phase.ASCENT, 9, 1200, data=data)
-        gf_step = 0.18333333333333335
-        steps = list(engine._deco_ascent(first_stop, 0, AIR, 0.3, gf_step))
-
-        # 5min of deco plus 3 steps for ascent between stops
-        self.assertEquals(8, len(steps))
-
-        self.assertEquals(9, steps[0].depth)
-        self.assertEquals('decostop', steps[0].phase)
-        self.assertAlmostEquals(0.30, steps[0].data.gf)
-        self.assertEquals(3, steps[-2].depth)
-        self.assertEquals('decostop', steps[-2].phase)
-        self.assertEquals(0, steps[-1].depth)
-        self.assertEquals('ascent', steps[-1].phase)
-        self.assertAlmostEquals(0.85, steps[-1].data.gf)
-
-        # stops at 9m, 6m and 3m and include last step at 0m
-        self.assertEquals(4, len(set(s.depth for s in steps)))
-
-
-    def test_stepper_depth(self):
-        """
-        Test decompression stepper with depth limit
-        """
-        engine = Engine()
-        engine.gf_low = 0.30
-        engine.gf_high = 0.85
-        engine.surface_pressure = 1
-        engine.conveyor.time_delta = None
-        engine._deco_ascent = DecoStopStepper(engine)
-        pressure = engine._to_pressure
-
-        data = Data([2.5] * 3, 0.3)
-        first_stop = _step(Phase.ASCENT, 15, 1200, data=data)
-
-        steps = list(engine._deco_ascent(first_stop, 7, AIR, 0.3, 0.11))
-        self.assertEquals(6, len(steps))
-
-        self.assertEquals(15, steps[0].depth)
-        self.assertEquals(1260, steps[0].time)
-        self.assertEquals(0.30, steps[0].data.gf)
-
-        self.assertEquals(12, steps[1].depth)
-        self.assertEquals(1278, steps[1].time)
-        self.assertEquals(12, steps[2].depth)
-        self.assertEquals(1338, steps[2].time)
-
-        self.assertEquals(9, steps[4].depth)
-        self.assertEquals(1416, steps[4].time)
-
-        # last stop at 6m due to depth limit
-        self.assertEquals(6, steps[5].depth)
-        self.assertEquals(1434, steps[5].time)
-        self.assertEquals(0.63, steps[5].data.gf)
 
 
 # vim: sw=4:et:ai
