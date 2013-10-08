@@ -50,7 +50,18 @@ class AscentJumper(DecoRoutine):
     Such ascent simulation allows to avoid Schreiner equation, but is less
     accurate. The longer depth jump, the less accuracy. Do not use for
     ascents faster than 10m/min.
+
+    :var engine: DecoTengu decompression engine.
     """
+    def __init__(self, engine):
+        """
+        Create ascent jumper object.
+
+        :param engine: DecoTengu decompression engine.
+        """
+        self.engine = engine
+
+
     def __call__(self, start, stop, gas):
         engine = self.engine
         ascent_rate = engine.ascent_rate
@@ -84,7 +95,18 @@ class FirstStopTabFinder(DecoRoutine):
     as well.
 
     Ascent rate is assumed to be 10m/min and non-configurable.
+
+    :var engine: DecoTengu decompression engine.
     """
+    def __init__(self, engine):
+        """
+        Create tabular first deco stop finder.
+
+        :param engine: DecoTengu decompression engine.
+        """
+        self.engine = engine
+
+
     def __call__(self, start, gas):
         engine = self.engine
         model = engine.model
@@ -159,7 +181,18 @@ class DecoStopStepper(DecoRoutine):
     The algorithm is quite inefficient, but is used by some of the
     implementations, so the deco stop stepper is created for comparison
     purposes.
+
+    :var engine: DecoTengu decompression engine.
     """
+    def __init__(self, engine):
+        """
+        Create deco stop stepper object.
+
+        :param engine: DecoTengu decompression engine.
+        """
+        self.engine = engine
+
+
     def __call__(self, first_stop, depth, gas, gf_start, gf_step):
         engine = self.engine
         ts_3m = engine._to_time(3, engine.ascent_rate)

@@ -35,7 +35,7 @@ class DecoStepperTestCase(unittest.TestCase):
         Test deco stop stepper with DecoTengu deco engine
         """
         engine, dt = create()
-        engine._deco_ascent = DecoStopStepper()
+        engine._deco_ascent = DecoStopStepper(engine)
         engine.model.gf_low = 0.2
         engine.model.gf_high = 0.9
         engine.add_gas(0, 27)

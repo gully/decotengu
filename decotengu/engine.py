@@ -135,14 +135,6 @@ class Engine(object):
     :var conveyor: Conveyor used to divide dive into multiple steps.
     :var _gas_list: List of gas mixes.
     """
-    PARTS = {
-        '_deco_ascent',
-        '_dive_const',
-        '_dive_descent',
-        '_find_first_stop',
-        '_free_ascent',
-    }
-
     def __init__(self):
         super().__init__()
         self.model = ZH_L16B_GF()
@@ -527,13 +519,6 @@ class Engine(object):
             ts_3m = self._to_time(3, self.ascent_rate)
             step = self._step_next_ascent(step, ts_3m, gas, gf + gf_step)
             yield step
-
-
-    def __setattr__(self, attr, value):
-        if attr in self.PARTS:
-            logger.debug('part "{}" override with "{}"'.format(attr, value))
-            value.engine = self
-        super().__setattr__(attr, value)
 
 
     def add_gas(self, depth, o2):

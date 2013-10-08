@@ -52,7 +52,7 @@ class AscentJumperTestCase(unittest.TestCase):
         """
         engine = Engine()
         engine.conveyor.time_delta = 60 # FIXME: this should be automatic
-        engine._free_ascent = AscentJumper()
+        engine._free_ascent = AscentJumper(engine)
 
         data = None
         start = _step(Phase.ASCENT, 30, 1200, data=data)
@@ -73,7 +73,7 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         self.engine = engine = Engine()
         m = engine.model
         m.calc = TabTissueCalculator(m.N2_HALF_LIFE, m.HE_HALF_LIFE)
-        engine._find_first_stop = FirstStopTabFinder()
+        engine._find_first_stop = FirstStopTabFinder(engine)
 
 
     @mock.patch('decotengu.routines.recurse_while')
@@ -224,7 +224,7 @@ class DecoStopStepperTestCase(unittest.TestCase):
         engine.gf_low = 0.30
         engine.gf_high = 0.85
         engine.surface_pressure = 1
-        engine._deco_ascent = DecoStopStepper()
+        engine._deco_ascent = DecoStopStepper(engine)
 
         data = Data([2.8, 2.8], 0.3)
         first_stop = _step(Phase.ASCENT, 9, 1200, data=data)
@@ -256,7 +256,7 @@ class DecoStopStepperTestCase(unittest.TestCase):
         engine.gf_high = 0.85
         engine.surface_pressure = 1
         engine.conveyor.time_delta = None
-        engine._deco_ascent = DecoStopStepper()
+        engine._deco_ascent = DecoStopStepper(engine)
         pressure = engine._to_pressure
 
         data = Data([2.5] * 3, 0.3)
