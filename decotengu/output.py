@@ -18,29 +18,26 @@
 #
 
 """
-DecoTengu basic mods.
+DecoTengu rich output classes, functions and coroutines.
 
-DecoTengu mods allow to enhance DecoTengu engine calculations. Currently
-supported mods are
+The implemented coroutines
 
-- decompression table to summarize required decompression stops
 - convert dive step into rich dive information records
 - saving rich dive information records in CSV file
-- dive step tissue pressure validator
-
-More mods can be implemented, i.e. to calculate CNS or to track PPO2.
 """
 
-from collections import OrderedDict
-import math
 import csv
 import logging
+from collections import namedtuple
 
-from .engine import DecoStop, InfoTissue, InfoSample
 from .flow import coroutine
 
 logger = logging.getLogger(__name__)
 
+
+# InfoSample [1] --> [16] tissues: InfoTissue
+InfoSample = namedtuple('InfoSample', 'depth time pressure gas tissues phase')
+InfoTissue = namedtuple('InfoTissue', 'no pressure limit gf gf_limit')
 
 
 class DiveStepInfoGenerator(object):
@@ -90,7 +87,7 @@ class DiveStepInfoGenerator(object):
 
 
 @coroutine
-def info_csv_writer(f, target=None):
+def csv_writer(f, target=None):
     """
     Write rich dive information records into a CSV file.
 

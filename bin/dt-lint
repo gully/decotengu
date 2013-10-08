@@ -88,7 +88,7 @@ else:
 import decotengu
 from decotengu.routines import AscentJumper, DecoStopStepper, FirstStopTabFinder
 #from decotengu.tab import TabTissueCalculator
-from decotengu.mod import DiveStepInfoGenerator, info_csv_writer
+from decotengu.output import DiveStepInfoGenerator, csv_writer
 from decotengu.flow import sender
 
 engine, deco_table = decotengu.create(time_delta=args.time_delta)
@@ -96,7 +96,7 @@ pipeline = []
 
 if args.tissue_file:
     f = open(args.tissue_file, 'w')
-    csv_writer = info_csv_writer(f)
+    csv_writer = csv_writer(f)
     info = DiveStepInfoGenerator(engine, csv_writer)
     pipeline.append(info)
 

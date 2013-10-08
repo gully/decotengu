@@ -39,10 +39,6 @@ EPSILON = 10 ** -10
 
 logger = logging.getLogger('decotengu.engine')
 
-# InfoSample [1] --> [16] tissues: InfoTissue
-InfoSample = namedtuple('InfoSample', 'depth time pressure gas tissues phase')
-InfoTissue = namedtuple('InfoTissue', 'no pressure limit gf gf_limit')
-
 class Phase(object):
     """
     Dive phase enumeration.

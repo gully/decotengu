@@ -18,14 +18,14 @@
 #
 
 """
-Tests for basic DecoTengu mods.
+Tests for DecoTengu output classes, functions and coroutines.
 """
 
 import io
 
-from decotengu.engine import Engine, Phase, Step, GasMix, \
+from decotengu.engine import Engine, Phase, Step, GasMix
+from decotengu.output import DiveStepInfoGenerator, csv_writer, \
         InfoSample, InfoTissue
-from decotengu.mod import DiveStepInfoGenerator, info_csv_writer
 from decotengu.model import ZH_L16B_GF, Data
 from decotengu.flow import coroutine
 
@@ -114,7 +114,7 @@ class CSVWriterTestCase(unittest.TestCase):
             ], 'const'),
         ]
 
-        writer = info_csv_writer(f)
+        writer = csv_writer(f)
         for i in data:
             writer.send(i)
 
