@@ -34,9 +34,13 @@ More mods can be implemented, i.e. to calculate CNS or to track PPO2.
 from collections import OrderedDict
 import math
 import csv
+import logging
 
 from .engine import DecoStop, InfoTissue, InfoSample, EngineError
 from .flow import coroutine
+
+logger = logging.getLogger(__name__)
+
 
 class DecoTable(object):
     """
@@ -91,30 +95,50 @@ class DecoTable(object):
 
 
 
-@coroutine
-def dive_step_info(model, target):
+class DiveStepInfoGenerator(object):
     """
-    Coroutine to convert dive step into rich dive information records.
+    Coroutine class to convert dive step into rich dive information
+    records.
 
-    :param model: Decompression model instance.
-    :param target: Coroutine to send dive information records to.
+    Create coroutine object, then call it to start the coroutine.
+
+    :var engine: DecoTengu decompression engine.
+    :var target: Coroutine to send dive information records to.
     """
-    while True:
-        step = yield
-        gf_low = step.data.gf
-        data = step.data
-        phase = step.phase
+    def __init__(self, engine, target):
+        """
+        Create the coroutine object.
 
-        tl = model.gf_limit(gf_low, data)
-        tm = model.gf_limit(1, data)
+        :param engine: DecoTengu decompression engine.
+        :param target: Coroutine to send dive information records to.
+        """
+        self.engine = engine
+        self.target = target
 
-        tissues = tuple(InfoTissue(k, p, l, data.gf, gf)
+
+    @coroutine
+    def __call__(self):
+        """
+        Start the coroutine.
+        """
+        model = self.engine.model
+        target = self.target
+        while True:
+            step = yield
+            gf_low = step.data.gf
+            data = step.data
+            phase = step.phase
+
+            tl = model.gf_limit(gf_low, data)
+            tm = model.gf_limit(1, data)
+
+            tissues = tuple(InfoTissue(k, p, l, data.gf, gf)
                 for k, (p, l, gf) in enumerate(zip(data.tissues, tm, tl), 1))
-        sample = InfoSample(
+            sample = InfoSample(
                 step.depth, step.time, step.pressure, step.gas, tissues, phase
-        )
+            )
 
-        target.send(sample)
+            target.send(sample)
 
 
 @coroutine
@@ -149,23 +173,40 @@ def info_csv_writer(f, target=None):
             target.send(sample)
 
 
-@coroutine
-def tissue_pressure_validator(engine):
+class DecoModelValidator(object):
     """
-    Dive step tissue pressure validator.
+    Dive step tissue pressure validator (coroutine class).
 
     The validator verifies that maximum allowed tissue pressure of a dive
     step is not over pressure limit.
 
-    :param engine: DecoTengu engine object.
-    """
-    while True:
-        step = yield
+    Create coroutine object, then call it to start the coroutine.
 
-        limit = engine.model.pressure_limit(step.data, step.data.gf)
-        if step.pressure < limit: # ok when step.pressure >= limit
-            raise EngineError('Tissue pressure validation error at {}' \
-                    ' (limit={})'.format(step, limit))
+    :var engine: DecoTengu decompression engine.
+    """
+    def __init__(self, engine):
+        """
+        Create coroutine object.
+
+        :param engine: DecoTengu decompression engine.
+        """
+        self.engine = engine
+
+
+    @coroutine
+    def __call__(self):
+        """
+        Start the coroutine.
+        """
+        logger.debug('started deco model validator')
+        engine = self.engine
+        while True:
+            step = yield
+
+            limit = engine.model.pressure_limit(step.data, step.data.gf)
+            if step.pressure < limit: # ok when step.pressure >= limit
+                raise EngineError('Tissue pressure validation error at {}' \
+                        ' (limit={})'.format(step, limit))
 
 
 # vim: sw=4:et:ai

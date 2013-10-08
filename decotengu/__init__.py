@@ -35,7 +35,7 @@ minutes::
     >>> import decotengu
     >>> engine, deco_table = decotengu.create()
     >>> engine.add_gas(0, 21)
-    >>> profile = engine.calculate(35, 40, deco_table())
+    >>> profile = engine.calculate(35, 40)
 
 The :func:`DecoTengu engine calculation <Engine.calculate>` function returns
 an iterator with dive profile steps::
@@ -86,7 +86,7 @@ The default decompression model used by DecoTengu library is Buhlmann's
 We can switch to ZH-L16C-GF decompression model easily::
 
     >>> engine.model = decotengu.ZH_L16C_GF()
-    >>> profile = engine.calculate(35, 40, deco_table())
+    >>> profile = engine.calculate(35, 40)
     >>> list(profile)            # doctest:+ELLIPSIS
     [Step...]
     >>> deco_table.total
@@ -106,7 +106,7 @@ attributes::
     <decotengu.model.ZH_L16C_GF object at ...>
     >>> engine.model.gf_low = 0.2    # vs. 0.30 - first stop deeper
     >>> engine.model.gf_high = 0.90  # vs. 0.85 - last stop shorter
-    >>> profile = engine.calculate(35, 40, deco_table())
+    >>> profile = engine.calculate(35, 40)
     >>> list(profile)            # doctest:+ELLIPSIS
     [Step...]
     >>> deco_table.total
@@ -118,14 +118,17 @@ attributes::
 
 """
 
+from functools import wraps
+
 from .engine import Engine
-from .mod import DecoTable
+from .mod import DecoTable, DecoModelValidator
 from .model import ZH_L16B_GF, ZH_L16C_GF
+from .flow import sender
 
 __version__ = '0.1.0'
 
 
-def create(time_delta=None):
+def create(time_delta=None, validate=True):
     """
     Create decompression engine with decompression table.
 
@@ -134,16 +137,24 @@ def create(time_delta=None):
     >>> import decotengu
     >>> engine, dt = decotengu.create()
     >>> engine.add_gas(0, 21)
-    >>> data = list(engine.calculate(35, 40, dt()))
+    >>> data = list(engine.calculate(35, 40))
     >>> dt.total
     48
 
     :param time_delta: Time between dive steps.
+    :param validate: Validate decompression data with decompression model
+                     validator.
     """
     engine = Engine()
     engine.conveyor.time_delta = time_delta
 
     dt = DecoTable()
+
+    pipeline = [dt]
+    if validate:
+        pipeline.append(DecoModelValidator(engine))
+
+    engine.calculate = sender(engine.calculate, *pipeline)
 
     return engine, dt
 

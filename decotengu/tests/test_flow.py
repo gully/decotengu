@@ -43,7 +43,7 @@ class SenderTestCase(unittest.TestCase):
                 v = yield
                 data.append(v)
 
-        fd = sender(f, printer())
+        fd = sender(f, printer)
         result = list(fd(3))
         self.assertEquals([0, 1, 2], result)
         self.assertEquals([0, 1, 2], data)

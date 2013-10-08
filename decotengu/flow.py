@@ -41,7 +41,7 @@ def coroutine(func):
 def split(*tc):
     """
     Coroutine to receive a value and send it to all coroutines specified
-    in ``tc`` list.
+    by ``tc`` list.
 
     :param tc: List of target coroutines.
     """
@@ -51,16 +51,23 @@ def split(*tc):
             c.send(v)
 
 
+def sender(gen, *tf):
+    """
+    Decorate generator `gen` to send all its data to coroutines started by
+    functions specified by `tf` list.
 
-def sender(f, target):
+    The `tf` is list of functions - each function is called to create
+    a coroutine when generator is started.
+
+    :param gen: Data generator.
+    :param *tf: List of functions.
     """
-    Decorate generator `f` to send data to coroutine `target`.
-    """
-    @wraps(f)
+    @wraps(gen)
     def _send(*a, **kw):
-        data = f(*a, **kw)
+        t = split(*[c() for c in tf])
+        data = gen(*a, **kw)
         for v in data:
-            target.send(v)
+            t.send(v)
             yield v
     return _send
 

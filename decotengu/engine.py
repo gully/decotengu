@@ -563,7 +563,7 @@ class Engine(object):
         self._gas_list.append(GasMix(depth, o2, 100 - o2, 0))
 
 
-    def calculate(self, depth, time, *mods):
+    def calculate(self, depth, time):
         """
         Start dive calculations for specified dive depth and bottom time.
 
@@ -571,7 +571,6 @@ class Engine(object):
 
         :param depth: Maximum depth [m].
         :param time: Bottom time [min].
-        :param mods: Collection of decompression engine mods.
         """
         time_delta = self.conveyor.time_delta
         if time_delta is not None:
@@ -588,16 +587,12 @@ class Engine(object):
         if len(self._gas_list) == 0:
             raise ConfigError('No gas mixes configured')
 
-        sink = split(*mods)
-
         gas = self._gas_list[0]
 
         for step in self._dive_descent(depth, gas):
-            sink.send(step)
             yield step
 
         for step in self._dive_const(step, time * 60, gas):
-            sink.send(step)
             yield step
 
         # (switch depth, gas) -> (destination depth, gas)
@@ -625,7 +620,6 @@ class Engine(object):
             if abs(stop.depth - step.depth) > EPSILON:
                 assert step.depth > stop.depth
                 for step in self._free_ascent(step, stop, gas):
-                    sink.send(step)
                     yield step
                 assert abs(step.depth - stop.depth) < EPSILON, (step.depth, depth)
 
@@ -642,7 +636,6 @@ class Engine(object):
             for depth, gas in depths[k:]:
                 gf = self.model.gf_low + (first_stop - step.depth) / 3 * gf_step
                 for step in self._deco_ascent(step, depth, gas, gf, gf_step): 
-                    sink.send(step)
                     yield step
             logger.debug('deco engine: gf at surface={:.4f}'.format(step.data.gf))
 

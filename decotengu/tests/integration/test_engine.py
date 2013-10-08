@@ -24,7 +24,6 @@ DecoTengu engine integration tests.
 import itertools
 
 from decotengu import create
-from decotengu.mod import tissue_pressure_validator
 
 import unittest
 
@@ -45,9 +44,7 @@ class EngineTestCase(unittest.TestCase):
             engine.add_gas(24, 50)
             engine.add_gas(6, 100)
 
-            validator = tissue_pressure_validator(engine)
-
-            data = list(engine.calculate(40, 35, dt(), validator))
+            data = list(engine.calculate(40, 35))
 
             self.assertEquals(7, len(dt.stops))
             self.assertEquals(16, dt.total)
@@ -71,9 +68,7 @@ class EngineTestCase(unittest.TestCase):
             engine.add_gas(depth, 50)
             engine.add_gas(6, 100)
 
-            validator = tissue_pressure_validator(engine)
-
-            data = list(engine.calculate(40, 35, dt(), validator))
+            data = list(engine.calculate(40, 35))
 
             self.assertEquals(8, len(dt.stops), dt.stops)
             self.assertEquals(times[depth], dt.total)
