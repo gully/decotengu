@@ -67,12 +67,15 @@ parser.add_argument(
 )
 #parser.add_argument('--no-descent', '-nd', dest='descent',
 #        default=True, type=bool, help='decompression model')
-parser.add_argument('--tissue-file', '-f', dest='tissue_file',
-        default=None, type=str, help='tissue saturation data output file')
-parser.add_argument('--replace-parts', '-r', dest='parts',
-        default=(), type=str, action=ValidateReplacement,
-        help='list of alternative implementations to be used: tab,' \
-            ' ascentjump, decostep')
+parser.add_argument(
+    '--tissue-file', '-f', dest='tissue_file',
+    default=None, type=str, help='tissue saturation data output file'
+)
+parser.add_argument(
+    '--use', dest='parts',
+    default=(), type=str, action=ValidateReplacement,
+    help='list of alternative implementations to be used: ascentjump, decostep'
+)
 parser.add_argument('depth', type=int, help='dive maximum depth [meter]')
 parser.add_argument('time', type=int, help='dive time [minute]')
 args = parser.parse_args()
@@ -122,9 +125,9 @@ else:
     engine.add_gas(0, 21)
 
 if 'ascentjump' in args.parts:
-    engine._free_ascent = AscentJumper()
+    engine._free_ascent = AscentJumper(engine)
 if 'decostep' in args.parts:
-    engine._deco_ascent = DecoStopStepper()
+    engine._deco_ascent = DecoStopStepper(engine)
 #engine._find_first_stop = FirstStopTabFinder()
 #engine.calc = TabTissueCalculator()
 

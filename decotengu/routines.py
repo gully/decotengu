@@ -63,6 +63,7 @@ class AscentJumper(DecoRoutine):
 
 
     def __call__(self, start, stop, gas):
+        logger.debug('executing ascent jumper')
         engine = self.engine
         ascent_rate = engine.ascent_rate
         model = engine.model
@@ -108,6 +109,8 @@ class FirstStopTabFinder(DecoRoutine):
 
 
     def __call__(self, start, gas):
+        logger.debug('executing tabular first deco stop finder')
+
         engine = self.engine
         model = engine.model
         ts_3m = engine._to_time(3, engine.ascent_rate)
@@ -194,6 +197,8 @@ class DecoStopStepper(DecoRoutine):
 
 
     def __call__(self, first_stop, depth, gas, gf_start, gf_step):
+        logger.debug('executing deco stepper')
+
         engine = self.engine
         ts_3m = engine._to_time(3, engine.ascent_rate)
         step = first_stop
