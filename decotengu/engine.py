@@ -24,14 +24,14 @@ DecoTengu dive decompression engine.
 """
 
 from functools import partial
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 import math
 import logging
 
 from .model import ZH_L16B_GF
 from .conveyor import Conveyor
 from .ft import recurse_while, bisect_find
-from .flow import split
+from .flow import coroutine
 from .const import METER_TO_BAR
 
 EPSILON = 10 ** -10
@@ -623,6 +623,61 @@ class Engine(object):
                 for step in self._deco_ascent(step, depth, gas, gf, gf_step): 
                     yield step
             logger.debug('deco engine: gf at surface={:.4f}'.format(step.data.gf))
+
+
+class DecoTable(object):
+    """
+    Decompression table summary.
+
+    The class is coroutine class - Create coroutine object, then call it to
+    start the coroutine.
+
+    The decompression stops time is in minutes.
+    """
+    def __init__(self):
+        """
+        Create decompression table summary.
+        """
+        self._stops = OrderedDict()
+
+
+    @property
+    def total(self):
+        """
+        Total decompression time.
+        """
+        return sum(s.time for s in self.stops)
+
+
+    @property
+    def stops(self):
+        """
+        List of decompression stops.
+        """
+        times = (math.ceil((s[1] - s[0]) / 60) for s in self._stops.values())
+        stops = [DecoStop(d, t) for d, t in zip(self._stops, times) if t > 0]
+
+        assert all(s.time > 0 for s in stops)
+        assert all(s.depth > 0 for s in stops)
+
+        return stops
+
+
+    @coroutine
+    def __call__(self):
+        """
+        Create decompression table coroutine to gather decompression stops
+        information.
+        """
+        stops = self._stops = OrderedDict()
+        while True:
+            step = yield
+            if step.phase == 'decostop':
+                depth = step.depth
+                if depth in stops:
+                    stops[depth][1] = step.time
+                else:
+                    stops[depth] = [step.prev.time, step.time]
 
 
 # vim: sw=4:et:ai

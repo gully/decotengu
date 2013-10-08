@@ -120,8 +120,8 @@ attributes::
 
 from functools import wraps
 
-from .engine import Engine
-from .mod import DecoTable, DecoModelValidator
+from .engine import Engine, DecoTable
+from .mod import DecoModelValidator
 from .model import ZH_L16B_GF, ZH_L16C_GF
 from .flow import sender
 

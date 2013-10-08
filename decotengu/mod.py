@@ -42,58 +42,6 @@ from .flow import coroutine
 logger = logging.getLogger(__name__)
 
 
-class DecoTable(object):
-    """
-    Decompression table summary.
-
-    The decompression stops time is in minutes.
-    """
-    def __init__(self):
-        """
-        Create decompression table summary.
-        """
-        self._stops = OrderedDict()
-
-
-    @property
-    def total(self):
-        """
-        Total decompression time.
-        """
-        return sum(s.time for s in self.stops)
-
-
-    @property
-    def stops(self):
-        """
-        List of decompression stops.
-        """
-        times = (math.ceil((s[1] - s[0]) / 60) for s in self._stops.values())
-        stops = [DecoStop(d, t) for d, t in zip(self._stops, times) if t > 0]
-
-        assert all(s.time > 0 for s in stops)
-        assert all(s.depth > 0 for s in stops)
-
-        return stops
-
-
-    @coroutine
-    def __call__(self):
-        """
-        Create decompression table coroutine to gather decompression stops
-        information.
-        """
-        stops = self._stops = OrderedDict()
-        while True:
-            step = yield
-            if step.phase == 'decostop':
-                depth = step.depth
-                if depth in stops:
-                    stops[depth][1] = step.time
-                else:
-                    stops[depth] = [step.prev.time, step.time]
-
-
 
 class DiveStepInfoGenerator(object):
     """

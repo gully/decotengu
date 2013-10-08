@@ -25,7 +25,7 @@ import io
 
 from decotengu.engine import Engine, EngineError, Phase, Step, GasMix, \
         InfoSample, InfoTissue
-from decotengu.mod import DecoTable, DiveStepInfoGenerator, info_csv_writer, \
+from decotengu.mod import DiveStepInfoGenerator, info_csv_writer, \
         DecoModelValidator
 from decotengu.model import ZH_L16B_GF, Data
 from decotengu.flow import coroutine
@@ -33,106 +33,6 @@ from decotengu.flow import coroutine
 import unittest
 
 AIR = GasMix(0, 21, 79, 0)
-
-
-class DecoTableTestCase(unittest.TestCase):
-    """
-    Deco table mod tests.
-    """
-    def setUp(self):
-        """
-        Set up deco table tests data.
-        """
-        s1 = Step(Phase.CONST, 25, 40, 1.9, AIR, None, None)
-        s2 = Step(Phase.ASCENT, 15, 100, 2.5, AIR, None, s1)
-        s3 = Step(Phase.DECOSTOP, 15, 160, 2.5, AIR, None, s2)
-        s4 = Step(Phase.DECOSTOP, 15, 200, 2.5, AIR, None, s3)
-        s5 = Step(Phase.DECOSTOP, 15, 250, 2.5, AIR, None, s4) # 3min
-        s6 = Step(Phase.ASCENT, 12, 258, 2.2, AIR, None, s5)
-        s7 = Step(Phase.DECOSTOP, 12, 300, 2.2, AIR, None, s6) # 1min
-        # start of next stop at 9m, to be skipped
-        s8 = Step(Phase.ASCENT, 9, 318, 1.9, AIR, None, s7)
-
-        stops = (s1, s2, s3, s4, s5, s6, s7, s8)
-
-        self.dt = DecoTable()
-        dtc = self.dtc = self.dt()
-
-        for s in stops:
-            dtc.send(s)
-
-
-    def test_internals(self):
-        """
-        Test deco table mod internals
-        """
-        self.assertEquals(2, len(self.dt._stops), self.dt._stops)
-        self.assertEquals((15, 12), tuple(self.dt._stops))
-
-        times = tuple(self.dt._stops.values())
-        self.assertEquals([100, 250], times[0])
-        self.assertEquals([258, 300], times[1])
-
-
-    def test_internals_restart(self):
-        """
-        Test deco table mod internals after deco table restart
-
-        The test sends first set of dive steps, restart the table and sends
-        the second set of dive steps. The deco table should be calculated
-        using only first set. This test uses its own deco table and skips
-        the main test case deco table.
-        """
-        s1 = Step(Phase.ASCENT, 25, 0, 3.5, AIR, None, None)
-        s2 = Step(Phase.DECOSTOP, 18, 5, 2.8, AIR, None, s1)
-        s3 = Step(Phase.DECOSTOP, 18, 10, 2.8, AIR, None, s2)
-        s4 = Step(Phase.ASCENT, 15, 100, 2.5, AIR, None, s3)
-        s5 = Step(Phase.DECOSTOP, 15, 160, 2.5, AIR, None, s4)
-        s6 = Step(Phase.DECOSTOP, 15, 200, 2.5, AIR, None, s5)
-        s7 = Step(Phase.DECOSTOP, 15, 250, 2.5, AIR, None, s6) # 3min
-        s8 = Step(Phase.ASCENT, 12, 258, 2.2, AIR, None, s7)
-        s9 = Step(Phase.DECOSTOP, 12, 300, 2.2, AIR, None, s8) # 1min
-        # start of next stop at 9m, to be skipped
-        s10 = Step(Phase.ASCENT, 9, 318, 1.9, AIR, None, s9)
-
-        steps1 = (s4, s5, s6, s7, s8, s9, s10)
-        steps2 = (s1, s2, s3, s4, s5, s6, s7, s8, s9, s10)
-
-        dt = DecoTable()
-        dtc = dt()
-        for s in steps1:
-            dtc.send(s)
-
-        # test preconditions
-        assert len(dt._stops) == 2, dt._stops
-        assert tuple(dt._stops) == (15, 12), dt._stops
-
-        # restart
-        dtc = dt()
-        for s in steps2:
-            dtc.send(s)
-        self.assertEquals(3, len(dt._stops), dt._stops)
-        self.assertEquals((18, 15, 12), tuple(dt._stops))
-
-
-    def test_deco_stops(self):
-        """
-        Test deco table mod deco stops summary
-        """
-        stops = self.dt.stops
-        self.assertEquals(2, len(stops))
-        self.assertEquals(15, stops[0].depth)
-        self.assertEquals(3, stops[0].time)
-        self.assertEquals(12, stops[1].depth)
-        self.assertEquals(1, stops[1].time)
-
-
-    def test_total(self):
-        """
-        Test deco table mod total time summary
-        """
-        self.assertEquals(4, self.dt.total)
-
 
 
 class DiveStepInfoTestCase(unittest.TestCase):
