@@ -21,9 +21,10 @@
 DecoTengu calculator tests.
 """
 
-from decotengu.engine import GasMix
+from decotengu.engine import Engine, Step, GasMix, Phase
+from decotengu.error import EngineError
 from decotengu.model import eq_schreiner, eq_gf_limit, TissueCalculator, \
-    ZH_L16_GF, ZH_L16B_GF, Data
+    ZH_L16_GF, ZH_L16B_GF, Data, DecoModelValidator
 
 import unittest
 from unittest import mock
@@ -188,6 +189,38 @@ class TissueCalculatorTestCase(unittest.TestCase):
             v = c.load_tissue(4, 60, AIR, -1, 3, 1)
             f.assert_called_once_with(4, 60, 0.79, -1, 3, 8.0)
             self.assertEquals(2, v)
+
+
+
+class DecoModelValidatorTestCase(unittest.TestCase):
+    """
+    Decompression model validator tests.
+    """
+    def test_tissue_validator(self):
+        """
+        Test deco model validator
+        """
+        engine = Engine()
+
+        # 2.157535, so pressure limit for 30% raises error and for 90% is OK
+        engine.model.gf_low = 0.3
+        data = Data([1.263320, 2.157535], 0.9)
+        s = Step(Phase.CONST, 25, 3, 1.3127, AIR, data, None)
+
+        mod = DecoModelValidator(engine)()
+        mod.send(s)
+
+
+    def test_tissue_validator_error(self):
+        """
+        Test deco model validator error
+        """
+        engine = Engine()
+        data = Data([2.263320, 2.957535], 0.9)
+        s = Step(Phase.CONST, 25, 3, 1.3127, AIR, data, None)
+
+        mod = DecoModelValidator(engine)()
+        self.assertRaises(EngineError, mod.send, s)
 
 
 # vim: sw=4:et:ai

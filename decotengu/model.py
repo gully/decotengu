@@ -102,8 +102,13 @@ References
 
 from collections import namedtuple
 import math
+import logging
 
+from .error import EngineError
 from .const import WATER_VAPOUR_PRESSURE_DEFAULT
+from .flow import coroutine
+
+logger = logging.getLogger(__name__)
 
 Data = namedtuple('Data', 'tissues gf')
 Data.__doc__ = """
@@ -340,6 +345,43 @@ class TissueCalculator(object):
         """
         hl = self.n2_half_life[tissue_no]
         return eq_schreiner(abs_p, time, gas.n2 / 100, rate, pressure, hl)
+
+
+
+class DecoModelValidator(object):
+    """
+    Dive step tissue pressure validator (coroutine class).
+
+    The validator verifies that maximum allowed tissue pressure of a dive
+    step is not over pressure limit.
+
+    Create coroutine object, then call it to start the coroutine.
+
+    :var engine: DecoTengu decompression engine.
+    """
+    def __init__(self, engine):
+        """
+        Create coroutine object.
+
+        :param engine: DecoTengu decompression engine.
+        """
+        self.engine = engine
+
+
+    @coroutine
+    def __call__(self):
+        """
+        Start the coroutine.
+        """
+        logger.debug('started deco model validator')
+        engine = self.engine
+        while True:
+            step = yield
+
+            limit = engine.model.pressure_limit(step.data, step.data.gf)
+            if step.pressure < limit: # ok when step.pressure >= limit
+                raise EngineError('Tissue pressure validation error at {}' \
+                        ' (limit={})'.format(step, limit))
 
 
 # vim: sw=4:et:ai

@@ -121,8 +121,7 @@ attributes::
 from functools import wraps
 
 from .engine import Engine, DecoTable
-from .mod import DecoModelValidator
-from .model import ZH_L16B_GF, ZH_L16C_GF
+from .model import ZH_L16B_GF, ZH_L16C_GF, DecoModelValidator
 from .flow import sender
 
 __version__ = '0.1.0'

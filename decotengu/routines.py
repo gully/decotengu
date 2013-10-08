@@ -34,12 +34,12 @@ The supported routines
 from functools import partial
 import logging
 
-from .engine import DecoRoutine, Phase
+from .engine import Phase
 from .ft import recurse_while, bisect_find
 
 logger = logging.getLogger('decotengu.routines')
 
-class AscentJumper(DecoRoutine):
+class AscentJumper(object):
     """
     Ascent by jumping (teleporting).
     
@@ -87,7 +87,7 @@ class AscentJumper(DecoRoutine):
 
 
 
-class FirstStopTabFinder(DecoRoutine):
+class FirstStopTabFinder(object):
     """
     Find deco stop using tabular tissue calculator.
 
@@ -177,7 +177,7 @@ class FirstStopTabFinder(DecoRoutine):
 
 
 
-class DecoStopStepper(DecoRoutine):
+class DecoStopStepper(object):
     """
     Perform dive decompression using 1min intervals.
 

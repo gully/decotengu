@@ -29,6 +29,7 @@ import math
 import logging
 
 from .model import ZH_L16B_GF
+from .error import ConfigError
 from .conveyor import Conveyor
 from .ft import recurse_while, bisect_find
 from .flow import coroutine
@@ -103,22 +104,6 @@ Dive decompression stop.
 :var depth: Depth of decompression stop [m].
 :var time: Length of decompression stops [min].
 """
-
-
-class EngineError(Exception):
-    pass
-
-
-
-class ConfigError(EngineError):
-    pass
-
-
-
-class DecoRoutine(object):
-    def __init__(self):
-        self.engine = None
-
 
 
 class Engine(object):

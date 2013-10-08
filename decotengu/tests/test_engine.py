@@ -21,8 +21,8 @@
 Tests for DecoTengu dive decompression engine.
 """
 
-from decotengu.engine import Engine, Phase, Step, GasMix, ConfigError, \
-    DecoTable
+from decotengu.engine import Engine, Phase, Step, GasMix, DecoTable
+from decotengu.error import ConfigError
 from decotengu.model import Data
 
 import unittest

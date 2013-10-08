@@ -36,7 +36,7 @@ import math
 import csv
 import logging
 
-from .engine import DecoStop, InfoTissue, InfoSample, EngineError
+from .engine import DecoStop, InfoTissue, InfoSample
 from .flow import coroutine
 
 logger = logging.getLogger(__name__)
@@ -119,42 +119,6 @@ def info_csv_writer(f, target=None):
 
         if target:
             target.send(sample)
-
-
-class DecoModelValidator(object):
-    """
-    Dive step tissue pressure validator (coroutine class).
-
-    The validator verifies that maximum allowed tissue pressure of a dive
-    step is not over pressure limit.
-
-    Create coroutine object, then call it to start the coroutine.
-
-    :var engine: DecoTengu decompression engine.
-    """
-    def __init__(self, engine):
-        """
-        Create coroutine object.
-
-        :param engine: DecoTengu decompression engine.
-        """
-        self.engine = engine
-
-
-    @coroutine
-    def __call__(self):
-        """
-        Start the coroutine.
-        """
-        logger.debug('started deco model validator')
-        engine = self.engine
-        while True:
-            step = yield
-
-            limit = engine.model.pressure_limit(step.data, step.data.gf)
-            if step.pressure < limit: # ok when step.pressure >= limit
-                raise EngineError('Tissue pressure validation error at {}' \
-                        ' (limit={})'.format(step, limit))
 
 
 # vim: sw=4:et:ai
