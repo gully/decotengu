@@ -161,7 +161,7 @@ class FirstStopTabFinder(object):
         self.engine = engine
 
 
-    def __call__(self, start, gas):
+    def __call__(self, start, depth, gas):
         logger.debug('executing tabular first deco stop finder')
 
         engine = self.engine

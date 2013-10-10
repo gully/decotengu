@@ -115,6 +115,7 @@ class Engine(object):
     :var descent_rate: Descent rate during a dive [m/min].
     :var conveyor: Conveyor used to divide dive into multiple steps.
     :var _gas_list: List of gas mixes.
+    :var _deco_stop_search_time: Linear search time for decompression stop.
     """
     def __init__(self):
         super().__init__()
@@ -125,6 +126,7 @@ class Engine(object):
         self.conveyor = Conveyor()
 
         self._gas_list = []
+        self._deco_stop_search_time = 64
 
 
     def _to_pressure(self, depth):
@@ -463,12 +465,12 @@ class Engine(object):
                         value for next stops.
         """
         step = first_stop
+        max_time = self._deco_stop_search_time * 60
 
         assert round(step.depth, 10) % 3 == 0 and step.depth > 0, step.depth
         assert abs(step.depth - depth) > EPSILON, '{} vs. {}' \
                 .format(step.depth, depth)
 
-        max_time = 64
         n_stops = round((step.depth - depth) / 3)
         logger.debug('stops={}, gf start={:.4}, gf step={:.4}' \
                 .format(n_stops, gf_start, gf_step))
@@ -478,7 +480,7 @@ class Engine(object):
             gf = gf_start + k_stop * gf_step
 
             inv_f = partial(self._inv_deco_stop, gas=gas, gf=gf + gf_step)
-            l_step_next_f = partial(self._step_next, time=max_time * 60, gas=gas)
+            l_step_next_f = partial(self._step_next, time=max_time, gas=gas)
             l_step = recurse_while(inv_f, l_step_next_f, step)
             logger.debug('deco stop: linear find finished at {}'.format(l_step))
 

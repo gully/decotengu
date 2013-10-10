@@ -31,20 +31,22 @@ import sys
 # Arguments parsing
 #
 
-class ValidateReplacement(argparse.Action):
-    PARTS = {'tab', 'ascentjump', 'decostep'}
+class ValidateAlternative(argparse.Action):
+    ALT = {'tab', 'ascentjump', 'decostep'}
     def __call__(self, parser, args, values, option_string=None):
-        parts = set(values.split(','))
+        alt = set(values.split(','))
 
-        if 'tab' in parts:
-            raise argparse.ArgumentError(self, 'Tabular tissue calculator not' \
-                ' supported yet')
+        if 'tab' in alt:
+            raise argparse.ArgumentError(
+                self, 'Tabular tissue calculator not supported yet'
+            )
 
-        if parts - self.PARTS:
-            s = ', '.join(parts - self.PARTS)
+
+        if alt - self.ALT:
+            s = ', '.join(alt - self.ALT)
             raise argparse.ArgumentError(self,
-                'Invalid part replacement(s): {}'.format(s))
-        setattr(args, self.dest, tuple(sorted(parts)))
+                'Invalid alternative(s): {}'.format(s))
+        setattr(args, self.dest, tuple(sorted(alt)))
 
 
 parser = argparse.ArgumentParser(description='DecoTengu 0.1.0.')
@@ -78,9 +80,10 @@ parser.add_argument(
     default=None, type=str, help='tissue saturation data output file'
 )
 parser.add_argument(
-    '--use', dest='parts',
-    default=(), type=str, action=ValidateReplacement,
-    help='list of alternative implementations to be used: ascentjump, decostep'
+    '--use', dest='alt',
+    default=(), type=str, action=ValidateAlternative,
+    help='list of alternative implementations to be used: ascentjump,'  \
+        ' decostep, tab'
 )
 parser.add_argument('depth', type=int, help='dive maximum depth [meter]')
 parser.add_argument('time', type=int, help='dive time [minute]')
@@ -134,12 +137,20 @@ if args.gas_list:
 else:
     engine.add_gas(0, 21)
 
-if 'ascentjump' in args.parts:
+if 'ascentjump' in args.alt:
     engine._free_ascent = AscentJumper(engine)
-if 'decostep' in args.parts:
+if 'decostep' in args.alt:
     engine._deco_ascent = DecoStopStepper(engine)
-#engine._find_first_stop = FirstStopTabFinder()
-#engine.calc = TabTissueCalculator()
+if 'tab' in args.alt:
+    engine._find_first_stop = FirstStopTabFinder(engine)
+    engine._deco_ascent = DecoStopStepper(engine)
+
+    calc = TabTissueCalculator(
+        engine.model.N2_HALF_LIFE,
+        engine.model.HE_HALF_LIFE
+    )
+    engine.model.calc = calc
+    engine.conveyor.time_delta = 60
 
 #
 # Execute calculations and provide summary
