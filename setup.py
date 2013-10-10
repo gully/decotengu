@@ -33,7 +33,7 @@ setup(
     author_email='wrobell@pld-linux.org',
     url='http://wrobell.it-zone.org/decotengu',
     packages=find_packages('.'),
-    scripts=('bin/dt-lint',),
+    scripts=('bin/dt-lint', 'bin/dt-plot'),
     include_package_data=True,
     long_description=\
 """\
