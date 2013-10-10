@@ -1,5 +1,25 @@
 @import url('agogo.css');
 
+div.header a:visited {
+    color: black;
+}
+
+div.header a {
+    color: black;
+}
+
+div.footer a:visited {
+    color: black;
+}
+
+div.footer a {
+    color: black;
+}
+
+div.footer {
+    color: black;
+}
+
 div.diagram pre {
     padding: 20px;
     line-height: 95%;
