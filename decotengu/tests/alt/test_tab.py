@@ -152,7 +152,7 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         f_bf.return_value = 2
         self.engine._step_next_ascent.return_value = first_stop
 
-        stop = self.engine._find_first_stop(start, AIR)
+        stop = self.engine._find_first_stop(start, 0, AIR)
         self.assertIs(stop, first_stop)
 
         self.assertTrue(f_rw.called)
@@ -184,7 +184,7 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         f_bf.return_value = 2
         self.engine._step_next_ascent.return_value = first_stop
 
-        stop = self.engine._find_first_stop(start, AIR)
+        stop = self.engine._find_first_stop(start, 0, AIR)
         self.assertIs(stop, first_stop)
 
         self.assertTrue(f_rw.called)
@@ -216,7 +216,7 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         f_rw.return_value = step
         f_bf.return_value = 0 # in deco already
 
-        stop = self.engine._find_first_stop(start, AIR)
+        stop = self.engine._find_first_stop(start, 0, AIR)
         self.assertIs(stop, step)
 
         self.assertFalse(self.engine._step_next_ascent.called)
@@ -242,7 +242,7 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
 
         f_rw.return_value = step
 
-        self.engine._find_first_stop(start, AIR)
+        self.engine._find_first_stop(start, 0, AIR)
 
         # 3 bisect calls, 2 debug "bisect check" calls, final call
         self.assertEquals(6, self.engine._step_next_ascent.call_count,
@@ -261,7 +261,7 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         self.engine.surface_pressure = 1
         start = _step(Phase.ASCENT, 30, 1200)
 
-        stop = self.engine._find_first_stop(start, AIR)
+        stop = self.engine._find_first_stop(start, 0, AIR)
         self.assertEquals(0, stop.depth)
         self.assertEquals(1380, stop.time)
 
