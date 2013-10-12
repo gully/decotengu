@@ -23,7 +23,7 @@ be replaced with alternative implementations (i.e. which use precomputed
 values of `log` and `exp` functions).
 
 The DecoTengu engine sends data to an instance of :class:`DecoTable
-<decotengu.mod.DecoTable>` class, which extracts decompression information
+<decotengu.DecoTable>` class, which extracts decompression information
 from received data. It is designed as Python coroutine.
 
 The :class:`Conveyor <decotengu.conveyor.Conveyor>` class is used to divide
@@ -90,7 +90,7 @@ which should sum to `100%`, it has switch depth attribute, which indicates
 the deepest depth at which gas mix can be used.
 
 The decompression stops information is extracted from dive steps by
-:class:`decompression table coroutine <decotengu.mod.DecoTable>` as
+:class:`decompression table coroutine <decotengu.DecoTable>` as
 instances of :class:`DecoStop class <decotengu.engine.DecoStop>`.
 
 .. code::

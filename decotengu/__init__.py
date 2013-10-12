@@ -131,6 +131,8 @@ def create(time_delta=None, validate=True):
     """
     Create decompression engine with decompression table.
 
+    The decompression model validation is enabled by default.
+
     Usage
 
     >>> import decotengu

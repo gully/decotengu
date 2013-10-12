@@ -72,7 +72,7 @@ Step.__repr__ = lambda s: 'Step(phase="{}", depth={}, time={},' \
         s.phase, s.depth, s.time, s.pressure, s.data.gf
     )
 Step.__doc__ = """
-Dive step.
+Dive step information.
 
 :var phase: Dive phase.
 :var depth: Depth of dive [m].
@@ -88,14 +88,14 @@ GasMix.__doc__ = """
 Gas mix configuration.
 
 :var depth: Gas mix switch depth.
-:var o: O2 percentage.
-:var n: N2 percentage.
+:var o2: O2 percentage.
+:var n2: N2 percentage.
 :var he: Helium percentage.
 """
 
 DecoStop = namedtuple('DecoStop', 'depth time')
 DecoStop.__doc__ = """
-Dive decompression stop.
+Dive decompression stop information.
 
 :var depth: Depth of decompression stop [m].
 :var time: Length of decompression stops [min].
@@ -106,16 +106,18 @@ class Engine(object):
     """
     DecoTengu decompression engine.
 
-    Use decompression engine to calculate dive profile, dive and
-    decompression information.
+    Use decompression engine to calculate dive profile and decompression
+    information.
 
     :var model: Decompression model.
     :var surface_pressure: Surface pressure [bar].
     :var ascent_rate: Ascent rate during a dive [m/min].
     :var descent_rate: Descent rate during a dive [m/min].
-    :var conveyor: Conveyor used to divide dive into multiple steps.
+    :var conveyor: Conveyor used to divide calculations into multiple
+        steps.
     :var _gas_list: List of gas mixes.
-    :var _deco_stop_search_time: Linear search time for decompression stop.
+    :var _deco_stop_search_time: Time limit for decompression stop linear
+        search.
     """
     def __init__(self):
         super().__init__()
@@ -506,14 +508,14 @@ class Engine(object):
 
     def add_gas(self, depth, o2):
         """
-        Add gas mix to gas mix list.
+        Add gas mix to the gas mix list.
 
         Rules
 
         #. First gas mix switch depth should be 0m.
         #. Second or later gas mix switch depth should be greater than 0m.
-        #. Third or later gas mix switch depth should be shallower than last
-           one.
+        #. Third or later gas mix switch depth should be shallower than the
+           last one.
 
         :param depth: Switch depth of gas mix.
         :param o2: O2 percentage.
@@ -612,10 +614,12 @@ class DecoTable(object):
     """
     Decompression table summary.
 
-    The class is coroutine class - Create coroutine object, then call it to
+    The class is coroutine class - create coroutine object, then call it to
     start the coroutine.
 
     The decompression stops time is in minutes.
+
+    .. seealso:: :class:`decotengu.engine.DecoStop`
     """
     def __init__(self):
         """

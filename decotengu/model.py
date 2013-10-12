@@ -119,9 +119,7 @@ Data for ZH-L16-GF decompression model.
 def eq_schreiner(abs_p, time, gas, rate, pressure, half_life,
         wvp=WATER_VAPOUR_PRESSURE_DEFAULT):
     """
-    Calculate gas loading using Schreiner equation.
-
-    The result is pressure of inert gas in tissue compartment.
+    Calculate pressure in a tissue compartment using Schreiner equation.
 
     :param abs_p: Absolute pressure [bar] (current depth).
     :param time: Time of exposure [s] (i.e. time of ascent).
@@ -187,7 +185,7 @@ class ZH_L16_GF(object):
 
     def init(self, surface_pressure):
         """
-        Initialize pressure of intert gas in all tissues.
+        Initialize pressure of inert gas in all tissues.
 
         :param surface_pressure: Surface pressure [bar].
         """
@@ -207,6 +205,11 @@ class ZH_L16_GF(object):
         :param gas: Gas mix configuration.
         :param rate: Pressure rate change [bar/min].
         :param data: Decompression model data.
+
+        .. seealso::
+        
+            - :func:`decotengu.model.eq_schreiner`
+            - :func:`decotengu.model.TissueCalculator`
         """
         load = self.calc.load_tissue
         tp = tuple(load(abs_p, time, gas, rate, tp, k)
@@ -229,6 +232,11 @@ class ZH_L16_GF(object):
 
         :param data: Decompression model data.
         :param gf: Gradient factor value, `gf_low` by default.
+
+        .. seealso::
+
+            - :func:`decotengu.model.ZH_L16_GF.gf_limit`
+            - :func:`decotengu.model.eq_schreiner`
         """
         return max(self.gf_limit(gf, data))
 
