@@ -28,10 +28,10 @@ import decotengu
 setup(
     name='decotengu',
     version=decotengu.__version__,
-    description='DecoTengu is dive decompression library',
+    description='DecoTengu - dive decompression library',
     author='Artur Wroblewski',
     author_email='wrobell@pld-linux.org',
-    url='http://wrobell.it-zone.org/decotengu',
+    url='http://wrobell.it-zone.org/decotengu/',
     setup_requires = ['setuptools_git >= 1.0',],
     packages=find_packages('.'),
     scripts=('bin/dt-lint', 'bin/dt-plot'),
