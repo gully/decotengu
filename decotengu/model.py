@@ -65,25 +65,21 @@ The parameters mentioned in previous section are used by two equations
 implemented by functions
 
 :func:`eq_schreiner`
-    Schreiner equation for gas loading calculation.
+    Schreiner equation to calculate inert gas pressure of a tissue
+    compartment.
 
 :func:`eq_gf_limit`
-    Buhlmann equation extended by Eric Baker with gradient factors. It is
-    used for ascent ceiling calculation.
+    Buhlmann equation extended with gradient factors by Eric Baker to
+    calculate ascent ceiling of a tissue compartment.
 
 Calculations
 ------------
-Pressure of inert gas in each of tissue compartments is calculated using
-:func:`Schreiner equation <eq_schreiner>`. The :func:`ZH_L16_GF.load`
-method calculates gas loading of all tissue compartments for descent,
-ascent and at constant depth.
+Inert gas pressure of each tissue compartment for descent, ascent and at
+constant depth is calculated by the :func:`ZH_L16_GF.load` method. It uses
+:func:`Schreiner equation <eq_schreiner>`.
 
-The ceiling of ascent for each of tissue compartments is calculated with
-:func:`eq_gf_limit` function. The :func:`ZH_L16_GF.pressure_limit` method
-uses :func:`eq_gf_limit` function to calculate pressure of ascent ceiling
-for a diver.
-
-Using :func:`ZH_L16_GF.pressure_limit` method we can determine
+The pressure of ascent ceiling of a diver is calculated with the
+:func:`ZH_L16_GF.pressure_limit` method. The method allows to determine
 
 - depth of first decompression stop - a diver cannot ascent from the bottom
   shallower than ascent ceiling
