@@ -9,11 +9,13 @@
 Introduction
 ============
 
-DecoTengu is Python decompression library to experiment with various
+DecoTengu is Python dive decompression library to experiment with various
 implementations of Buhlmann decompression model with Eric Baker's gradient
-factors (other decompression models might be possible in the future). Basic
-implementation of the decompression model is provided and its different
-parts can be replaced with different code routines.
+factors (other decompression models might be possible in the future).
+
+.. Basic
+.. implementation of the decompression model is provided and its different
+.. parts can be replaced with different code routines.
 
 The results of DecoTengu calculations are decompression stops and tissue
 saturation information. Third party applications can use those results for

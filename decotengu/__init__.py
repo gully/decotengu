@@ -30,14 +30,14 @@ few simple steps by using :func:`~decotengu.create` function, which creates
 <DecoTable>` objects. Having DecoTengu engine object, we need to instruct
 it what gas mixes are used after which we can start calculations. The
 following example executes calculations for a dive to 35 meters for 40
-minutes::
+minutes on air::
 
     >>> import decotengu
     >>> engine, deco_table = decotengu.create()
     >>> engine.add_gas(0, 21)
     >>> profile = engine.calculate(35, 40)
 
-The :func:`DecoTengu engine calculation <Engine.calculate>` function returns
+The :func:`DecoTengu engine calculation <Engine.calculate>` method returns
 an iterator with dive profile steps::
 
     >>> for step in profile:

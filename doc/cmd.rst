@@ -5,8 +5,8 @@ DecoTengu library provides two commandline applications.
 The ``dt-lint`` command prints dive decompression information and allows to
 store dive profile steps data in a CSV file.
 
-The ``dt-plot`` command plots dive profile steps data in the form of plots
-stored in a PDF file.
+The ``dt-plot`` command plots dive profile steps data in the form of PDF
+file.
 
 Calculating Dive Decompression Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -76,22 +76,23 @@ be plotted with ``dt-plot`` command::
 The output, PDF file, contains plots for each of 16 tissues described by
 Buhlmann model
 
-- first page contains summary for each tissue
-- second page has plot for leading tissue data (presented on figure
-  :ref:`cmd-plot-leading-tissue`)
-- next pages contain plots for each tissue
+- first page contains summary for each tissue compartment
+- second page has plot for leading tissue compartment data (presented on
+  figure :ref:`cmd-plot-leading-tissue`)
+- next pages contain plots for each tissue compartment
 
 The plots show pressure value at given time of a dive. There are four lines
 on the plot
 
 blue
-    Actual pressure (or in other words depth of a dive).
+    Pressure of dive depth.
 black
-    Pressure of inert gases in a tissue.
+    Pressure of inert gases in a tissue compartment.
 orange
-    Tissue pressure limit as implied by current gradient factor value (i.e.
-    for GF low 30% and GF high 90%, gradient factor value is 30% until
-    first decompression stop and it changes lineary to 90% at the surface).
+    Tissue pressure ceiling limit as implied by current gradient factor
+    value. For example, when GF low set to 30% and GF high set to 90%,
+    gradient factor value is 30% until first decompression stop and then it
+    changes lineary to 90% until the surface.
 red
     The maximum tissue pressure limit as required by Buhlmann model (or at
     100% gradient factor value).
