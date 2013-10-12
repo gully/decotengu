@@ -23,10 +23,6 @@ epub_author = 'DecoTengu Team'
 todo_include_todos = True
 
 html_theme = 'agogo'
-html_theme_options = {
-    'headerbg': '#dddddd',
-    'footerbg': '#dddddd',
-}
 html_style = 'decotengu.css'
 html_static_path = ['static']
 
