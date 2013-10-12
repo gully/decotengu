@@ -38,7 +38,7 @@ setup(
     include_package_data=True,
     long_description=\
 """\
-DecoTengu is decompression library.
+DecoTengu - dive decompression library.
 """,
     classifiers=[
         'License :: OSI Approved :: GNU General Public License (GPL)',
