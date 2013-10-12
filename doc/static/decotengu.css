@@ -1,22 +1,16 @@
 @import url('agogo.css');
 
-div.header a:visited {
+div.header a:link,
+div.header a:visited,
+div.header a:hover,
+div.header a:active {
     color: black;
 }
 
-div.header a {
-    color: black;
-}
-
-div.footer a:visited {
-    color: black;
-}
-
-div.footer a {
-    color: black;
-}
-
-div.footer {
+div.footer a:link,
+div.footer a:visited,
+div.footer a:hover,
+div.footer a:active {
     color: black;
 }
 
