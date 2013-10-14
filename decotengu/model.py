@@ -121,10 +121,19 @@ def eq_schreiner(abs_p, time, gas, rate, pressure, half_life,
     """
     Calculate pressure in a tissue compartment using Schreiner equation.
 
-    :param abs_p: Absolute pressure [bar] (current depth).
+    The values for `rate` can be
+
+    zero
+        constant depth exposure
+    negative
+        ascent during a dive
+    positive
+        descent during a dive
+
+    :param abs_p: Absolute pressure of current depth [bar].
     :param time: Time of exposure [s] (i.e. time of ascent).
     :param gas: Inert gas fraction, i.e. for air it is 0.79.
-    :param rate: Pressure rate change [bar/min]. Use "-" for ascent.
+    :param rate: Pressure rate change [bar/min].
     :param pressure: Current tissue pressure [bar].
     :param half_life: Current tissue compartment half-life constant value.
     :param wvp: Water vapour pressure.
@@ -139,7 +148,8 @@ def eq_schreiner(abs_p, time, gas, rate, pressure, half_life,
 
 def eq_gf_limit(gf, pn2, phe, n2_a_limit, n2_b_limit): # FIXME: include he
     """
-    Calculate ascent ceiling limit using gradient factor value.
+    Calculate ascent ceiling limit of a tissue compartment using Buhlmann
+    equation extended with gradient factors by Eric Baker.
 
     The returned value is absolute pressure of depth of the ascent ceiling.
 
@@ -149,6 +159,7 @@ def eq_gf_limit(gf, pn2, phe, n2_a_limit, n2_b_limit): # FIXME: include he
     :param n2_a_limit: N2 A Buhlmann coefficient.
     :param n2_b_limit: N2 B Buhlmann coefficient.
 
+    .. todo:: Helium parameters are missing.
     """
     assert gf > 0 and gf <= 1.5
     p = pn2 + phe
