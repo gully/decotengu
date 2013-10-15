@@ -121,7 +121,34 @@ def eq_schreiner(abs_p, time, gas, rate, pressure, half_life,
     """
     Calculate pressure in a tissue compartment using Schreiner equation.
 
-    The values for `rate` can be
+    The Schreiner equation is
+
+        .. math::
+
+            P = P_alv + R * (t - 1 / k) - (P_alv - P - R / k) * e^{-k * t}
+
+    Tissue compartment pressure (:math:`P` on the right of the equation) is
+    initial tissue compartment pressure, i.e. `0.79` bar on the surface. The
+    result of equation is tissue compartment pressure (:math:`P` on the
+    left) after time of exposure :math:`t`, which we feed recursively to
+    the equation from start till end of a dive.
+
+    The variables of the equation are (see also function parameters
+    description below)
+
+    :math:`P_alv`
+        Pressure of inspired inert gas: :math:`P_alv = F_gas * (P_abs - P_wvp)`
+
+    :math:`t`
+        Time of exposure in minutes: :math:`t = T_time / 60`
+
+    :math:`k`
+        Tissue compartment half-life time constant: :math:`k = ln(2) / T_hl`
+
+    :math:`R`
+        Rate of change of inert gas pressure: :math:`R = F_gas * P_rate` 
+
+    The values for :math:`P_rate` parameter can be
 
     zero
         constant depth exposure
@@ -130,13 +157,15 @@ def eq_schreiner(abs_p, time, gas, rate, pressure, half_life,
     positive
         descent during a dive
 
-    :param abs_p: Absolute pressure of current depth [bar].
-    :param time: Time of exposure [s] (i.e. time of ascent).
-    :param gas: Inert gas fraction, i.e. for air it is 0.79.
-    :param rate: Pressure rate change [bar/min].
-    :param pressure: Current tissue pressure [bar].
-    :param half_life: Current tissue compartment half-life constant value.
-    :param wvp: Water vapour pressure.
+    :param abs_p: Absolute pressure of current depth [bar] (:math:`P_abs`).
+    :param time: Time of exposure [s], i.e. time of ascent (:math:`T_time`).
+    :param gas: Inert gas fraction, i.e. for air it is 0.79 (:math:`F_gas`).
+    :param rate: Pressure rate change [bar/min] (:math:`P_rate`).
+    :param pressure: Current, initial pressure in tissue compartment [bar]
+        (:math:`P`).
+    :param half_life: Current tissue compartment half-life time constant value
+        (:math:`T_hl`).
+    :param wvp: Water vapour pressure (:math:`P_wvp`).
     """
     assert time > 0, 'time={}'.format(time)
     palv = gas * (abs_p - wvp)
