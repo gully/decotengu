@@ -45,7 +45,7 @@ A
 B
     Buhlmann coefficient B.
 half life
-    Gas half life time value.
+    Inert gas half-life time constant.
 
 The gradient factors extension defines two parameters expressed as
 percentage
@@ -62,21 +62,160 @@ gf high
 Equations
 ---------
 The parameters mentioned in previous section are used by two equations
-implemented by functions
 
-:func:`eq_schreiner`
-    Schreiner equation to calculate inert gas pressure of a tissue
-    compartment.
+#. Schreiner equation to calculate inert gas pressure of a tissue
+   compartment (:func:`eq_schreiner`).
 
-:func:`eq_gf_limit`
-    Buhlmann equation extended with gradient factors by Eric Baker to
-    calculate ascent ceiling of a tissue compartment.
+#. Buhlmann equation extended with gradient factors by Eric Baker to
+   calculate ascent ceiling of a tissue compartment (:func:`eq_gf_limit`).
+
+.. _eq-schreiner:
+
+Schreiner Equation
+^^^^^^^^^^^^^^^^^^
+The Schreiner equation is
+
+    .. math::
+
+        P = P_alv + R * (t - 1 / k) - (P_alv - P - R / k) * e^{-k * t}
+
+Pressure of inert gas in tissue compartment (:math:`P` on the right of the
+equation) is initial pressure in tissue compartment, i.e. `0.79` bar for
+air on the surface. The result of equation is pressure in tissue
+compartment (:math:`P` on the left) after time of exposure :math:`t`, which
+we feed recursively to the equation from start till end of a dive.
+
+The variables of the equation are
+
+:math:`P_alv`
+    Pressure of inspired inert gas: :math:`P_alv = F_gas * (P_abs - P_wvp)`
+
+:math:`t`
+    Time of exposure in minutes.
+
+:math:`k`
+    Tissue compartment half-life time constant: :math:`k = ln(2) / T_hl`
+
+:math:`R`
+    Rate of change of inert gas pressure: :math:`R = F_gas * P_rate`
+
+where
+
+:math:`P_abs`
+    Absolute pressure of current depth [bar].
+
+:math:`F_gas`
+    Inert gas fraction, i.e. for air it is 0.79.
+
+:math:`P_rate`
+    Pressure rate change [bar/min].
+
+:math:`T_hl`
+    Inert gas half-life time for tissue compartment.
+
+:math:`P_wvp`
+    Water vapour pressure.
+
+The values for :math:`P_rate` parameter can be
+
+zero
+    constant depth exposure
+negative
+    ascent during a dive
+positive
+    descent during a dive
+
+Example
+~~~~~~~
+Below, calculation of inert gas pressure in tissue compartment using
+Schreiner equation is performed. It is done for first compartment in
+ZH-L16B-GF decompression model and for dive profile described below when
+using EAN32
+
+- descent from 0m to 30m at rate 20m/min
+- dive time at 30m for 20min
+- ascent from 30m to 10m at rate 10m/min
+
+For the above example, the following assumptions are made
+
+- surface pressure is 1 bar
+- change of 10m depth is change of 1 bar pressure
+- the water vapour pressure is 0.0627
+
+For the start of a dive and descent from 0m to 30m the Schreiner equation
+variables are
+
+    :math:`P = 0.79` (initial pressure of inert gas in tissue compartment - 79% of :math:`N_2`)
+
+    :math:`P_abs = 1` (starting from 0m or 1 bar)
+
+    :math:`F_gas = 0.68` (EAN32)
+
+    :math:`P_alv = 0.68 * (1 - 0.0627) = 0.637364`
+
+    :math:`R = 0.68 * 2` (20m/min is 2 bar per minute pressure change)
+
+    :math:`T_hl = 5.0`  (:math:`N_2` half-life time for first tissue compartment in ZH-L16B-GF)
+
+    :math:`t = 1.5` (1.5 minute to descent by 30m at 20m/min)
+
+    :math:`k = ln(2) / T_hl = 0.138629`
+
+and pressure in the first tissue compartment is
+
+    .. math::
+
+       P = P_alv + 1.36  * (1.5 - 1 / k) - (P_alv - 0.79 - 1.36 / k) * e^{-k * 1.5} = 0.959477
+
+Next, continue dive at 30m for 20 minutes
+
+    :math:`P = 0.959477` (inert gas pressure in tissue compartment after descent)
+
+    :math:`P_abs = 4` (30m or 4 bar)
+
+    :math:`P_alv = 0.68 * (4 - 0.0627) = 2.677364`
+
+    :math:`R = 0.68 * 0` (constant depth, no pressure change)
+
+    :math:`t = 20`
+
+and pressure in first tissue compartment is (note :math:`R` is zero and cancels parts of equation)
+
+    .. math::
+
+       P = P_alv + 0 - (P_alv - 0.959477 - 0) * e^{-k * 20} = 2.569995
+
+Finally, ascent from 30m to 10m
+
+    :math:`P = 2.569995`
+
+    :math:`R = 0.68 * (-1)` (10m/min is 1 bar per minute pressure change, negative because of ascent)
+
+    :math:`t = 2` (2 minutes to ascend from 30m to 10m at 10m/min)
+
+and pressure in first tissue compartment is
+
+    .. math::
+
+       P = P_alv + (-0.68)  * (2 - 1 / k) - (P_alv - 2.569995 - (-0.68) / k) * e^{-k * 2} = 2.423739
+
+Using :func:`eq_schreiner` function (note the implementation of this function expects time in seconds)
+
+    >>> P = eq_schreiner(1, 1.5 * 60, 0.68, 2, 0.79, 5.0)
+    >>> round(P, 6)
+    0.959478
+    >>> P = eq_schreiner(4, 20 * 60, 0.68, 0, P, 5.0)
+    >>> round(P, 6)
+    2.569996
+    >>> P = eq_schreiner(4, 2 * 60, 0.68, -1, P, 5.0)
+    >>> round(P, 6)
+    2.423739
 
 Calculations
 ------------
 Inert gas pressure of each tissue compartment for descent, ascent and at
 constant depth is calculated by the :func:`ZH_L16_GF.load` method. It uses
-:func:`Schreiner equation <eq_schreiner>`.
+:func:`Schreiner equation <eq_schreiner>` function.
 
 The pressure of ascent ceiling of a diver is calculated with the
 :func:`ZH_L16_GF.pressure_limit` method. The method allows to determine
@@ -121,41 +260,7 @@ def eq_schreiner(abs_p, time, gas, rate, pressure, half_life,
     """
     Calculate pressure in a tissue compartment using Schreiner equation.
 
-    The Schreiner equation is
-
-        .. math::
-
-            P = P_alv + R * (t - 1 / k) - (P_alv - P - R / k) * e^{-k * t}
-
-    Tissue compartment pressure (:math:`P` on the right of the equation) is
-    initial tissue compartment pressure, i.e. `0.79` bar on the surface. The
-    result of equation is tissue compartment pressure (:math:`P` on the
-    left) after time of exposure :math:`t`, which we feed recursively to
-    the equation from start till end of a dive.
-
-    The variables of the equation are (see also function parameters
-    description below)
-
-    :math:`P_alv`
-        Pressure of inspired inert gas: :math:`P_alv = F_gas * (P_abs - P_wvp)`
-
-    :math:`t`
-        Time of exposure in minutes: :math:`t = T_time / 60`
-
-    :math:`k`
-        Tissue compartment half-life time constant: :math:`k = ln(2) / T_hl`
-
-    :math:`R`
-        Rate of change of inert gas pressure: :math:`R = F_gas * P_rate` 
-
-    The values for :math:`P_rate` parameter can be
-
-    zero
-        constant depth exposure
-    negative
-        ascent during a dive
-    positive
-        descent during a dive
+    See :ref:`eq-schreiner` section for details.
 
     :param abs_p: Absolute pressure of current depth [bar] (:math:`P_abs`).
     :param time: Time of exposure [s], i.e. time of ascent (:math:`T_time`).
@@ -247,7 +352,7 @@ class ZH_L16_GF(object):
         :param data: Decompression model data.
 
         .. seealso::
-        
+
             - :func:`decotengu.model.eq_schreiner`
             - :func:`decotengu.model.TissueCalculator`
         """
@@ -315,11 +420,11 @@ class ZH_L16B_GF(ZH_L16_GF): # source: gfdeco.f by Baker
         0.9092, 0.9222, 0.9319, 0.9403, 0.9477, 0.9544, 0.9602, 0.9653,
     )
     HE_A = (
-        1.6189, 1.3830, 1.1919, 1.0458, 0.9220, 0.8205, 0.7305, 0.6502, 
+        1.6189, 1.3830, 1.1919, 1.0458, 0.9220, 0.8205, 0.7305, 0.6502,
         0.5950, 0.5545, 0.5333, 0.5189, 0.5181, 0.5176, 0.5172, 0.5119,
     )
     HE_B = (
-        0.4770, 0.5747, 0.6527, 0.7223, 0.7582, 0.7957, 0.8279, 0.8553, 
+        0.4770, 0.5747, 0.6527, 0.7223, 0.7582, 0.7957, 0.8279, 0.8553,
         0.8757, 0.8903, 0.8997, 0.9073, 0.9122, 0.9171, 0.9217, 0.9267,
     )
     N2_HALF_LIFE = (
