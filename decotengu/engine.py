@@ -557,7 +557,7 @@ class Engine(object):
         step = start
         for depth, gas in stages:
             if step.depth - gas.depth < 3:
-                # if gas switch drives us into dive zone, then stop leaving
+                # if gas switch drives us into deco zone, then stop leaving
                 # `step` as first decompression stop
                 gs_steps = self._can_switch_gas(step, gas)
                 if gs_steps:
