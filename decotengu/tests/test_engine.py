@@ -365,53 +365,6 @@ class EngineTestCase(unittest.TestCase):
         self.assertEquals(11, f_bf.call_args_list[0][0][0])
 
 
-    def test_free_ascent(self):
-        """
-        Test ascent from current to shallower depth without deco
-        """
-        pressure = self.engine._to_pressure
-        self.engine.conveyor.time_delta = 60
-
-        data = Data([1.0, 1.0], 0.3)
-        start = Step(Phase.ASCENT, 31, 1200, pressure(31), AIR, data, None)
-        data = Data([1.33538844660, 1.22340240386], 0.3)
-        stop = Step(Phase.ASCENT, 10, 1326, pressure(10), AIR, data, None)
-        steps = list(self.engine._free_ascent(start, stop, AIR))
-
-        self.assertEquals(3, len(steps))
-
-        s1, s2, s3 = steps
-        self.assertEquals(s1.depth, 21.0)
-        self.assertEquals(s1.time, 1260)
-        self.assertEquals(s2.depth, 11.0)
-        self.assertEquals(s2.time, 1320)
-        self.assertEquals(s3.depth, 10.0)
-        self.assertEquals(s3.time, 1326)
-
-
-    def test_free_ascent_no_time_delta(self):
-        """
-        Test ascent from current to shallower depth without deco (no time delta)
-        """
-        pressure = self.engine._to_pressure
-        self.engine.conveyor.time_delta = None
-
-        assert self.engine.conveyor.time_delta is None, \
-                self.engine.conveyor.time_delta
-
-        data = Data([1.0, 1.0], 0.3)
-        start = Step(Phase.ASCENT, 31, 1200, pressure(31), AIR, data, None)
-        data = Data([1.33538844660, 1.22340240386], 0.3)
-        stop = Step(Phase.ASCENT, 10, 1326, pressure(10), AIR, data, None)
-        steps = list(self.engine._free_ascent(start, stop, AIR))
-
-        self.assertEquals(1, len(steps))
-
-        step = steps[0]
-        self.assertEquals(step.depth, 10)
-        self.assertEquals(step.time, 1326)
-
-
     def test_deco_ascent(self):
         """
         Test ascent with decompression stops
@@ -658,6 +611,163 @@ class EngineTestCase(unittest.TestCase):
         # 2nd call: 22m -> 6m
         self.assertEquals(96.0, args[1][0][1], args)
 
+
+
+class EngineDiveAscentTestCase(unittest.TestCase):
+    """
+    Deco engine dive ascent related tests.
+    """
+    def setUp(self):
+        self.engine = Engine()
+
+
+    def test_free_ascent_stages_single(self):
+        """
+        Test dive ascent stages calculation (single gas, no deco)
+        """
+        self.engine.add_gas(0, 21)
+        stages = list(self.engine._free_ascent_stages())
+
+        self.assertEquals(1, len(stages))
+        self.assertEquals(0, stages[0][0])
+        self.assertEquals(21, stages[0][1].o2)
+
+
+    def test_ascent_stages_free(self):
+        """
+        Test dive ascent stages calculation (no deco)
+        """
+        self.engine.add_gas(0, 21)
+        self.engine.add_gas(22, 50)
+        self.engine.add_gas(11, 80)
+        self.engine.add_gas(6, 100)
+
+        stages = list(self.engine._free_ascent_stages())
+        self.assertEquals(4, len(stages))
+        self.assertEquals(24, stages[0][0])
+        self.assertEquals(21, stages[0][1].o2)
+
+        self.assertEquals(12, stages[1][0])
+        self.assertEquals(50, stages[1][1].o2)
+
+        self.assertEquals(6, stages[2][0])
+        self.assertEquals(80, stages[2][1].o2)
+
+        self.assertEquals(0, stages[3][0])
+        self.assertEquals(100, stages[3][1].o2)
+
+
+    def test_ascent_stages_deco_single(self):
+        """
+        Test dive ascent stages calculation (single gas, deco)
+        """
+        self.engine.add_gas(0, 21)
+        stages = list(self.engine._deco_ascent_stages(22))
+
+        self.assertEquals(1, len(stages))
+        self.assertEquals(0, stages[0][0])
+        self.assertEquals(21, stages[0][1].o2)
+
+
+    def test_ascent_stages_deco(self):
+        """
+        Test dive ascent stages calculation (deco)
+        """
+        self.engine.add_gas(0, 21)
+        self.engine.add_gas(22, 50)
+        self.engine.add_gas(11, 80)
+        self.engine.add_gas(6, 100)
+
+        stages = list(self.engine._deco_ascent_stages(22))
+        self.assertEquals(3, len(stages))
+
+        self.assertEquals(9, stages[0][0])
+        self.assertEquals(50, stages[0][1].o2)
+
+        self.assertEquals(6, stages[1][0])
+        self.assertEquals(80, stages[1][1].o2)
+
+        self.assertEquals(0, stages[2][0])
+        self.assertEquals(100, stages[2][1].o2)
+
+
+    def test_free_ascent(self):
+        """
+        Test deco free ascent
+        """
+        pressure = self.engine._to_pressure
+        data = Data([1.0, 1.0], 0.3)
+        start = Step(Phase.ASCENT, 31, 1200, pressure(31), AIR, data, None)
+
+        stop = self.engine._free_ascent(start, 10, AIR)
+        self.assertEquals(stop.depth, 10)
+        self.assertEquals(stop.time, 1326)
+
+
+    def test_switch_gas_same_depth(self):
+        """
+        Test gas mix switch at current depth
+        """
+        pressure = self.engine._to_pressure
+        data = Data([1.0, 1.0], 0.3)
+        start = Step(Phase.ASCENT, 22, 1200, pressure(22), AIR, data, None)
+
+        steps = self.engine._switch_gas(start, EAN50)
+        self.assertEquals(1, len(steps))
+        self.assertEquals(22, steps[0].depth)
+        self.assertEquals(1200, steps[0].time)
+
+
+    def test_switch_gas(self):
+        """
+        Test gas mix switch
+        """
+        pressure = self.engine._to_pressure
+        data = Data([1.0, 1.0], 0.3)
+        start = Step(Phase.ASCENT, 24, 1200, pressure(24), AIR, data, None)
+
+        steps = self.engine._switch_gas(start, EAN50)
+        self.assertEquals(3, len(steps))
+        self.assertEquals(22, steps[0].depth)
+        self.assertEquals(1212, steps[0].time)
+        self.assertEquals(22, steps[1].depth)
+        self.assertEquals(1212, steps[1].time)
+        self.assertEquals(21, steps[2].depth)
+        self.assertEquals(1218, steps[2].time)
+
+        start = Step(Phase.ASCENT, 24, 1200, pressure(24), AIR, data, None)
+        gas = EAN50._replace(depth=23)
+        steps = self.engine._switch_gas(start, gas)
+        self.assertEquals(23, steps[0].depth)
+        self.assertEquals(1206, steps[0].time)
+        self.assertEquals(23, steps[1].depth)
+        self.assertEquals(1206, steps[1].time)
+        self.assertEquals(21, steps[2].depth)
+        self.assertEquals(1218, steps[2].time)
+
+
+    def test_can_switch_gas_ok(self):
+        """
+        Test gas mix switch validator (allowed)
+        """
+        pressure = self.engine._to_pressure
+        data = Data([0.7, 0.7], 0.3)
+        start = Step(Phase.ASCENT, 24, 1200, pressure(24), AIR, data, None)
+
+        steps = self.engine._can_switch_gas(start, EAN50)
+        self.assertTrue(steps)
+
+
+    def test_can_switch_gas_not_ok(self):
+        """
+        Test gas mix switch validator (not allowed)
+        """
+        pressure = self.engine._to_pressure
+        data = Data([4.0, 4.0], 0.3)
+        start = Step(Phase.ASCENT, 24, 1200, pressure(24), AIR, data, None)
+
+        steps = self.engine._can_switch_gas(start, EAN50)
+        self.assertIsNone(steps)
 
 
 class GasMixTestCase(unittest.TestCase):

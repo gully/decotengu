@@ -83,7 +83,7 @@ Dive step information.
 :var prev: Previous dive step.
 """
 
-GasMix = namedtuple('GasMix', 'depth o2 n2 he') 
+GasMix = namedtuple('GasMix', 'depth o2 n2 he')
 GasMix.__doc__ = """
 Gas mix configuration.
 
@@ -209,7 +209,7 @@ class Engine(object):
         :param data: Decompression model data.
         """
         p = self._to_pressure(depth)
-        return Step(phase, depth, time, p, gas, data, prev) 
+        return Step(phase, depth, time, p, gas, data, prev)
 
 
     def _step_next(self, step, time, gas, phase='const'):
@@ -317,7 +317,7 @@ class Engine(object):
 
         :param start: Starting dive step.
         :param time: Duration of dive at depth indicated by starting dive
-                     step [s]. 
+                     step [s].
         :param gas: Gas mix configuration.
         """
         step = start
@@ -348,6 +348,26 @@ class Engine(object):
         logger.debug('descent finished at {}m'.format(step.depth))
 
 
+    def _dive_ascent(self, start):
+        """
+        Dive ascent from specified dive step.
+
+        The ascent is divided into two phases
+
+        - ascent to first decompression stop or surface
+        - ascent performing decompression stops, if necessary
+
+        :param start: Starting dive step.
+        """
+        step = start
+
+        stages = self._free_ascent_stages()
+        for step in self._free_staged_ascent(step, stages):
+            yield step
+
+        stages = self._deco_ascent_stages(step.depth)
+        yield from self._deco_staged_ascent(step, stages)
+
 
     def _find_first_stop(self, start, depth, gas):
         """
@@ -356,7 +376,8 @@ class Engine(object):
 
         The first decompression stop is searched between depth indicated by
         starting dive step and depth parameter (the latter can be 0
-        (surface) or any other depth (gas switch depth).
+        (surface) or any other depth (divisible by 3, depth stop
+        candidate).
 
         The depth of first decompression stop is the shallowest depth,
         which does not breach the ascent limit imposed by maximum tissue
@@ -367,86 +388,272 @@ class Engine(object):
         :param gas: Gas mix configuration.
         """
         assert start.depth > depth
+        assert depth % 3 == 0
 
         ts_3m = self._to_time(3, self.ascent_rate)
 
         # round to keep numerical stability when conveyor.time_delta is
         # small
-        t = round((start.depth - (depth // 3) * 3) / self.ascent_rate * 60, 10)
+        t = round((start.depth - depth) / self.ascent_rate * 60, 10)
         dt = t % ts_3m
 
+        # bisect search solution range: 0 <= k < n - 1; the invariant
+        # function will use k + 1 as it does not make sense to ascent
+        # by 0m
+        n = t // ts_3m
+        logger.debug(
+            'find first stop: {}m -> {}m, {}s, n={}, dt={}s'
+                .format(start.depth, depth, start.time, n, dt)
+        )
         assert t >= 0
         assert 0 <= dt < ts_3m, dt
+        #assert start.depth - n * 3 == depth
 
-        # bisect search solution range: 0 <= k < n - 1, shallowest possible
-        # first stop at n - 2 and n - 1 is in deco zone
-        n = t // ts_3m + 1
-
-        logger.debug('find first stop: {}m -> {}m, {}s, n={}, dt={}s' \
-                .format(start.depth, depth, start.time, n, dt))
-
-        # for each k ascent for k * t(3m) + dt seconds and check if ascent
-        # invariant is not violated; k * t(3m) + dt formula gives first stop
-        # candidates as multiples of 3m
-        f = lambda k, step: True if k == 0 and dt == 0 else \
-                    self._inv_ascent(
-                        self._step_next_ascent(step, k * ts_3m + dt, gas)
-                    )
-        # find largest k, so ascent is possible
+        # for each k ascent for (k + 1) * t(3m) + dt seconds and check if
+        # ascent invariant is not violated; (k + 1) * t(3m) + dt formula
+        # gives first stop candidates as multiples of 3m
+        f = lambda k, step: self._inv_ascent(
+            self._step_next_ascent(step, (k + 1) * ts_3m + dt, gas)
+        )
+        # find largest k for which ascent without decompression is possible
         k = bisect_find(n, f, start)
+        k += 1  # the invariant function uses k + 1
 
-        t = k * ts_3m + dt
-        if t > 0:
-            first_stop =  self._step_next_ascent(start, t, gas)
+        if k == n:
+            depth = None
+            logger.debug('find first stop: no deco zone found')
+        elif k == 0:
+            depth = start.depth
+            logger.debug('already at deco zone')
         else:
-            first_stop = start
+            t = k * ts_3m + dt
+            depth = start.depth - self._to_depth(t, self.ascent_rate)
+            logger.debug(
+                'find first stop: found, free from {} to {}, ascent time={}' \
+                    .format(start.depth, depth, t)
+            )
 
-        logger.debug('deco zone found: free from {} to {}, ascent time={}' \
-                .format(start.depth, first_stop.depth,
-                    first_stop.time - start.time))
-
-        return first_stop
+        return depth
 
 
-    def _free_ascent(self, start, stop, gas):
+    def _free_ascent_stages(self):
         """
-        Ascent from one dive step to destination one.
+        Calculate stages for deco-free ascent.
+
+        Ascent stage is a tuple
+
+        - destination depth
+        - gas mix
+
+        The ascent stages are calculated using gas mix list. The
+        destination depth is gas switch depth rounded up to multiply of 3m,
+        for example::
+
+             0m  21%        24m  21%
+            22m  50%   ->    6m  50%
+             6m 100%         0m 100%
+
+        """
+        mixes = zip(self._gas_list[:-1], self._gas_list[1:])
+        yield from ((((m2.depth - 1) // 3 + 1) * 3, m1) for m1, m2 in mixes)
+        yield (0, self._gas_list[-1])
+
+
+    def _deco_ascent_stages(self, start_depth):
+        """
+        Calculate stages for decompression ascent.
+
+        Ascent stage is a tuple
+
+        - destination depth
+        - gas mix
+
+        The ascent stages are calculated using gas mix list. The
+        destination depth is gas switch depth rounded down to multiply of
+        3m, for example::
+
+             0m  21%        21m  21%
+            22m  50%   ->    6m  50%
+             6m 100%         0m 100%
+
+        Only gas mixes, which switch depth is shallower than start depth,
+        are used for decompression ascent stages calculation.
+
+        :param start_depth: Decompression start depth.
+        """
+        mixes = zip(self._gas_list[:-1], self._gas_list[1:])
+        yield from (
+            (m2.depth // 3 * 3, m1) for m1, m2 in mixes
+            if m2.depth < start_depth
+        )
+        yield (0, self._gas_list[-1])
+
+
+    def _switch_gas(self, step, gas):
+        """
+        Switch to specified gas mix, ascending if necessary.
+
+        The method is used to switch gas during dive ascent when ascent is
+        performed to depth being multiply of 3m. Two scenarios are
+        implemented
+
+        #. Gas mix switch depth is the same as current dive step depth,
+           then simply perform gas mix switch.
+        #. Gas mix switch depth is shallower than current dive step depth
+
+           - ascend to gas mix switch depth
+           - perform gas mix switch
+           - ascend to next depth, which is multiply of 3m
+
+        Gas mix switch is done in place, takes no time at the moment, but
+        in the future this should be configurable.
+
+        A tuple of gas mix switch dive steps is returned.
+
+        :param step: Current dive step.
+        :param gas: Gas to switch to.
+
+        .. seealso:: :func:`decotengu.engine.Engine._can_switch_gas`
+        """
+        logger.debug('switching to gas {} from {}'.format(gas, step.depth))
+        assert step.depth - gas.depth < 3
+        if step.depth == gas.depth:
+            steps = (step._replace(gas=gas),)
+        else:
+            assert step.depth > gas.depth
+            s1 = self._free_ascent(step, gas.depth, gas)
+            s2 = s1._replace(gas=gas)
+            s3 = self._free_ascent(s2, gas.depth // 3 * 3, gas)
+            steps = (s1, s2, s3)
+        return steps
+
+
+    def _can_switch_gas(self, start, gas):
+        """
+        Check if gas mix can be switched to without violating decompression
+        model ascent invariant.
+
+        If gas mix switch is possible, then gas mix switch dive steps are
+        returned, null otherwise.
+
+        :param step: Current dive step.
+        :param gas: Gas to switch to.
+
+        .. seealso:: :func:`decotengu.engine.Engine._switch_gas`
+        """
+        gs_steps = self._switch_gas(start, gas)
+        return gs_steps if self._inv_ascent(gs_steps[-1]) else None
+
+
+    def _free_staged_ascent(self, start, stages):
+        """
+        Perform staged ascent until first decompression stop.
+
+        :param start: Starting dive step.
+        :param stages: Dive stages.
+
+        .. seealso:: :func:`decotengu.engine.Engine._ascent_stages_free`
+        """
+        step = start
+        for depth, gas in stages:
+            if step.depth - gas.depth < 3:
+                # if gas switch drives us into dive zone, then stop leaving
+                # `step` as first decompression stop
+                gs_steps = self._can_switch_gas(step, gas)
+                if gs_steps:
+                    step = gs_steps[-1]
+                    yield from gs_steps
+                else:
+                    logger.debug('gas switch into deco zone, revert')
+                    break
+
+            # check if there is first decompression stop at this ascent
+            # stage
+            stop = self._find_first_stop(step, depth, gas)
+            if stop and stop == step.depth:
+                break
+            elif stop:
+                step = self._free_ascent(step, stop, gas)
+                yield step
+                break
+            else:
+                step = self._free_ascent(step, depth, gas)
+                yield step
+
+
+    def _deco_staged_ascent(self, start, stages):
+        """
+        Perform staged asccent within decompression zone.
+
+        :param start: Starting dive step.
+        :param stages: Dive stages.
+
+        .. seealso:: :func:`decotengu.engine.Engine._ascent_stages_deco`
+        """
+        step = start
+        assert round(step.depth, 10) % 3 == 0 and step.depth > 0, step.depth
+        n_stops = step.depth / 3
+        gf_step = (self.model.gf_high - self.model.gf_low) / n_stops
+        logger.debug('deco engine: gf step={:.4}'.format(gf_step))
+        first_stop = step.depth
+        for depth, gas in stages:
+            if step.depth >= gas.depth and gas.depth != 0:
+                for step in self._switch_gas(step, gas):
+                    yield step
+            gf = self.model.gf_low + (first_stop - step.depth) / 3 * gf_step
+            for step in self._deco_ascent(step, depth, gas, gf, gf_step):
+                yield step
+        logger.debug('deco engine: gf at surface={:.4f}'.format(step.data.gf))
+
+
+    def _free_ascent(self, start, depth, gas):
+        """
+        Ascent to destination depth using gas mix.
 
         The ascent is performed without performing any decompression stops.
-        It is caller resposibility to provide the destination step outside
+        It is caller resposibility to provide the destination depth outside
         of decompression zone.
 
         :param start: Dive step indicating current depth.
-        :param stop: Dive step indicating destination depth.
+        :param depth: Destination depth.
         :param gas: Gas mix configuration.
         """
-        logger.debug('ascent from {0.depth}m ({0.time}s)'
-                ' to {1.depth}m ({1.time}s)'.format(start, stop))
+        dt = self._to_time(start.depth - depth, self.ascent_rate)
+        time = start.time + dt
+        return self._step_next_ascent(start, dt, gas)
 
-        belt = self.conveyor.trays(start.depth, start.time, stop.time,
-                -self.ascent_rate)
-
-        step = start
-        for tray in belt:
-            step = self._step_next_ascent(step, tray.d_time, gas)
-            yield step
-
-        logger.debug('ascent finished at {}m'.format(step.depth))
-
-        if __debug__:
-            assert abs(step.depth - stop.depth) < EPSILON, '{} ({}s) vs. {} ({}s)' \
-                    .format(step.depth, step.time, stop.depth, stop.time)
-
-            dstr = ' '.join(str(v1 - v2) for v1, v2 in
-                    zip(step.data.tissues, stop.data.tissues))
-
-            assert all(abs(v1 - v2) < EPSILON
-                for v1, v2 in zip(step.data.tissues, stop.data.tissues)), dstr
+        # if __debug__:
+        #     logger.debug(
+        #         'ascent from {0.depth}m ({0.time}s) to {depth}m ({time}s)'
+        #             .format(start, depth=depth, time=time)
+        #     )
+        #
+        # belt = self.conveyor.trays(start.depth, start.time, time,
+        #         -self.ascent_rate)
+        #
+        # step = start
+        # for tray in belt:
+        #     step = self._step_next_ascent(step, tray.d_time, gas)
+        #     yield step
+        #
+        # if __debug__:
+        #     logger.debug('ascent finished at {}m'.format(step.depth))
+        #
+        # if __debug__:
+        #     stop = self._step_next_ascent(start, dt, gas)
+        #     assert abs(step.depth - stop.depth) < EPSILON, '{} ({}s) vs. {} ({}s)' \
+        #             .format(step.depth, step.time, stop.depth, stop.time)
+        #
+        #     dstr = ' '.join(str(v1 - v2) for v1, v2 in
+        #             zip(step.data.tissues, stop.data.tissues))
+        #
+        #     assert all(abs(v1 - v2) < EPSILON
+        #         for v1, v2 in zip(step.data.tissues, stop.data.tissues)), dstr
 
 
     def _deco_ascent(self, first_stop, depth, gas, gf_start, gf_step):
         """
-        Ascent from first decompression stop to the destination depth. 
+        Ascent from first decompression stop to the destination depth.
 
         The depth of first stop should be divisible by 3. The depth of last
         step is at value indicated by ``depth`` value (0 if at surface).
@@ -565,49 +772,8 @@ class Engine(object):
         for step in self._dive_const(step, time * 60, gas):
             yield step
 
-        # (switch depth, gas) -> (destination depth, gas)
-        # (0m, 21%), (22m, 50%), (6m, 100%) -> (22m, 21%), (6m, 50%), (0m, 100%)
-        mix = zip(self._gas_list[:-1], self._gas_list[1:])
-        depths = tuple((m2.depth, m1) for m1, m2 in mix)
-        depths += ((0, self._gas_list[-1]), )
-        k = len(depths)
+        yield from self._dive_ascent(step)
 
-        deco = False
-        for i, (depth, gas) in enumerate(depths):
-            # target depth should be divisble by 3m in case when gas switch
-            # depth is deeper than ascent limit and shallower than first
-            # deco stop, i.e. ascent limit 21.9m, gas switch depth 22m,
-            # first deco stop 24m
-            time_ascent = (step.depth - (depth // 3) * 3) \
-                    / self.ascent_rate * 60
-            assert time_ascent > 0, time_ascent
-            stop = self._step_next_ascent(step, time_ascent, gas)
-            if not self._inv_ascent(stop):
-                stop = self._find_first_stop(step, depth, gas)
-                deco = True
-
-            # is free ascent needed?
-            if abs(stop.depth - step.depth) > EPSILON:
-                assert step.depth > stop.depth
-                for step in self._free_ascent(step, stop, gas):
-                    yield step
-                assert abs(step.depth - stop.depth) < EPSILON, (step.depth, depth)
-
-            if deco:
-                k = i
-                break
-
-        if deco:
-            assert round(step.depth, 10) % 3 == 0 and step.depth > 0, step.depth
-            n_stops = step.depth / 3
-            gf_step = (self.model.gf_high - self.model.gf_low) / n_stops
-            logger.debug('deco engine: gf step={:.4}'.format(gf_step))
-            first_stop = step.depth
-            for depth, gas in depths[k:]:
-                gf = self.model.gf_low + (first_stop - step.depth) / 3 * gf_step
-                for step in self._deco_ascent(step, depth, gas, gf, gf_step): 
-                    yield step
-            logger.debug('deco engine: gf at surface={:.4f}'.format(step.data.gf))
 
 
 class DecoTable(object):

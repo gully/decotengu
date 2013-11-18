@@ -55,44 +55,32 @@ def recurse_while(predicate, f, start):
 
 def bisect_find(n, f, *args, **kw):
     """
-    Find largest k for which f(k) is True.
-    
-    The k is integer in range 0 <= k < n - 1.
+    Find largest `k` for which `f(k)` is true.
 
-    There must be at least one k for which f(k) is False (i.e. n - 1). If
-    not, then ValueError exception is raised.
+    The k is integer in range 0 <= k < n - 1 or -1.  If there is no `k` for
+    which `f(k)` is true, then return `-1`.
 
-    :param n: Range for k, so 0 <= k < n - 1.
-    :param f: Invariant function accepting k.
-    :param *args: Additional positional parameters of f.
-    :param **kw: Additional named parameters of f.
+    :param n: Range for `k`, so :math:`0 <= k < n - 1`.
+    :param f: Invariant function accepting `k`.
+    :param *args: Additional positional parameters of `f`.
+    :param **kw: Additional named parameters of `f`.
     """
     lo = 0
     hi = n
-    logger.debug('bisect n: {}'.format(n))
+    if __debug__:
+        logger.debug('bisect n: {}'.format(n))
 
     while lo < hi:
         k = (lo + hi) // 2
 
-        logger.debug('bisect range: {} <= {} <= {}'.format(lo, k, hi))
-        assert lo <= k <= hi, 'bisect range: {} <= {} <= {}'.format(lo, k, hi)
+        if __debug__:
+            logger.debug('bisect range: {} <= {} <= {}'.format(lo, k, hi))
+            assert lo <= k <= hi, 'bisect range: {} <= {} <= {}'.format(lo, k, hi)
 
         if f(k, *args, **kw):
             lo = k + 1
         else:
             hi = k
-
-    if hi == 0 or lo == n:
-        raise ValueError('Solution {} out of range 0 <= k < {}'.format(hi - 1,
-            n - 1))
-
-    assert hi > 0
-    if __debug__:
-        logger.debug('bisect check a >= b')
-        assert f(hi - 1, *args, **kw)
-
-        logger.debug('bisect check a < b')
-        assert not f(hi, *args, **kw)
 
     return hi - 1 # hi is first k for which f(k) is not true, so f(hi - 1) is true
 
