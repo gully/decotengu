@@ -66,15 +66,16 @@ time: {}
 
         print(desc)
 
-        engine = decotengu.Engine()
+        engine, dt = decotengu.create(validate=False)
         engine.surface_pressure = surface_pressure
         engine.gf_low = gf_low
         engine.gf_high = gf_high
+        engine.add_gas(0, 21)
         data = engine.calculate(depth, time)
         self.assertTrue(list(data), desc)
-        self.assertTrue(engine.deco_table, desc)
-        self.assertTrue(engine.deco_table[-1].depth != 0)
+        self.assertTrue(dt.stops, desc)
+        self.assertTrue(dt.stops[-1].depth != 0)
 
-        pprint(engine.deco_table)
+        pprint(dt.stops)
 
 # vim: sw=4:et:ai
