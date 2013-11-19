@@ -211,6 +211,17 @@ Using :func:`eq_schreiner` function (note the implementation of this function ex
     >>> round(P, 6)
     2.423739
 
+The relationship between dive time, absolute pressure of dive depth and
+inert gas pressure in a tissue compartment is visualized on figure
+:ref:`model-eq-schreiner-plot`.
+
+.. _model-eq-schreiner-plot:
+
+.. figure:: eq-schreiner-plot.png
+   :align: center
+
+   Inert gas pressure in tissue compartment for a dive profile
+
 Calculations
 ------------
 Inert gas pressure of each tissue compartment for descent, ascent and at
