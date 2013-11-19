@@ -234,8 +234,8 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         # trigger bisect_find to use 2nd maximum time allowed by tabular
         # tissue calculator...
         self.engine._inv_ascent = mock.MagicMock(
-                side_effect=[True, True, False,
-                    True, False]) # debug calls "bisect check"
+            side_effect=[True, True, False]
+        )
 
         start = _step(Phase.CONST, 30, 1200)
         step = _step(Phase.ASCENT, 27, 1200, prev=start)
@@ -244,8 +244,8 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
 
         self.engine._find_first_stop(start, 0, AIR)
 
-        # 3 bisect calls, 2 debug "bisect check" calls, final call
-        self.assertEquals(6, self.engine._step_next_ascent.call_count,
+        # 3 bisect calls, final call
+        self.assertEquals(4, self.engine._step_next_ascent.call_count,
                 '{}'.format(self.engine._step_next_ascent.call_args_list))
         max_time = max(a[0][1] for a in self.engine._step_next_ascent.call_args_list)
         # ... as max time should not be used by bisect_find (it is used by
