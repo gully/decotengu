@@ -441,98 +441,6 @@ class EngineTestCase(unittest.TestCase):
         self.assertRaises(ConfigError, next, it)
 
 
-    def test_calculation_with_deco(self):
-        """
-        Test deco engine dive profile calculation with deco
-        """
-        s1 = _step(Phase.START, 0, 0, data=Data((0.7, 0.7), 0.3))
-        s2 = _step(Phase.DESCENT, 45, 270, prev=s1, data=Data((3.0, 3.0), 0.3))
-        s3 = _step(Phase.CONST, 45, 2070, prev=s2, data=Data((4.5, 4.5), 0.3))
-        s4 = _step(Phase.ASCENT, 21, 2214, prev=s3, data=Data((3.0, 3.0), 0.3))
-        self.engine._dive_descent = mock.MagicMock(return_value=[s1, s2])
-        self.engine._dive_const = mock.MagicMock(return_value=[s3])
-        self.engine._find_first_stop = mock.MagicMock(return_value=s4)
-        self.engine._free_ascent = mock.MagicMock(return_value=[s4])
-        self.engine._deco_ascent = mock.MagicMock()
-
-        v = list(self.engine.calculate(45, 30))
-        self.assertEquals(1, self.engine._dive_descent.call_count)
-        self.assertEquals(1, self.engine._dive_const.call_count)
-        self.assertEquals(1, self.engine._find_first_stop.call_count)
-        self.assertEquals(1, self.engine._free_ascent.call_count)
-        self.assertEquals(1, self.engine._deco_ascent.call_count)
-
-
-    def test_calculation_with_gas_switch_deco(self):
-        """
-        Test deco engine dive profile calculation with gas switch and with deco
-        """
-        self.engine.add_gas(22, 50)
-        self.engine.add_gas(6, 100)
-
-        s1 = _step(Phase.START, 0, 0)
-        s2 = _step(Phase.DESCENT, 25, 150, prev=s1)
-        s3 = _step(Phase.CONST, 25, 1050, prev=s2)
-        s4 = _step(Phase.ASCENT, 22, 1068, prev=s3) # gas switch
-        s5 = _step(Phase.ASCENT, 15, 1110, prev=s4) # first deco stop
-        s6 = _step(Phase.ASCENT, 6, 1164, prev=s5) # gas switch
-        s7 = _step(Phase.ASCENT, 0, 1200, prev=s6) # surface
-
-        self.engine._dive_descent = mock.MagicMock(return_value=[s1, s2])
-        self.engine._dive_const = mock.MagicMock(return_value=[s3])
-        self.engine._find_first_stop = mock.MagicMock(return_value=s5)
-        self.engine._step_next_ascent = mock.MagicMock(side_effect=[s4, s6])
-
-        # True till 22m, False till 6m, which should trigger first stop at 15m
-        self.engine._inv_ascent = mock.MagicMock(side_effect=[True, False])
-        self.engine._free_ascent = mock.MagicMock(side_effect=[[s4], [s5]])
-        self.engine._deco_ascent = mock.MagicMock(side_effect=[[s6], [s7]])
-
-        v = list(self.engine.calculate(25, 15))
-        self.assertEquals(1, self.engine._dive_descent.call_count)
-        self.assertEquals(1, self.engine._dive_const.call_count)
-        self.assertEquals(1, self.engine._find_first_stop.call_count)
-
-        # 25 -> 22, 22 -> 15
-        args = self.engine._free_ascent.call_args_list
-        self.assertEquals(2, self.engine._free_ascent.call_count, args)
-        depths = [a[0][1].depth for a in args]
-        self.assertEquals([22, 15], depths)
-        gas_mixes = [a[0][2] for a in args]
-        self.assertEquals([AIR, EAN50], gas_mixes)
-
-        # 15 -> 6m, 6m -> 0m
-        self.assertEquals(2, self.engine._deco_ascent.call_count)
-
-        args = self.engine._deco_ascent.call_args_list
-
-        # verify that depth limit is passed properly
-        depths = [a[0][1] for a in args]
-        self.assertEquals([6, 0], depths)
-
-        # verify that gas mix is passed properly
-        gas_mixes = [a[0][2] for a in args]
-        self.assertEquals([EAN50, O2], gas_mixes)
-
-        # verify that gradient factor values are passed correctly
-        gf_values = [a[0][3] for a in args]
-        self.assertEquals(0.3, gf_values[0])
-        self.assertAlmostEquals(0.63, gf_values[1])
-
-        gf_steps = [a[0][4] for a in args]
-        self.assertAlmostEquals(0.11, gf_steps[0])
-        self.assertAlmostEquals(0.11, gf_steps[1])
-
-        # calculations for ascent invariant: trying 25 -> 21, 22 -> 6
-        self.assertEquals(2, self.engine._step_next_ascent.call_count)
-        args = self.engine._step_next_ascent.call_args_list
-        # 1st call, trying ascent to 21m (target depth should be divisble
-        # by 3m): 25 - 21 = 4 -> 4 / 10 * 60 = 2.5
-        self.assertEquals(24.0, args[0][0][1], args)
-        # 2nd call: 22m -> 6m
-        self.assertEquals(96.0, args[1][0][1], args)
-
-
 
 class EngineDiveAscentTestCase(unittest.TestCase):
     """
@@ -770,6 +678,53 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         self.assertEquals(1, self.engine._can_switch_gas.call_count)
         self.assertEquals(1, self.engine._find_first_stop.call_count)
         self.assertEquals(1, self.engine._free_ascent.call_count)
+
+
+    def test_deco_staged_ascent(self):
+        """
+        Test deco engine deco ascent
+
+        Verify deco ascent without gas switches
+        """
+        stages = [(0, AIR)]
+        start = _step(Phase.ASCENT, 21, 2214, data=Data((3.0, 3.0), 0.3))
+
+        deco_stop = mock.MagicMock()
+        deco_stop.data.gf = 0.3
+        deco_steps = [deco_stop] * 7
+        self.engine._deco_ascent = mock.MagicMock(side_effect=[deco_steps])
+
+        steps = list(self.engine._deco_staged_ascent(start, stages))
+        self.assertEquals(7, len(steps)) # deco stops 21m -> 0m
+        self.assertEquals(1, self.engine._deco_ascent.call_count)
+
+
+    def test_deco_staged_ascent_gas_switch(self):
+        """
+        Test deco engine deco ascent with gas switch
+        """
+        gas_mix = EAN50._replace(depth=12)
+        stages = [
+            (12, AIR),
+            (0, gas_mix),
+        ]
+        start = _step(Phase.ASCENT, 21, 2214, data=Data((3.0, 3.0), 0.3))
+
+        deco_stop = mock.MagicMock()
+        deco_stop.data.gf = 0.3
+        deco_stop.depth = 12
+        deco_steps = [deco_stop] * 7
+        self.engine._deco_ascent = mock.MagicMock(
+            side_effect=[deco_steps[:3], deco_steps[3:]]
+        )
+        # add gas switch step at 12m
+        self.engine._switch_gas = mock.MagicMock(return_value=[deco_steps[3]])
+
+        steps = list(self.engine._deco_staged_ascent(start, stages))
+        #self.assertEquals(8, len(steps)) # deco stops 21m -> 0m + gas switch
+                                         # step at 12m
+        self.assertEquals(2, self.engine._deco_ascent.call_count)
+        self.engine._switch_gas.assert_called_once_with(deco_steps[3], gas_mix)
 
 
 class GasMixTestCase(unittest.TestCase):
