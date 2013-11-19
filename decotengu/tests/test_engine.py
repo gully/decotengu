@@ -325,15 +325,16 @@ class EngineTestCase(unittest.TestCase):
     def test_first_stop_finder(self, f_bf):
         """
         Test first deco stop finder
+
+        Call Engine._find_first_stop method and check if returns
+        appropriate decompression stop depth.
         """
         start = _step(Phase.ASCENT, 31, 1200)
         self.engine._step_next_ascent = mock.MagicMock()
 
-        f_bf.return_value = 6 # 31m -> 30m - 18m == 12m
-        self.engine._find_first_stop(start, 0, AIR)
-
-        # 6 * 3m + 1m (6s) == 114s to ascent from 31m to 12m
-        self.engine._step_next_ascent.assert_called_once_with(start, 114, AIR)
+        f_bf.return_value = 5 # 31m -> 30m - (k + 1) * 3m == 12m
+        stop = self.engine._find_first_stop(start, 0, AIR)
+        self.assertEquals(12, stop)
 
 
     @mock.patch('decotengu.engine.bisect_find')
@@ -344,10 +345,10 @@ class EngineTestCase(unittest.TestCase):
         start = _step(Phase.ASCENT, 12, 1200)
         self.engine._step_next_ascent = mock.MagicMock()
 
-        f_bf.return_value = 0 # the 12m is depth of deco stop
+        f_bf.return_value = -1 # the 12m is depth of deco stop
         stop = self.engine._find_first_stop(start, 0, AIR)
         self.assertFalse(self.engine._step_next_ascent.called)
-        self.assertIs(start, stop)
+        self.assertEquals(start.depth, stop)
 
 
     @mock.patch('decotengu.engine.bisect_find')
@@ -362,7 +363,7 @@ class EngineTestCase(unittest.TestCase):
         self.engine._find_first_stop(start, 0, AIR)
 
         assert f_bf.called # test precondition
-        self.assertEquals(11, f_bf.call_args_list[0][0][0])
+        self.assertEquals(10, f_bf.call_args_list[0][0][0])
 
 
     def test_deco_ascent(self):

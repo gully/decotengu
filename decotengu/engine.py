@@ -371,13 +371,12 @@ class Engine(object):
 
     def _find_first_stop(self, start, depth, gas):
         """
-        Find first decompression stop using Schreiner equation and bisect
-        algorithm.
+        Find first decompression stop depth using Schreiner equation and
+        bisect algorithm.
 
-        The first decompression stop is searched between depth indicated by
-        starting dive step and depth parameter (the latter can be 0
-        (surface) or any other depth (divisible by 3, depth stop
-        candidate).
+        The depth is searched between depth indicated by starting dive step
+        and depth parameter (the latter can be 0 (surface) or any other
+        depth (divisible by 3, depth stop candidate).
 
         The depth of first decompression stop is the shallowest depth,
         which does not breach the ascent limit imposed by maximum tissue
@@ -432,6 +431,8 @@ class Engine(object):
                 'find first stop: found, free from {} to {}, ascent time={}' \
                     .format(start.depth, depth, t)
             )
+
+        assert not depth or round(depth, 10) % 3 == 0
 
         return depth
 
@@ -557,8 +558,8 @@ class Engine(object):
         step = start
         for depth, gas in stages:
             if step.depth - gas.depth < 3:
-                # if gas switch drives us into deco zone, then stop leaving
-                # `step` as first decompression stop
+                # if gas switch drives us into deco zone, then stop ascent
+                # leaving `step` as first decompression stop
                 gs_steps = self._can_switch_gas(step, gas)
                 if gs_steps:
                     step = gs_steps[-1]
