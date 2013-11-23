@@ -64,10 +64,11 @@ Equations
 The parameters mentioned in previous section are used by two equations
 
 #. Schreiner equation to calculate inert gas pressure of a tissue
-   compartment (:func:`eq_schreiner`).
+   compartment (implemented by :func:`eq_schreiner` function).
 
 #. Buhlmann equation extended with gradient factors by Eric Baker to
-   calculate ascent ceiling of a tissue compartment (:func:`eq_gf_limit`).
+   calculate ascent ceiling of a tissue compartment (implemented by
+   :func:`eq_gf_limit` function).
 
 .. _eq-schreiner:
 
@@ -79,11 +80,12 @@ The Schreiner equation is
 
         P = P_alv + R * (t - 1 / k) - (P_alv - P - R / k) * e^{-k * t}
 
-Pressure of inert gas in tissue compartment (:math:`P` on the right of the
+Pressure of inert gas in tissue compartment :math:`P` (on the right of the
 equation) is initial pressure in tissue compartment, i.e. `0.79` bar for
 air on the surface. The result of equation is pressure in tissue
-compartment (:math:`P` on the left) after time of exposure :math:`t`, which
-we feed recursively to the equation from start till end of a dive.
+compartment :math:`P` (on the left of the equation) after time of exposure
+:math:`t`, which we feed recursively to the equation from start till end of
+a dive.
 
 The variables of the equation are
 
