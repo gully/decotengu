@@ -26,10 +26,6 @@ The DecoTengu engine sends data to an instance of :class:`DecoTable
 <decotengu.DecoTable>` class, which extracts decompression information
 from received data. It is designed as Python coroutine.
 
-The :class:`Conveyor <decotengu.conveyor.Conveyor>` class is used to divide
-dive time to perform calculations in multiple steps, i.e. to obtain
-decompression model calculation every minute.
-
 The attributes of core calculation classes usually keep various
 configuration aspects of DecoTengu library (i.e. ascent rate, surface
 pressure), but they never keep any state of calculation process. The state
@@ -49,20 +45,20 @@ of calculations is carried by DecoTengu data model, see
    | add_gas()                  |             | HE_B                |            |
    | calculate()                |             | N2_HALF_LIFE        |            |
    +----------------------------+             | HE_HALF_LIFE        |        [1] | calc
-           x                 x                +---------------------+            v
-           |                 |                | gf_low = 0.3        |    +------------------+
-           .                 |                | gf_high = 0.85      |    | TissueCalculator |
-           | <<send>>    [1] | conveyor       +---------------------+    +------------------+
-           .                 v                | init()              |    | n2_half_life     |
-           |           +------------+         | load()              |    | he_half_life     |
-           v           |  Conveyor  |         | pressure_limit()    |    +------------------+
-   +---------------+   +------------+         +---------------------+
-   | <<coroutine>> |   | time_delta |            /_\           /_\
-   |   DecoTable   |   +------------+             |             |
-   +---------------+                              |             |
-   | stops         |                      +------------+   +------------+
-   | tissues       |                      | ZH_L16B_GF |   | ZH_L16C_GF |
-   +---------------+                      +------------+   +------------+
+                  x                           +---------------------+            v
+                  |                           | gf_low = 0.3        |    +------------------+
+                  .                           | gf_high = 0.85      |    | TissueCalculator |
+                  | <<send>>                  +---------------------+    +------------------+
+                  .                           | init()              |    | n2_half_life     |
+                  |                           | load()              |    | he_half_life     |
+                  v                           | pressure_limit()    |    +------------------+
+          +---------------+                   +---------------------+
+          | <<coroutine>> |                      /_\           /_\
+          |   DecoTable   |                       |             |
+          +---------------+                       |             |
+          | stops         |               +------------+   +------------+
+          | tissues       |               | ZH_L16B_GF |   | ZH_L16C_GF |
+          +---------------+               +------------+   +------------+
 
 
 .. _design-data-model:
@@ -148,5 +144,26 @@ in DecoTengu are modeled by :class:`Phase enumeration
    | ASCENT = 'ascent'     |
    | DECOSTOP = 'decostop' |
    +-----------------------+
+
+
+Dive Profile Expansion
+----------------------
+The :class:`Conveyor <decotengu.conveyor.Conveyor>` class is used to expand
+dive profile with additional dive steps calculated in specific time
+interval (time delta), i.e. to obtain decompression model calculation every
+minute or every second. The The :class:`Conveyor <decotengu.conveyor.Conveyor>`
+object is a callable, which replaces decompression engine :func:`calculate
+<decotengu.Engine.calculate>` method.
+
+.. code::
+   :class: diagram
+
+   +--------------+  engine         +--------------+
+   |              |<----------------| <<callable>> |
+   |    Engine    |  [1]            |   Conveyor   |
+   |              |                 +--------------+
+   +--------------+   <<replace>>   | time_delta   |
+   | calculate()<.-.-.-.-.-.-.-.-.-.| f_calc       |
+   +--------------+                 +--------------+
 
 .. vim: sw=4:et:ai
