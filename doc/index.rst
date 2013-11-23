@@ -6,8 +6,8 @@
 | `BUGS <http://savannah.nongnu.org/bugs/?group=decotengu>`_
 | `SOURCE CODE <http://git.savannah.gnu.org/cgit/decotengu.git>`_
 
-Introduction
-============
+DecoTengu
+=========
 
 DecoTengu is Python dive decompression library to experiment with various
 implementations of Buhlmann decompression model with Eric Baker's gradient
@@ -37,6 +37,7 @@ Table of Contents
    model
    design
    api
+   changelog
 
 * :ref:`genindex`
 * :ref:`search`
