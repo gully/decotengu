@@ -24,109 +24,93 @@ Conveyor tests.
 from decotengu.conveyor import Conveyor
 
 import unittest
+from unittest import mock
 
 
 class ConveyorTestCase(unittest.TestCase):
     """
     Conveyor tests.
     """
-    def test_no_time_delta(self):
+    def test_trays_eq(self):
         """
-        Test conveyor without time delta
+        Test conveyor trays method, equal rest
         """
-        t = Conveyor()
-
-        st = t.trays(30, 1000, 1200, 10) 
-        r = next(st)
-
-        self.assertEquals(30, r.depth)
-        self.assertEquals(1000, r.time)
-        self.assertEquals(200, r.d_time)
-
-        self.assertTrue(next(st, None) is None)
+        t = Conveyor(mock.MagicMock(), 60)
+        k, r = t.trays(100, 160)
+        self.assertEquals(0, k)
+        self.assertEquals(60, r)
 
 
-    def test_edge_tray(self):
+    def test_trays_neq(self):
         """
-        Test conveyor with edge tray
+        Test conveyor trays method, non-equal rest
         """
-        t = Conveyor()
-        t.time_delta = 60
-
-        result = list(t.trays(30, 1000, 1003, 10))
-        depth = [s.depth for s in result]
-        time = [s.time for s in result]
-        t_time = [s.d_time for s in result]
-
-        self.assertEquals([30], depth)
-        self.assertEquals([1000], time)
-        self.assertEquals([3], t_time)
+        t = Conveyor(mock.MagicMock(), 60)
+        k, r = t.trays(100, 180)
+        self.assertEquals(1, k)
+        self.assertEquals(20, r)
 
 
-    def test_tray_depth_constant(self):
+    def test_tray_frac_eq(self):
         """
-        Test conveyor when depth is constant
+        Test conveyor with fractional time delta, equal rest
         """
-        t = Conveyor()
-        t.time_delta = 60
-
-        result = list(t.trays(30, 1000, 1210, 0))
-        depth = [s.depth for s in result]
-        time = [s.time for s in result]
-        d_time = [s.d_time for s in result]
-
-        self.assertEquals([30] * 4, depth)
-        self.assertEquals([1000, 1060, 1120, 1180], time)
-        self.assertEquals([60, 60, 60, 30], d_time)
+        t = Conveyor(mock.MagicMock(), 0.1)
+        k, r = t.trays(100, 160)
+        self.assertEquals(599, k)
+        self.assertEquals(0.1, round(r, 10))
 
 
-    def test_time_edge(self):
+    def test_tray_frac_neq(self):
         """
-        Test transimission time edges 
+        Test conveyor with fractional time delta, non-equal rest
         """
-        t = Conveyor()
-        t.time_delta = 60
-
-        result = list(t.trays(30, 1000, 1240, 0))
-        time = [s.time for s in result]
-        d_time = [s.d_time for s in result]
-
-        self.assertEquals([1000, 1060, 1120, 1180], time)
-        self.assertEquals([60] * 4, d_time)
+        t = Conveyor(mock.MagicMock(), 0.12)
+        k, r = t.trays(100, 160)
+        self.assertEquals(499, k)
+        self.assertEquals(0.12, round(r, 10))
 
 
-    def test_time_ascent(self):
-        """
-        Test conveyor trays for ascent
-        """
-        t = Conveyor()
-        t.time_delta = 60
+# FIXME: readd the tests below
+#    def test_dive_descent(self):
+#        """
+#        Test dive descent
+#        """
+#        self.engine.descent_rate = 10
+#        self.engine.conveyor.time_delta = 60
+# 
+#        steps = list(self.engine._dive_descent(21, AIR))
+#        self.assertEquals(4, len(steps)) # should contain start of a dive
+# 
+#        s1, s2, s3, s4 = steps
+#        self.assertEquals(0, s1.depth)
+#        self.assertEquals(0, s1.time)
+#        self.assertEquals(10, s2.depth)
+#        self.assertEquals(60, s2.time)
+#        self.assertEquals(20, s3.depth)
+#        self.assertEquals(120, s3.time)
+#        self.assertEquals(21, s4.depth)
+#        self.assertEquals(126, s4.time) # 1m is 6s at 10m/min
+#        self.assertEquals(AIR, s4.gas)
 
-        result = list(t.trays(60, 1680, 1860, -10))
-        depth = [s.depth for s in result]
-        time = [s.time for s in result]
-        d_time = [s.d_time for s in result]
 
-        self.assertEquals([60, 50, 40], depth)
-        self.assertEquals([1680, 1740, 1800], time)
-        self.assertEquals([60, 60, 60], d_time)
-
-
-    def test_time_ascent_time_edge(self):
-        """
-        Test conveyor trays for ascent with time edge
-        """
-        t = Conveyor()
-        t.time_delta = 60
-
-        result = list(t.trays(40, 1680, 1812, -10))
-        depth = [s.depth for s in result]
-        time = [s.time for s in result]
-        d_time = [s.d_time for s in result]
-
-        self.assertEquals([40, 30, 20], depth)
-        self.assertEquals([1680, 1740, 1800], time)
-        self.assertEquals([60, 60, 12], d_time)
+#    def test_dive_const(self):
+#        """
+#        Test diving constant depth
+#        """
+#        step = _step(Phase.ASCENT, 20, 120)
+#        self.engine.conveyor.time_delta = 60
+# 
+#        steps = list(self.engine._dive_const(step, 180, AIR))
+#        self.assertEquals(3, len(steps))
+# 
+#        s1, s2, s3 = steps
+#        self.assertEquals(20, s1.depth)
+#        self.assertEquals(180, s1.time)
+#        self.assertEquals(20, s2.depth)
+#        self.assertEquals(240, s2.time)
+#        self.assertEquals(20, s3.depth)
+#        self.assertEquals(300, s3.time)
 
 
 # vim: sw=4:et:ai

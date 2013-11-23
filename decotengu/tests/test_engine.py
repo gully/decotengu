@@ -242,51 +242,11 @@ class EngineTestCase(unittest.TestCase):
         self.assertEquals([1.2, 1.3], v)
 
 
-    def test_dive_const_no_time_delta(self):
+    def test_dive_descent(self):
         """
-        Test diving constant depth (no time delta)
-        """
-        step = _step(Phase.ASCENT, 20, 120)
-        self.engine.conveyor.time_delta = None
-
-        assert self.engine.conveyor.time_delta is None, \
-                self.engine.conveyor.time_delta
-
-        steps = list(self.engine._dive_const(step, 121, AIR))
-        self.assertEquals(1, len(steps))
-
-        step = steps[0]
-        self.assertEquals(20, step.depth)
-        self.assertEquals(241, step.time)
-
-
-    def test_dive_const(self):
-        """
-        Test diving constant depth
-        """
-        step = _step(Phase.ASCENT, 20, 120)
-        self.engine.conveyor.time_delta = 60
-
-        steps = list(self.engine._dive_const(step, 180, AIR))
-        self.assertEquals(3, len(steps))
-
-        s1, s2, s3 = steps
-        self.assertEquals(20, s1.depth)
-        self.assertEquals(180, s1.time)
-        self.assertEquals(20, s2.depth)
-        self.assertEquals(240, s2.time)
-        self.assertEquals(20, s3.depth)
-        self.assertEquals(300, s3.time)
-
-
-    def test_dive_descent_no_time_delta(self):
-        """
-        Test dive descent (no time delta)
+        Test dive descent
         """
         self.engine.descent_rate = 10
-        self.engine.conveyor.time_delta = None
-
-        assert self.engine.conveyor.time_delta is None, self.engine.conveyor.time_delta
 
         steps = list(self.engine._dive_descent(21, AIR))
         self.assertEquals(2, len(steps)) # should contain start of a dive
@@ -297,28 +257,6 @@ class EngineTestCase(unittest.TestCase):
         self.assertEquals(21, s2.depth)
         self.assertEquals(126, s2.time) # 1m is 6s at 10m/min
         self.assertEquals(AIR, s2.gas)
-
-
-    def test_dive_descent(self):
-        """
-        Test dive descent
-        """
-        self.engine.descent_rate = 10
-        self.engine.conveyor.time_delta = 60
-
-        steps = list(self.engine._dive_descent(21, AIR))
-        self.assertEquals(4, len(steps)) # should contain start of a dive
-
-        s1, s2, s3, s4 = steps
-        self.assertEquals(0, s1.depth)
-        self.assertEquals(0, s1.time)
-        self.assertEquals(10, s2.depth)
-        self.assertEquals(60, s2.time)
-        self.assertEquals(20, s3.depth)
-        self.assertEquals(120, s3.time)
-        self.assertEquals(21, s4.depth)
-        self.assertEquals(126, s4.time) # 1m is 6s at 10m/min
-        self.assertEquals(AIR, s4.gas)
 
 
     @mock.patch('decotengu.engine.bisect_find')
@@ -373,7 +311,6 @@ class EngineTestCase(unittest.TestCase):
         pressure = self.engine._to_pressure
         self.engine.model.gf_low = 0.30
         self.engine.model.gf_high = 0.85
-        self.engine.conveyor.time_delta = None
 
         data = Data([2.5] * 3, 0.3)
         first_stop = _step(Phase.ASCENT, 15, 1200, data=data)
@@ -406,7 +343,6 @@ class EngineTestCase(unittest.TestCase):
         """
         self.engine.model.gf_low = 0.30
         self.engine.model.gf_high = 0.85
-        self.engine.conveyor.time_delta = None
 
         data = Data([2.5] * 3, 0.3)
         first_stop = _step(Phase.ASCENT, 15, 1200, data=data)

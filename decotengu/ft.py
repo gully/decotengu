@@ -22,17 +22,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def seq(start, stop, step=1):
-    """
-    Create a sequence [start, stop] with specific step.
-    """
-    if start > stop and step > 0 or start < stop and step < 0:
-        raise ValueError('Wrong sign of step')
-
-    count = int((stop - start) / step) + 1
-    return (start + k * step for k in range(count))
-
-
 def recurse_while(predicate, f, start):
     """
     Execute function `f` while predicate function is true.

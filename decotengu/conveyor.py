@@ -22,90 +22,136 @@ Conveyor to move depth between points in time.
 """
 
 from collections import namedtuple
+from functools import partial
+import logging
+import math
 
-from .ft import seq
+from .engine import Phase
 
-#
-# Tray tuple having depth, time and delta time for next tray.
-#
-# depth
-#   Depth in meters.
-# time
-#   Time in seconds.
-# d_time
-#   Delta time for next tray (next tray time is equal to time + d_time).
-#   
-Tray = namedtuple('Tray', 'depth time d_time')
+logger = logging.getLogger(__name__)
 
 EPSILON = 10 ** -10
 
 class Conveyor(object):
     """
-    Conveyor to move depth between points in time.
+    Conveyor to expand dive profile into more granular dive steps.
 
-    The points in time are calculated using time delta attribute. If time
-    delta is ``None``, then one point time exists only.
+    The conveyor is used to override Engine.calculate method, for example::
 
-    To ascent from 40m depth
+        >>> import decotengu
+        >>> engine = decotengu.Engine()
+        >>> engine.add_gas(0, 21)
+        >>> engine.calculate = Conveyor(engine, 60) # dive step every 60s
+        >>> profile = engine.calculate(50, 20)
+        >>> for step in profile:
+        ...     print(step)     # doctest:+ELLIPSIS
+        Step(phase="start", depth=0, time=0, ...)
+        Step(phase="descent", depth=20.0, time=60, ...)
+        Step(phase="descent", depth=40.0, time=120, ...)
+        Step(phase="descent", depth=50.0, time=150.0, ...)
+        ...
 
-    >>> from pprint import pprint
-    >>> conveyor = Conveyor()
-    >>> conveyor.time_delta = 60
-    >>> belt = conveyor.trays(40, 100, 220, -10)
-    >>> for tray in belt:
-    ...     print(tray)
-    Tray(depth=40.0, time=100, d_time=60)
-    Tray(depth=30.0, time=160, d_time=60)
-
-    Last point in time is given by last tray's time plus its time delta
-
-    >>> belt = conveyor.trays(40, 100, 230, -10)
-    >>> for tray in belt:
-    ...     print(tray)
-    Tray(depth=40.0, time=100, d_time=60)
-    Tray(depth=30.0, time=160, d_time=60)
-    Tray(depth=20.0, time=220, d_time=10)
-    >>> print('next point in time {}'.format(tray.time + tray.d_time))
-    next point in time 230
-
-    :var time_delta: Time delta to calculate points in time.
+    :var engine: DecoTengu decompression engine.
+    :var time_delta: Time delta to increase dive steps granulity [s].
+    :var f_calc: Orignal DecoTengu decompression engine calculation method.
     """
-    def __init__(self):
+    def __init__(self, engine, time_delta):
         """
         Create conveyor.
+
+        :param engine: DecoTengu decompression engine.
+        :param time_delta: Time delta to increase dive steps granulity [s].
         """
-        self.time_delta = None
+        if time_delta < 0.1:
+            logger.warn('possible calculation problems: time delta below' \
+                    ' 0.1 not supported')
+        elif time_delta < 60 and math.modf(60 / time_delta)[0] != 0:
+            logger.warn('possible calculation problems: time delta does' \
+                    ' not divide 60 evenly without a reminder')
+        elif time_delta >= 60 and time_delta % 60 != 0:
+            logger.warn('possible calculation problems: time delta modulo' \
+                ' 60 not zero')
+        self.time_delta = time_delta
+        self.engine = engine
+        self.f_calc = engine.calculate
 
 
-    def trays(self, start_depth, start_time, end_time, rate):
+    def trays(self, start_time, end_time):
         """
-        Return collection of tray tuples.
+        Return count of trays and time rest.
 
-        :param start_depth: Starting depth [m].
+        The count of trays is amount of time delta values existing between
+        start and end time (exclusive). The time rest is amount of seconds
+        between last tray and end of time.
+
+        The information calculated by the method enables us to increase
+        dive step granulity, i.e::
+
+            >>> import decotengu
+            >>> engine = decotengu.Engine()
+            >>> conveyor = Conveyor(engine, 60)
+            >>> conveyor.trays(100, 240)
+            (2, 20)
+
+        For time delta 60s, there are two dive steps to be inserted. The
+        remaining time between last inserted dive step and ending step is
+        20s.
+
         :param start_time: Starting time [s].
         :param end_time: Ending time [s].
-        :param rate: Rate at which depth changes [m/min].
         """
-        if self.time_delta is None:
-            d_time = end_time - start_time
-        else:
-            d_time = self.time_delta
+        dt = end_time - start_time
+        k = math.ceil(dt / self.time_delta) - 1
+        r = dt - k * self.time_delta
+        return k, r
 
-        d_depth = rate * d_time / 60
 
-        if start_time <= end_time - d_time:
-            for k, t in enumerate(seq(start_time, end_time - d_time, d_time)):
-                depth = start_depth + k * d_depth
-                tray = Tray(depth, t, d_time)
-                yield tray
-        else:
-            d_depth = 0
-            d_time = 0
-            tray = Tray(start_depth, start_time, 0)
+    def __call__(self, *args):
+        """
+        Execute original `Engine.calculate` method and expand dive steps.
+        """
+        if __debug__:
+            logger.debug('conveyor time delta {}'.format(self.time_delta))
 
-        if abs(end_time - tray.time - d_time) > EPSILON:
-            td = end_time - tray.time - d_time
-            yield Tray(tray.depth + d_depth, tray.time + d_time, td)
+        data = self.f_calc(*args)
+        yield next(data)
 
+        for end in data:
+            prev = end.prev
+
+            # determine descent/ascent/const engine method
+            f_step = self.engine._step_next # default const
+            if end.phase == Phase.ASCENT:
+                assert end.depth - prev.depth < 0
+                f_step = partial(self.engine._step_next_ascent, gf=end.data.gf)
+            elif end.phase == Phase.DESCENT:
+                assert end.depth - prev.depth > 0
+                f_step = self.engine._step_next_descent
+
+            k, tr = self.trays(prev.time, end.time)
+            logger.debug(
+                'conveyor time {}s -> {}s, {}m -> {}m, steps {}, rest {}' \
+                .format(prev.time, end.time, prev.depth, end.depth, k, tr)
+            )
+
+            step = prev
+            for i in range(k):
+                step = f_step(step, self.time_delta, end.gas)
+                yield step
+
+            if __debug__:
+                # validate steps expansion: (step + time(tr) = stop) == end?
+                stop = f_step(step, tr, end.gas)
+                assert abs(end.depth - stop.depth) < EPSILON, \
+                    '{}m ({}s) vs. {}m ({}s)'.format(
+                        end.depth, end.time, stop.depth, stop.time
+                    )
+
+                vt = (v1 - v2 for v1, v2 in zip(end.data.tissues, stop.data.tissues))
+                dstr = ' '.join(str(v) for v in vt)
+                assert all(abs(v) < EPSILON for v in vt), dstr
+                logger.debug('step expansion validation ok')
+
+            yield end
 
 # vim: sw=4:et:ai

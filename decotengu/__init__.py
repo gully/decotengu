@@ -49,7 +49,6 @@ an iterator with dive profile steps::
     Step(phase="ascent", depth=9.0, time=3081.0, pressure=1.9119, gf=0.5750)
     ...
     Step(phase="ascent", depth=0.0, time=5595.0, pressure=1.0132, gf=0.8500)
-    >>>
 
 After dive profile iterator is fully exhausted, the dive table can be used
 to obtain all information about decompression stops::
@@ -123,6 +122,7 @@ from functools import wraps
 from .engine import Engine, DecoTable
 from .model import ZH_L16B_GF, ZH_L16C_GF, DecoModelValidator
 from .flow import sender
+from .conveyor import Conveyor
 
 __version__ = '0.1.0'
 
@@ -147,14 +147,14 @@ def create(time_delta=None, validate=True):
                      validator.
     """
     engine = Engine()
-    engine.conveyor.time_delta = time_delta
-
     dt = DecoTable()
 
     pipeline = [dt]
     if validate:
         pipeline.append(DecoModelValidator(engine))
 
+    if time_delta:
+        engine.calculate = Conveyor(engine, time_delta)
     engine.calculate = sender(engine.calculate, *pipeline)
 
     return engine, dt

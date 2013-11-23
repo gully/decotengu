@@ -30,7 +30,6 @@ import logging
 
 from .model import ZH_L16B_GF
 from .error import ConfigError
-from .conveyor import Conveyor
 from .ft import recurse_while, bisect_find
 from .flow import coroutine
 from .const import METER_TO_BAR
@@ -113,8 +112,6 @@ class Engine(object):
     :var surface_pressure: Surface pressure [bar].
     :var ascent_rate: Ascent rate during a dive [m/min].
     :var descent_rate: Descent rate during a dive [m/min].
-    :var conveyor: Conveyor used to divide calculations into multiple
-        steps.
     :var _gas_list: List of gas mixes.
     :var _deco_stop_search_time: Time limit for decompression stop linear
         search.
@@ -125,7 +122,6 @@ class Engine(object):
         self.surface_pressure = 1.01325
         self.ascent_rate = 10.0
         self.descent_rate = 20.0
-        self.conveyor = Conveyor()
 
         self._gas_list = []
         self._deco_stop_search_time = 64
@@ -309,25 +305,6 @@ class Engine(object):
         return tp
 
 
-    def _dive_const(self, start, time, gas):
-        """
-        Dive constant depth for specifed amount of time.
-
-        Collection of dive steps is returned.
-
-        :param start: Starting dive step.
-        :param time: Duration of dive at depth indicated by starting dive
-                     step [s].
-        :param gas: Gas mix configuration.
-        """
-        step = start
-        duration = start.time + time
-        belt = self.conveyor.trays(start.depth, start.time, duration, 0)
-        for tray in belt:
-            step = self._step_next(step, tray.d_time, gas)
-            yield step
-
-
     def _dive_descent(self, depth, gas):
         """
         Dive descent from surface to specified depth.
@@ -341,10 +318,8 @@ class Engine(object):
 
         time = self._to_time(depth, self.descent_rate)
         logger.debug('descent for {}s'.format(time))
-        belt = self.conveyor.trays(0, 0, time, self.descent_rate)
-        for tray in belt:
-            step = self._step_next_descent(step, tray.d_time, gas)
-            yield step
+        step = self._step_next_descent(step, time, gas)
+        yield step
         logger.debug('descent finished at {}m'.format(step.depth))
 
 
@@ -391,9 +366,7 @@ class Engine(object):
 
         ts_3m = self._to_time(3, self.ascent_rate)
 
-        # round to keep numerical stability when conveyor.time_delta is
-        # small
-        t = round((start.depth - depth) / self.ascent_rate * 60, 10)
+        t = self._to_time(start.depth - depth, self.ascent_rate)
         dt = t % ts_3m
 
         # bisect search solution range: 0 <= k < n - 1; the invariant
@@ -432,7 +405,8 @@ class Engine(object):
                     .format(start.depth, depth, t)
             )
 
-        assert not depth or round(depth, 10) % 3 == 0
+        # FIXME: assert not depth or round(depth, 10) % 3 == 0
+        assert not depth or depth % 3 == 0
 
         return depth
 
@@ -592,7 +566,8 @@ class Engine(object):
         .. seealso:: :func:`decotengu.engine.Engine._ascent_stages_deco`
         """
         step = start
-        assert round(step.depth, 10) % 3 == 0 and step.depth > 0, step.depth
+        #assert round(step.depth, 10) % 3 == 0 and step.depth > 0, step.depth
+        assert step.depth % 3 == 0 and step.depth > 0, step.depth
         n_stops = step.depth / 3
         gf_step = (self.model.gf_high - self.model.gf_low) / n_stops
         logger.debug('deco engine: gf step={:.4}'.format(gf_step))
@@ -623,34 +598,6 @@ class Engine(object):
         time = start.time + dt
         return self._step_next_ascent(start, dt, gas)
 
-        # if __debug__:
-        #     logger.debug(
-        #         'ascent from {0.depth}m ({0.time}s) to {depth}m ({time}s)'
-        #             .format(start, depth=depth, time=time)
-        #     )
-        #
-        # belt = self.conveyor.trays(start.depth, start.time, time,
-        #         -self.ascent_rate)
-        #
-        # step = start
-        # for tray in belt:
-        #     step = self._step_next_ascent(step, tray.d_time, gas)
-        #     yield step
-        #
-        # if __debug__:
-        #     logger.debug('ascent finished at {}m'.format(step.depth))
-        #
-        # if __debug__:
-        #     stop = self._step_next_ascent(start, dt, gas)
-        #     assert abs(step.depth - stop.depth) < EPSILON, '{} ({}s) vs. {} ({}s)' \
-        #             .format(step.depth, step.time, stop.depth, stop.time)
-        #
-        #     dstr = ' '.join(str(v1 - v2) for v1, v2 in
-        #             zip(step.data.tissues, stop.data.tissues))
-        #
-        #     assert all(abs(v1 - v2) < EPSILON
-        #         for v1, v2 in zip(step.data.tissues, stop.data.tissues)), dstr
-
 
     def _deco_ascent(self, first_stop, depth, gas, gf_start, gf_step):
         """
@@ -677,7 +624,8 @@ class Engine(object):
         step = first_stop
         max_time = self._deco_stop_search_time * 60
 
-        assert round(step.depth, 10) % 3 == 0 and step.depth > 0, step.depth
+        # assert round(step.depth, 10) % 3 == 0 and step.depth > 0, step.depth
+        assert step.depth % 3 == 0 and step.depth > 0, step.depth
         assert abs(step.depth - depth) > EPSILON, '{} vs. {}' \
                 .format(step.depth, depth)
 
@@ -703,11 +651,8 @@ class Engine(object):
                 ' gf={:.4}'.format(step.depth, t, gas, gf))
             assert t % 60 == 0, t
 
-            time = step.time
-            belt = self.conveyor.trays(step.depth, time, time + t, 0)
-            for tray in belt:
-                step = self._step_next(step, tray.d_time, gas, phase='decostop')
-                yield step
+            step = self._step_next(step, t, gas, phase='decostop')
+            yield step
 
             ts_3m = self._to_time(3, self.ascent_rate)
             step = self._step_next_ascent(step, ts_3m, gas, gf + gf_step)
@@ -750,18 +695,6 @@ class Engine(object):
         :param depth: Maximum depth [m].
         :param time: Bottom time [min].
         """
-        time_delta = self.conveyor.time_delta
-        if time_delta is not None:
-            if time_delta < 0.1:
-                logger.warn('possible calculation problems: time delta below' \
-                        ' 0.1 not supported')
-            elif time_delta < 60 and math.modf(60 / time_delta)[0] != 0:
-                logger.warn('possible calculation problems: time delta does' \
-                        ' not divide 60 evenly without a reminder')
-            elif time_delta >= 60 and time_delta % 60 != 0:
-                logger.warn('possible calculation problems: time delta modulo' \
-                    ' 60 not zero')
-
         if len(self._gas_list) == 0:
             raise ConfigError('No gas mixes configured')
 
@@ -770,8 +703,8 @@ class Engine(object):
         for step in self._dive_descent(depth, gas):
             yield step
 
-        for step in self._dive_const(step, time * 60, gas):
-            yield step
+        step = self._step_next(step, time * 60, gas)
+        yield step
 
         yield from self._dive_ascent(step)
 

@@ -35,7 +35,7 @@ comparison purposes.
 from functools import partial
 import logging
 
-from ..engine import Phase
+from ..engine import Phase, ConfigError
 
 logger = logging.getLogger(__name__)
 
@@ -72,21 +72,22 @@ class AscentJumper(object):
         engine = self.engine
         ascent_rate = engine.ascent_rate
         model = engine.model
-        conveyor = engine.conveyor
+        if engine.ascent_rate != 10:
+            raise ConfigError('Ascent jumper requires ascent rate 10m/min')
 
         logger.debug('ascent from {0.depth}m ({0.time}s)'
                 ' to {1.depth}m ({1.time}s)'.format(start, stop))
 
-        belt = conveyor.trays(start.depth, start.time, stop.time, -ascent_rate)
+
         step = start
         ascent_rate = engine.ascent_rate
-        to_depth = engine._to_depth
-        for tray in belt:
-            depth = tray.depth - to_depth(tray.d_time, ascent_rate) # jump
+        d_depth = engine._to_depth(60, ascent_rate)
+        for i in range(start.time, stop.time, 60):
+            depth = step.depth - d_depth # jump
             abs_p = engine._to_pressure(depth)
-            data = model.load(abs_p, tray.d_time, gas, 0, step.data)
+            data = model.load(abs_p, 60, gas, 0, step.data)
             step = engine._step(
-                Phase.DECOSTOP, step, depth, tray.time + tray.d_time, gas, data
+                Phase.DECOSTOP, step, depth, step.time + 60, gas, data
             )
             yield step
 

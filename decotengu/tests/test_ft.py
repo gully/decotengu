@@ -17,60 +17,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from decotengu.ft import seq, bisect_find, recurse_while
+from decotengu.ft import bisect_find, recurse_while
 
 import unittest
-
-class SeqTestCase(unittest.TestCase):
-    """
-    Sequence tests.
-    """
-    def test_error(self):
-        """
-        Test sequence error
-        """
-        self.assertRaises(ValueError, seq, 31, 41, -10)
-        self.assertRaises(ValueError, seq, 41, 31, 10)
-
-
-    def test_edges(self):
-        """
-        Test sequence edges
-        """
-        s = list(seq(31, 41, 10))
-        self.assertEquals([31, 41], s)
-
-
-    def test_edges_rev(self):
-        """
-        Test sequence edges reversed
-        """
-        s = list(seq(41, 31, -10))
-        self.assertEquals([41, 31], s)
-
-
-    def test_close(self):
-        """
-        Test sequence close edge
-        """
-        s = list(seq(1740, 1799.4, 60))
-        self.assertEquals([1740], s)
-
-        s = list(seq(31, 40.9, 10))
-        self.assertEquals([31], s)
-
-
-
-    def test_rev_close(self):
-        """
-        Test sequence close edge reversed
-        """
-        s = list(seq(40.9, 31, -10))
-        self.assertEquals([40.9], s)
-
-        s = list(seq(42, 31, -10))
-        self.assertEquals([42, 32], s)
-
 
 
 class RecurseWhileTestCase(unittest.TestCase):
