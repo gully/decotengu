@@ -25,7 +25,7 @@ air use the following command::
     Gas list:
      o2=21% at 0m
 
-    Decompression stops (<decotengu.calc.ZH_L16B object at 0x7fd132205150>):
+    Decompression stops (ZH-L16B-GF):
        21m   1min
        18m   1min
        15m   2min
@@ -54,7 +54,7 @@ of saving the data into ``dive.csv`` file::
      o2=50% at 21m
      o2=100% at 6m
 
-    Decompression stops (<decotengu.calc.ZH_L16B object at 0x7f127d87eb10>):
+    Decompression stops (ZH-L16B-GF):
        24m   1min
        21m   1min
        18m   1min
