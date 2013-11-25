@@ -52,7 +52,7 @@ class EngineTestCase(unittest.TestCase):
 
     def test_various_time_delta_gas_switch(self):
         """
-        Test various deco engine runs with time delta and gas switches variations
+        Test deco engine runs with various time delta and gas mix depth switch
 
         Depending on time delta and EAN50 gas mix depth switch DecoTengu
         could crash, when searching for first decompression stop.
