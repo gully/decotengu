@@ -405,7 +405,6 @@ class Engine(object):
                     .format(start.depth, depth, t)
             )
 
-        # FIXME: assert not depth or round(depth, 10) % 3 == 0
         assert not depth or depth % 3 == 0
 
         return depth
@@ -566,7 +565,6 @@ class Engine(object):
         .. seealso:: :func:`decotengu.engine.Engine._ascent_stages_deco`
         """
         step = start
-        #assert round(step.depth, 10) % 3 == 0 and step.depth > 0, step.depth
         assert step.depth % 3 == 0 and step.depth > 0, step.depth
         n_stops = step.depth / 3
         gf_step = (self.model.gf_high - self.model.gf_low) / n_stops
@@ -624,7 +622,6 @@ class Engine(object):
         step = first_stop
         max_time = self._deco_stop_search_time * 60
 
-        # assert round(step.depth, 10) % 3 == 0 and step.depth > 0, step.depth
         assert step.depth % 3 == 0 and step.depth > 0, step.depth
         assert abs(step.depth - depth) > EPSILON, '{} vs. {}' \
                 .format(step.depth, depth)
