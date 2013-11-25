@@ -340,6 +340,9 @@ class Engine(object):
         for step in self._free_staged_ascent(step, stages):
             yield step
 
+        if step.depth == 0:
+            return
+
         stages = self._deco_ascent_stages(step.depth)
         yield from self._deco_staged_ascent(step, stages)
 
@@ -455,6 +458,7 @@ class Engine(object):
 
         :param start_depth: Decompression start depth.
         """
+        assert start_depth != 0
         mixes = zip(self._gas_list[:-1], self._gas_list[1:])
         yield from (
             (m2.depth // 3 * 3, m1) for m1, m2 in mixes

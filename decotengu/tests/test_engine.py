@@ -386,6 +386,22 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         self.engine = Engine()
 
 
+    def test_dive_ascent_no_deco(self):
+        """
+        Test deco engine dive deco-free ascent
+        """
+        start = _step(Phase.ASCENT, 30, 1000)
+        step = _step(Phase.ASCENT, 0, 1200)
+        self.engine._free_staged_ascent = mock.MagicMock(return_value=[step])
+        self.engine._deco_ascent_stages = mock.MagicMock()
+        self.engine.add_gas(0, 21)
+
+        steps = list(self.engine._dive_ascent(start))
+        self.assertEquals(1, len(steps))
+        self.assertEquals(step, steps[0])
+        self.assertFalse(self.engine._deco_ascent_stages.called)
+
+
     def test_free_ascent_stages_single(self):
         """
         Test dive ascent stages calculation (single gas, no deco)
