@@ -42,13 +42,13 @@ an iterator with dive profile steps::
 
     >>> for step in profile:
     ...     print(step)     # doctest:+ELLIPSIS
-    Step(phase="start", depth=0, time=0, pressure=1.0132, gf=0.3000)
-    Step(phase="descent", depth=35.0, time=105.0, pressure=4.5080, gf=0.3000)
-    Step(phase="const", depth=35.0, time=2505.0, pressure=4.5080, gf=0.3000)
+    Step(phase="start", abs_p=1.0132, time=0, gf=0.3000)
+    Step(phase="descent", abs_p=4.5080, time=105.0, gf=0.3000)
+    Step(phase="const", abs_p=4.5080, time=2505.0, gf=0.3000)
     ...
-    Step(phase="ascent", depth=9.0, time=3081.0, pressure=1.9119, gf=0.5750)
+    Step(phase="ascent", abs_p=1.9119, time=3081.0, gf=0.5750)
     ...
-    Step(phase="ascent", depth=0.0, time=5595.0, pressure=1.0132, gf=0.8500)
+    Step(phase="ascent", abs_p=1.0133, time=5595.0, gf=0.8500)
 
 After dive profile iterator is fully exhausted, the dive table can be used
 to obtain all information about decompression stops::
@@ -147,7 +147,7 @@ def create(time_delta=None, validate=True):
                      validator.
     """
     engine = Engine()
-    dt = DecoTable()
+    dt = DecoTable(engine)
 
     pipeline = [dt]
     if validate:

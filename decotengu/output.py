@@ -73,6 +73,7 @@ class DiveStepInfoGenerator(object):
             gf_low = step.data.gf
             data = step.data
             phase = step.phase
+            to_depth = self.engine._to_depth
 
             tl = model.gf_limit(gf_low, data)
             tm = model.gf_limit(1, data)
@@ -80,7 +81,8 @@ class DiveStepInfoGenerator(object):
             tissues = tuple(InfoTissue(k, p, l, data.gf, gf)
                 for k, (p, l, gf) in enumerate(zip(data.tissues, tm, tl), 1))
             sample = InfoSample(
-                step.depth, step.time, step.pressure, step.gas, tissues, phase
+                to_depth(step.abs_p), step.time, step.abs_p,
+                step.gas, tissues, phase
             )
 
             target.send(sample)

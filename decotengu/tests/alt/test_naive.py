@@ -31,13 +31,11 @@ from unittest import mock
 
 AIR = GasMix(0, 21, 79, 0)
 
-def _step(phase, depth, time, gas=AIR, prev=None, data=None):
-    engine = Engine()
-    p = engine._to_pressure(depth)
+def _step(phase, abs_p, time, gas=AIR, prev=None, data=None):
     if data is None:
         data = mock.MagicMock()
         data.gf = 0.3
-    step = Step(phase, depth, time, p, gas, data, prev)
+    step = Step(phase, abs_p, time, gas, data, prev)
     return step
 
 
@@ -50,14 +48,16 @@ class AscentJumperTestCase(unittest.TestCase):
         Test ascent jumper between 30m and 5m
         """
         engine = Engine()
+        engine.surface_pressure = 1.0
+        engine._meter_to_bar = 0.1
+        engine._p3m = 0.3
         engine._free_ascent = AscentJumper(engine)
 
         data = None
-        start = _step(Phase.ASCENT, 30, 1200, data=data)
-        stop = _step(Phase.ASCENT, 5, 1200 + 120, data=data)
-        steps = list(engine._free_ascent(start, stop, AIR))
+        start = _step(Phase.ASCENT, 4.0, 1200, data=data)
+        steps = list(engine._free_ascent(start, 1.5, AIR))
         self.assertEquals(2, len(steps))
-        self.assertEquals([20.0, 10.0], [s.depth for s in steps])
+        self.assertEquals([3.0, 2.0], [s.abs_p for s in steps])
         self.assertEquals([1200 + 60, 1200 + 120], [s.time for s in steps])
 
 
@@ -73,28 +73,30 @@ class DecoStopStepperTestCase(unittest.TestCase):
         engine = Engine()
         engine.gf_low = 0.30
         engine.gf_high = 0.85
-        engine.surface_pressure = 1
+        engine.surface_pressure = 1.0
+        engine._meter_to_bar = 0.1
+        engine._p3m = 0.3
         engine._deco_ascent = DecoStopStepper(engine)
 
         data = Data([2.8, 2.8], 0.3)
-        first_stop = _step(Phase.ASCENT, 9, 1200, data=data)
+        first_stop = _step(Phase.ASCENT, 1.9, 1200, data=data)
         gf_step = 0.18333333333333335
-        steps = list(engine._deco_ascent(first_stop, 0, AIR, 0.3, gf_step))
+        steps = list(engine._deco_ascent(first_stop, 1.0, AIR, 0.3, gf_step))
 
         # 5min of deco plus 3 steps for ascent between stops
         self.assertEquals(8, len(steps))
 
-        self.assertEquals(9, steps[0].depth)
+        self.assertEquals(1.9, steps[0].abs_p)
         self.assertEquals('decostop', steps[0].phase)
         self.assertAlmostEquals(0.30, steps[0].data.gf)
-        self.assertEquals(3, steps[-2].depth)
+        self.assertEquals(1.3, round(steps[-2].abs_p, 10))
         self.assertEquals('decostop', steps[-2].phase)
-        self.assertEquals(0, steps[-1].depth)
+        self.assertEquals(1.0, round(steps[-1].abs_p, 10))
         self.assertEquals('ascent', steps[-1].phase)
         self.assertAlmostEquals(0.85, steps[-1].data.gf)
 
         # stops at 9m, 6m and 3m and include last step at 0m
-        self.assertEquals(4, len(set(s.depth for s in steps)))
+        self.assertEquals(4, len(set(s.abs_p for s in steps)))
 
 
     def test_stepper_depth(self):
@@ -104,30 +106,32 @@ class DecoStopStepperTestCase(unittest.TestCase):
         engine = Engine()
         engine.gf_low = 0.30
         engine.gf_high = 0.85
-        engine.surface_pressure = 1
+        engine.surface_pressure = 1.0
+        engine._meter_to_bar = 0.1
+        engine._p3m = 0.3
         engine._deco_ascent = DecoStopStepper(engine)
         pressure = engine._to_pressure
 
         data = Data([2.5] * 3, 0.3)
-        first_stop = _step(Phase.ASCENT, 15, 1200, data=data)
+        first_stop = _step(Phase.ASCENT, 2.5, 1200, data=data)
 
-        steps = list(engine._deco_ascent(first_stop, 7, AIR, 0.3, 0.11))
+        steps = list(engine._deco_ascent(first_stop, 1.7, AIR, 0.3, 0.11))
         self.assertEquals(6, len(steps))
 
-        self.assertEquals(15, steps[0].depth)
+        self.assertEquals(2.5, steps[0].abs_p)
         self.assertEquals(1260, steps[0].time)
         self.assertEquals(0.30, steps[0].data.gf)
 
-        self.assertEquals(12, steps[1].depth)
+        self.assertEquals(2.2, steps[1].abs_p)
         self.assertEquals(1278, steps[1].time)
-        self.assertEquals(12, steps[2].depth)
+        self.assertEquals(2.2, steps[2].abs_p)
         self.assertEquals(1338, steps[2].time)
 
-        self.assertEquals(9, steps[4].depth)
+        self.assertAlmostEquals(1.9, steps[4].abs_p)
         self.assertEquals(1416, steps[4].time)
 
-        # last stop at 6m due to depth limit
-        self.assertEquals(6, steps[5].depth)
+        # last stop at 6m due to pressure limit
+        self.assertEquals(1.6, steps[5].abs_p)
         self.assertEquals(1434, steps[5].time)
         self.assertEquals(0.63, steps[5].data.gf)
 

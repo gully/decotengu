@@ -541,7 +541,7 @@ class DecoModelValidator(object):
             step = yield
 
             limit = engine.model.pressure_limit(step.data, step.data.gf)
-            if step.pressure < limit: # ok when step.pressure >= limit
+            if step.abs_p < limit: # ok when step.abs_p >= limit
                 raise EngineError('Tissue pressure validation error at {}' \
                         ' (limit={})'.format(step, limit))
 

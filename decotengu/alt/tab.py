@@ -161,15 +161,17 @@ class FirstStopTabFinder(object):
         self.engine = engine
 
 
-    def __call__(self, start, depth, gas):
+    def __call__(self, start, abs_p, gas):
         logger.debug('executing tabular first deco stop finder')
 
         engine = self.engine
         model = engine.model
-        ts_3m = engine._to_time(3, engine.ascent_rate)
+        ts_3m = engine._depth_to_time(3, engine.ascent_rate)
 
-        logger.debug('tabular search: start at {}m, {}s'.format(start.depth,
-            start.time))
+        logger.debug(
+            'tabular search: start at {}bar, {}s'
+            .format(start.abs_p, start.time)
+        )
 
         data = start.data
         depth = int(start.depth / 3) * 3
@@ -177,7 +179,7 @@ class FirstStopTabFinder(object):
         time_start = start.time + t
 
         if t > 0:
-            data = engine._tissue_pressure_ascent(start.pressure, t, gas, data)
+            data = engine._tissue_pressure_ascent(start.abs_p, t, gas, data)
 
         logger.debug('tabular search: restart at {}m, {}s ({}s)'.format(depth,
             time_start, t))

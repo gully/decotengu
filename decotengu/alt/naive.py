@@ -35,7 +35,7 @@ comparison purposes.
 from functools import partial
 import logging
 
-from ..engine import Phase, ConfigError
+from ..engine import Phase, Step, ConfigError
 
 logger = logging.getLogger(__name__)
 
@@ -62,9 +62,10 @@ class AscentJumper(object):
         self.engine = engine
 
 
-    def __call__(self, start, stop, gas):
+    def __call__(self, start, abs_p, gas):
         """
-        Ascent from start to stop using specified gas mix.
+        Ascent from start dive step to destination depth (its absolute
+        pressure) using specified gas mix.
 
         .. seealso:: `decotengu.Engine._free_ascent`
         """
@@ -72,23 +73,26 @@ class AscentJumper(object):
         engine = self.engine
         ascent_rate = engine.ascent_rate
         model = engine.model
-        if engine.ascent_rate != 10:
-            raise ConfigError('Ascent jumper requires ascent rate 10m/min')
+        if ascent_rate > 10:
+            raise ConfigError(
+                'Ascent jumper requires ascent rate lower than 10m/min'
+            )
 
-        logger.debug('ascent from {0.depth}m ({0.time}s)'
-                ' to {1.depth}m ({1.time}s)'.format(start, stop))
-
+        end_time = int(
+            start.time
+            + engine._pressure_to_time(start.abs_p - abs_p, ascent_rate)
+        ) // 60 * 60
+        logger.debug(
+            'ascent from {0.abs_p}bar ({0.time}s) to {1}bar ({2})s)'
+            .format(start, abs_p, end_time)
+        )
 
         step = start
-        ascent_rate = engine.ascent_rate
-        d_depth = engine._to_depth(60, ascent_rate)
-        for i in range(start.time, stop.time, 60):
-            depth = step.depth - d_depth # jump
-            abs_p = engine._to_pressure(depth)
+        dp = engine._time_to_pressure(60, ascent_rate)
+        for i in range(start.time, end_time, 60):
+            abs_p = step.abs_p - dp # jump
             data = model.load(abs_p, 60, gas, 0, step.data)
-            step = engine._step(
-                Phase.DECOSTOP, step, depth, step.time + 60, gas, data
-            )
+            step = Step(Phase.DECOSTOP, abs_p, step.time + 60, gas, data, step)
             yield step
 
 
@@ -98,8 +102,7 @@ class DecoStopStepper(object):
     Perform dive decompression using 1min intervals.
 
     The algorithm is quite inefficient, but is used by some of the
-    implementations, so the deco stop stepper is created for comparison
-    purposes.
+    implementations, so this class is created for comparison purposes.
 
     :var engine: DecoTengu decompression engine.
     """
@@ -112,7 +115,7 @@ class DecoStopStepper(object):
         self.engine = engine
 
 
-    def __call__(self, first_stop, depth, gas, gf_start, gf_step):
+    def __call__(self, first_stop, abs_p, gas, gf_start, gf_step):
         """
         Perform dive decompression stop using 1min intervals.
 
@@ -121,26 +124,31 @@ class DecoStopStepper(object):
         logger.debug('executing deco stepper')
 
         engine = self.engine
-        ts_3m = engine._to_time(3, engine.ascent_rate)
+        ts_3m = engine._pressure_to_time(engine._p3m, engine.ascent_rate)
         step = first_stop
 
-        assert step.depth % 3 == 0
+        assert engine._to_depth(step.abs_p) % 3 == 0
 
-        n_stops = round((step.depth - depth) / 3)
+        n_stops = round(
+            (engine._to_depth(step.abs_p) - engine._to_depth(abs_p)) / 3
+        )
         logger.debug('stepper: stops={}, gf step={:.4}'.format(n_stops, gf_step))
 
         k_stop = 0
         while k_stop < n_stops:
-            logger.debug('stepper: k_stop={}, depth={}m'.format(k_stop,
-                step.depth))
+            logger.debug(
+                'stepper: k_stop={}, pressure={}bar'
+                .format(k_stop, step.abs_p)
+            )
 
             gf = gf_start + k_stop * gf_step
 
             # stay 1 min
             step = engine._step_next(step, 60, gas, phase=Phase.DECOSTOP)
-
-            logger.debug('stepper: {}m {}s, gas={.o2}, gf={:.4f}' \
-                .format(step.depth, step.time, gas, gf))
+            logger.debug(
+                'stepper: {}bar {}s, gas={.o2}, gf={:.4f}'
+                .format(step.abs_p, step.time, gas, gf)
+            )
 
             yield step
 

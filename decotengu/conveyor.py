@@ -45,10 +45,10 @@ class Conveyor(object):
         >>> profile = engine.calculate(50, 20)
         >>> for step in profile:
         ...     print(step)     # doctest:+ELLIPSIS
-        Step(phase="start", depth=0, time=0, ...)
-        Step(phase="descent", depth=20.0, time=60, ...)
-        Step(phase="descent", depth=40.0, time=120, ...)
-        Step(phase="descent", depth=50.0, time=150.0, ...)
+        Step(phase="start", abs_p=1.0132, time=0, ...)
+        Step(phase="descent", abs_p=3.0103, time=60, ...)
+        Step(phase="descent", abs_p=5.0072, time=120, ...)
+        Step(phase="descent", abs_p=6.0057, time=150.0, ...)
         ...
 
     :var engine: DecoTengu decompression engine.
@@ -122,16 +122,16 @@ class Conveyor(object):
             # determine descent/ascent/const engine method
             f_step = self.engine._step_next # default const
             if end.phase == Phase.ASCENT:
-                assert end.depth - prev.depth < 0
+                assert end.abs_p - prev.abs_p < 0
                 f_step = partial(self.engine._step_next_ascent, gf=end.data.gf)
             elif end.phase == Phase.DESCENT:
-                assert end.depth - prev.depth > 0
+                assert end.abs_p - prev.abs_p > 0
                 f_step = self.engine._step_next_descent
 
             k, tr = self.trays(prev.time, end.time)
             logger.debug(
-                'conveyor time {}s -> {}s, {}m -> {}m, steps {}, rest {}' \
-                .format(prev.time, end.time, prev.depth, end.depth, k, tr)
+                'conveyor time {}s -> {}s, {}bar -> {}bar, steps {}, rest {}' \
+                .format(prev.time, end.time, prev.abs_p, end.abs_p, k, tr)
             )
 
             step = prev
@@ -142,9 +142,9 @@ class Conveyor(object):
             if __debug__:
                 # validate steps expansion: (step + time(tr) = stop) == end?
                 stop = f_step(step, tr, end.gas)
-                assert abs(end.depth - stop.depth) < EPSILON, \
+                assert abs(end.abs_p - stop.abs_p) < EPSILON, \
                     '{}m ({}s) vs. {}m ({}s)'.format(
-                        end.depth, end.time, stop.depth, stop.time
+                        end.depth, end.time, stop.abs_p, stop.time
                     )
 
                 vt = (v1 - v2 for v1, v2 in zip(end.data.tissues, stop.data.tissues))

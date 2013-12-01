@@ -44,12 +44,15 @@ class DiveStepInfoTestCase(unittest.TestCase):
         """
         model = ZH_L16B_GF()
         engine = Engine()
+        engine.surface_pressure = 1.0
+        engine._meter_to_bar = 0.1
+        engine._p3m = 0.3
         engine.model = model
 
         d = Data([2.2, 2.3], 0.3)
-        s1 = Step(Phase.CONST, 20, 100, 3.5, AIR, d, None)
+        s1 = Step(Phase.CONST, 3.0, 100, AIR, d, None)
         d = Data([1.2, 1.3], 0.4)
-        s2 = Step(Phase.DECOSTOP, 15, 145, 2.5, AIR, d, s1)
+        s2 = Step(Phase.DECOSTOP, 2.5, 145, AIR, d, s1)
 
         data = []
         @coroutine
@@ -67,7 +70,7 @@ class DiveStepInfoTestCase(unittest.TestCase):
 
         self.assertEquals(20, i1.depth)
         self.assertEquals(100, i1.time)
-        self.assertEquals(3.5, i1.pressure)
+        self.assertEquals(3.0, i1.pressure)
         self.assertEquals(AIR, i1.gas)
         self.assertEquals('const', i1.phase)
         self.assertEquals(2, len(i1.tissues))
