@@ -81,6 +81,19 @@ class EngineTestCase(unittest.TestCase):
         self.assertEquals(v, 18) # 3m at 10m/min -> 18s
 
 
+    def test_n_stops(self):
+        """
+        Test calculation of amount of decompression stops
+        """
+        engine = Engine()
+
+        p1 = engine._to_pressure(21)
+        p2 = engine._to_pressure(9)
+
+        self.assertEquals(7, engine._n_stops(p1))
+        self.assertEquals(4, engine._n_stops(p1, p2))
+
+
     def test_ascent_invariant(self):
         """
         Test ascent invariant

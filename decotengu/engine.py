@@ -170,6 +170,22 @@ class Engine(object):
         return pressure / rate / self._meter_to_bar * 60
 
 
+    def _n_stops(self, start_abs_p, end_abs_p=None):
+        """
+        Calculate amount of decompression stops required between start and
+        end depths.
+
+        :param start_abs_p: Absolute pressure of starting depth.
+        :param end_abs_p: Absolute pressure of ending depth (surface
+            pressure if null).
+        """
+        if end_abs_p is None:
+            end_abs_p = self.surface_pressure
+        k = (start_abs_p - end_abs_p) / self._p3m
+        return round(k)
+
+
+
     def _inv_ascent(self, step):
         """
         Return true if ascent from a depth is possible.
@@ -574,7 +590,7 @@ class Engine(object):
         if __debug__:
             depth = self._to_depth(step.abs_p)
             assert depth % 3 == 0 and depth > 0, depth
-        n_stops = self._to_depth(step.abs_p) / 3
+        n_stops = self._n_stops(step.abs_p)
         gf_step = (self.model.gf_high - self.model.gf_low) / n_stops
         logger.debug('deco engine: gf step={:.4}'.format(gf_step))
         first_stop = step.abs_p
@@ -636,9 +652,11 @@ class Engine(object):
             assert depth % 3 == 0 and depth > 0, depth
             assert step.abs_p > abs_p, '{} vs. {}'.format(step.abs_p, abs_p)
 
-        n_stops = int(self._to_depth(step.abs_p) - self._to_depth(abs_p)) // 3
-        logger.debug('stops={}, gf start={:.4}, gf step={:.4}' \
-                .format(n_stops, gf_start, gf_step))
+        n_stops = self._n_stops(step.abs_p, abs_p)
+        logger.debug(
+            'stops={}, gf start={:.4}, gf step={:.4}'
+            .format(n_stops, gf_start, gf_step)
+        )
 
         for k_stop in range(n_stops):
             logger.debug('deco stop: k_stop={}, pressure={}bar'.format(

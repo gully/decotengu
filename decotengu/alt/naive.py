@@ -129,10 +129,10 @@ class DecoStopStepper(object):
 
         assert engine._to_depth(step.abs_p) % 3 == 0
 
-        n_stops = round(
-            (engine._to_depth(step.abs_p) - engine._to_depth(abs_p)) / 3
+        n_stops = engine._n_stops(step.abs_p, abs_p)
+        logger.debug(
+            'stepper: stops={}, gf step={:.4}'.format(n_stops, gf_step)
         )
-        logger.debug('stepper: stops={}, gf step={:.4}'.format(n_stops, gf_step))
 
         k_stop = 0
         while k_stop < n_stops:
