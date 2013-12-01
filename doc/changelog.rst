@@ -1,5 +1,8 @@
 Changelog
 =========
+DecoTengu 0.3.0
+---------------
+- all calculations are performed using pressure instead of depth
 
 DecoTengu 0.2.0
 ---------------
