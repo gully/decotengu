@@ -71,8 +71,8 @@ calculations.
 The :class:`DecoTengu engine <decotengu.Engine>` class creates dive steps
 (:class:`Step class <decotengu.engine.Step>`) i.e. descent step or ascent
 step (see :ref:`design-dive-phase`). The dive steps provide information
-about time of a dive, pressure at depth, gas mix used or decompression
-model data.
+about time of a dive, absolute pressure of dive depth, gas mix used or
+decompression model data.
 
 The decompression model data (:class:`Data class <decotengu.model.Data>`)
 is created by decompression model implementation and it carries information
@@ -105,10 +105,9 @@ instances of :class:`DecoStop class <decotengu.engine.DecoStop>`.
       |   Data   |<----------x|     Step     |<-.-.-.-.-.-|  DecoTable  |
       +----------+  [1]       +--------------+            +-------------+
       | tissues  |            | phase: Phase |                   |
-      | gf       |            | depth        |                   .
+      | gf       |            | abs_p        |                   .
       +-----------            | time         |                   | <<create>>
-                              | pressure     |                   .
-                              +--------------+                   |
+                              +--------------+                   .
                                      x                           v
                                      |                      +----------+
                                      |                      | DecoStop |
