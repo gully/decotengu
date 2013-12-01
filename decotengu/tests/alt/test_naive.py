@@ -22,21 +22,14 @@ Tests for alternative implementations of various parts of DecoTengu's
 Engine class.
 """
 
-from decotengu.engine import Engine, Phase, Step, GasMix
+from decotengu.engine import Phase
 from decotengu.model import Data
 from decotengu.alt.naive import AscentJumper, DecoStopStepper
 
+from ..tools import _step, _engine, AIR
+
 import unittest
 from unittest import mock
-
-AIR = GasMix(0, 21, 79, 0)
-
-def _step(phase, abs_p, time, gas=AIR, prev=None, data=None):
-    if data is None:
-        data = mock.MagicMock()
-        data.gf = 0.3
-    step = Step(phase, abs_p, time, gas, data, prev)
-    return step
 
 
 class AscentJumperTestCase(unittest.TestCase):
@@ -47,10 +40,7 @@ class AscentJumperTestCase(unittest.TestCase):
         """
         Test ascent jumper between 30m and 5m
         """
-        engine = Engine()
-        engine.surface_pressure = 1.0
-        engine._meter_to_bar = 0.1
-        engine._p3m = 0.3
+        engine = _engine()
         engine._free_ascent = AscentJumper(engine)
 
         data = None
@@ -70,12 +60,9 @@ class DecoStopStepperTestCase(unittest.TestCase):
         """
         Test decompression stepper
         """
-        engine = Engine()
+        engine = _engine()
         engine.gf_low = 0.30
         engine.gf_high = 0.85
-        engine.surface_pressure = 1.0
-        engine._meter_to_bar = 0.1
-        engine._p3m = 0.3
         engine._deco_ascent = DecoStopStepper(engine)
 
         data = Data([2.8, 2.8], 0.3)
@@ -103,12 +90,9 @@ class DecoStopStepperTestCase(unittest.TestCase):
         """
         Test decompression stepper with depth limit
         """
-        engine = Engine()
+        engine = _engine()
         engine.gf_low = 0.30
         engine.gf_high = 0.85
-        engine.surface_pressure = 1.0
-        engine._meter_to_bar = 0.1
-        engine._p3m = 0.3
         engine._deco_ascent = DecoStopStepper(engine)
         pressure = engine._to_pressure
 

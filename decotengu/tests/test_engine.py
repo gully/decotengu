@@ -21,23 +21,14 @@
 Tests for DecoTengu dive decompression engine.
 """
 
-from decotengu.engine import Engine, Phase, Step, GasMix, DecoTable
+from decotengu.engine import Engine, Phase, Step, DecoTable
 from decotengu.error import ConfigError
 from decotengu.model import Data
 
+from .tools import _step, _engine, AIR, EAN50
+
 import unittest
 from unittest import mock
-
-AIR = GasMix(depth=0, o2=21, n2=79, he=0)
-EAN50 = GasMix(depth=22, o2=50, n2=50, he=0)
-O2 = GasMix(depth=6, o2=100, n2=0, he=0)
-
-def _step(phase, abs_p, time, gas=AIR, prev=None, data=None):
-    if data is None:
-        data = mock.MagicMock()
-        data.gf = 0.3
-    step = Step(phase, abs_p, time, gas, data, prev)
-    return step
 
 
 class EngineTestCase(unittest.TestCase):
@@ -49,11 +40,7 @@ class EngineTestCase(unittest.TestCase):
         Create decompression engine and set unit test friendly pressure
         parameters.
         """
-        self.engine = Engine()
-        self.engine.surface_pressure = 1.0
-        self.engine._meter_to_bar = 0.1
-        self.engine._p3m = 0.3
-        self.engine.add_gas(0, 21)
+        self.engine = _engine(air=True)
 
 
     def test_depth_conversion(self):
@@ -331,10 +318,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         Create decompression engine and set unit test friendly pressure
         parameters.
         """
-        self.engine = Engine()
-        self.engine.surface_pressure = 1.0
-        self.engine._meter_to_bar = 0.1
-        self.engine._p3m = 0.3
+        self.engine = _engine()
 
 
     def test_dive_ascent_no_deco(self):
@@ -769,11 +753,7 @@ class DecoTableTestCase(unittest.TestCase):
         """
         Set up deco table tests data.
         """
-        self.engine = engine = Engine()
-        engine.surface_pressure = 1.0
-        engine._meter_to_bar = 0.1
-        engine._p3m = 0.3
-        engine.add_gas(0, 21)
+        self.engine = engine = _engine(air=True)
 
         s1 = _step(Phase.CONST, 3.5, 40)
         s2 = _step(Phase.ASCENT, 2.5, 100, prev=s1)

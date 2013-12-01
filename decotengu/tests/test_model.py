@@ -21,15 +21,16 @@
 DecoTengu calculator tests.
 """
 
-from decotengu.engine import Engine, Step, GasMix, Phase
+from decotengu.engine import Engine, Step, Phase
 from decotengu.error import EngineError
 from decotengu.model import eq_schreiner, eq_gf_limit, TissueCalculator, \
     ZH_L16_GF, ZH_L16B_GF, Data, DecoModelValidator
 
+from .tools import AIR
+
 import unittest
 from unittest import mock
 
-AIR = GasMix(depth=0, o2=21, n2=79, he=0)
 
 class SchreinerEquationTestCase(unittest.TestCase):
     """

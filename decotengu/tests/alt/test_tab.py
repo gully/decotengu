@@ -23,19 +23,12 @@ Tabular tissue calculator tests.
 
 from decotengu.alt.tab import eq_schreiner_t, TabTissueCalculator, FirstStopTabFinder
 from decotengu.model import ZH_L16B_GF, ZH_L16C_GF, Data
-from decotengu.engine import Engine, GasMix, Phase, Step
+from decotengu.engine import Phase
+
+from ..tools import _step, AIR
 
 import unittest
 from unittest import mock
-
-AIR = GasMix(0, 21, 79, 0)
-
-def _step(phase, abs_p, time, gas=AIR, prev=None, data=None):
-    if data is None:
-        data = mock.MagicMock()
-        data.gf = 0.3
-    step = Step(phase, abs_p, time, gas, data, prev)
-    return step
 
 
 class SchreinerTabularEquationTestCase(unittest.TestCase):
@@ -124,7 +117,7 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
     First stop tabular finder tests.
     """
     def setUp(self):
-        self.engine = engine = Engine()
+        self.engine = engine = _engine()
         m = engine.model
         m.calc = TabTissueCalculator(m.N2_HALF_LIFE, m.HE_HALF_LIFE)
         engine._find_first_stop = FirstStopTabFinder(engine)

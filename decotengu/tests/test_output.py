@@ -23,15 +23,15 @@ Tests for DecoTengu output classes, functions and coroutines.
 
 import io
 
-from decotengu.engine import Engine, Phase, Step, GasMix
+from decotengu.engine import Phase, Step
 from decotengu.output import DiveStepInfoGenerator, csv_writer, \
         InfoSample, InfoTissue
 from decotengu.model import ZH_L16B_GF, Data
 from decotengu.flow import coroutine
 
-import unittest
+from .tools import _engine, AIR
 
-AIR = GasMix(0, 21, 79, 0)
+import unittest
 
 
 class DiveStepInfoTestCase(unittest.TestCase):
@@ -43,10 +43,7 @@ class DiveStepInfoTestCase(unittest.TestCase):
         Test dive step info mod
         """
         model = ZH_L16B_GF()
-        engine = Engine()
-        engine.surface_pressure = 1.0
-        engine._meter_to_bar = 0.1
-        engine._p3m = 0.3
+        engine = _engine()
         engine.model = model
 
         d = Data([2.2, 2.3], 0.3)
