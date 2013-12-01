@@ -514,9 +514,6 @@ class DecoModelValidator(object):
     """
     Dive step tissue pressure validator (coroutine class).
 
-    The validator verifies that maximum allowed tissue pressure of a dive
-    step is not over pressure limit.
-
     Create coroutine object, then call it to start the coroutine.
 
     :var engine: DecoTengu decompression engine.
@@ -536,14 +533,23 @@ class DecoModelValidator(object):
         Start the coroutine.
         """
         logger.debug('started deco model validator')
-        engine = self.engine
         while True:
             step = yield
+            self._ceiling_limit(step)
 
-            limit = engine.model.pressure_limit(step.data, step.data.gf)
-            if step.abs_p < limit: # ok when step.abs_p >= limit
-                raise EngineError('Tissue pressure validation error at {}' \
-                        ' (limit={})'.format(step, limit))
+
+    def _ceiling_limit(self, step):
+        """
+        Verify that a dive step is deeper than a pressure ceiling limit.
+
+        :param step: Dive step to verify.
+        """
+        limit = self.engine.model.pressure_limit(step.data, step.data.gf)
+        if step.abs_p < limit: # ok when step.abs_p >= limit
+            raise EngineError(
+                'Pressure ceiling validation error at {} (limit={})'
+                .format(step, limit)
+            )
 
 
 # vim: sw=4:et:ai
