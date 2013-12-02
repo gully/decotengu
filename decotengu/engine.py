@@ -372,7 +372,7 @@ class Engine(object):
             switch depth.
         :param gas: Gas mix configuration.
         """
-        assert start.abs_p > abs_p
+        assert start.abs_p > abs_p, '{} vs. {}'.format(start.abs_p, abs_p)
         assert self._to_depth(abs_p) % 3 == 0, self._to_depth(abs_p)
 
         ts_3m = self._pressure_to_time(self._p3m, self.ascent_rate)
@@ -559,6 +559,7 @@ class Engine(object):
                 if gs_steps:
                     step = gs_steps[-1]
                     yield from gs_steps
+                    logger.debug('gas switch performed {}'.format(gas))
                 else:
                     logger.debug('gas switch into deco zone, revert')
                     break
