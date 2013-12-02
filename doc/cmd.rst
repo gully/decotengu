@@ -1,3 +1,5 @@
+.. highlight:: rst
+
 Commandline Tools
 ------------------
 DecoTengu library provides two commandline applications.
