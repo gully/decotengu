@@ -19,7 +19,6 @@
 #
 
 import decotengu
-from decotengu.ft import seq
 
 import time
 from functools import partial
@@ -59,7 +58,7 @@ def go(engine):
     #
     pool = Pool(processes=2)
     f = partial(go_for_depth, engine)
-    pool.map(f, seq(350.0, 40, -0.1))
+    pool.map(f, (v / 10 for v in range(3500, 400, -1)))
 
 if __name__ == '__main__':
     d = decotengu.Engine()
