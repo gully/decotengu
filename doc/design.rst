@@ -157,12 +157,12 @@ object is a callable, which replaces decompression engine :func:`calculate
 .. code::
    :class: diagram
 
-   +--------------+  engine         +--------------+
-   |              |<----------------| <<callable>> |
-   |    Engine    |  [1]            |   Conveyor   |
-   |              |                 +--------------+
-   +--------------+   <<replace>>   | time_delta   |
-   | calculate()<.-.-.-.-.-.-.-.-.-.| f_calc       |
-   +--------------+                 +--------------+
+   +--------------+  engine               +--------------+
+   |              |<----------------------| <<callable>> |
+   |    Engine    |  [1]                  |   Conveyor   |
+   |              |                       +--------------+
+   +--------------+      <<replace>>      | time_delta   |
+   | calculate()<-.-.-.-.-.-.-.-.-.-.-.-.-| f_calc       |
+   +--------------+                       +--------------+
 
 .. vim: sw=4:et:ai
