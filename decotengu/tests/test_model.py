@@ -237,6 +237,7 @@ class DecoModelValidatorTestCase(unittest.TestCase):
         # ascent to 18m should not be possible
         engine.model.pressure_limit = mock.MagicMock(return_value=2.81)
         validator._first_stop_at_ceiling(s2) # no exception expected
+        self.assertTrue(validator._first_stop_checked)
 
 
     def test_first_stop_at_ceiling_error(self):
@@ -253,6 +254,7 @@ class DecoModelValidatorTestCase(unittest.TestCase):
         # ascent to 18m should not be possible, so error expected
         engine.model.pressure_limit = mock.MagicMock(return_value=2.79)
         self.assertRaises(EngineError, validator._first_stop_at_ceiling, s2)
+        self.assertFalse(validator._first_stop_checked)
 
 
 # vim: sw=4:et:ai
