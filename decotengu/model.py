@@ -525,6 +525,7 @@ class DecoModelValidator(object):
         :param engine: DecoTengu decompression engine.
         """
         self.engine = engine
+        self._first_stop_checked = False
 
 
     @coroutine
@@ -536,6 +537,7 @@ class DecoModelValidator(object):
         while True:
             step = yield
             self._ceiling_limit(step)
+            self._first_stop_at_ceiling(step)
 
 
     def _ceiling_limit(self, step):
@@ -550,6 +552,36 @@ class DecoModelValidator(object):
                 'Pressure ceiling validation error at {} (limit={})'
                 .format(step, limit)
             )
+
+
+    def _first_stop_at_ceiling(self, step):
+        """
+        Verify that first decompression stop is at pressure ceiling limit.
+
+        :param step: Dive step to verify.
+        """
+        # FIXME: Phase circular import, so using 'decostop' below
+        if not self._first_stop_checked and step.phase == 'decostop':
+            first_stop = step.prev
+            ts_3m = self.engine._pressure_to_time(
+                self.engine._p3m, self.engine.ascent_rate
+            )
+            stop = self.engine._step_next_ascent(
+                first_stop, ts_3m, first_stop.gas, first_stop.data.gf
+            )
+            limit = self.engine.model.pressure_limit(
+                first_stop.data, first_stop.data.gf
+            )
+            # if further ascent was possible, then first deco stop is at
+            # wrong depth
+            if stop.abs_p >= limit:
+                raise EngineError(
+                    'First decompression stop not at deco ceiling. Error for'
+                    ' {} (next step possible {}, its limit is {})'
+                    .format(first_stop, stop, limit)
+                )
+            self._first_stop_checked = True
+            logger.debug('first deco stop ok')
 
 
 # vim: sw=4:et:ai

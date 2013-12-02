@@ -26,7 +26,7 @@ from decotengu.error import EngineError
 from decotengu.model import eq_schreiner, eq_gf_limit, TissueCalculator, \
     ZH_L16_GF, ZH_L16B_GF, Data, DecoModelValidator
 
-from .tools import AIR
+from .tools import _engine, AIR
 
 import unittest
 from unittest import mock
@@ -197,31 +197,62 @@ class DecoModelValidatorTestCase(unittest.TestCase):
     """
     Decompression model validator tests.
     """
-    def test_tissue_validator(self):
+    def test_ceiling_limit(self):
         """
-        Test deco model validator
+        Test ceiling limit validator
         """
         engine = Engine()
+        data = Data([1.263320, 2.157535], 0.3)
+        s = Step(Phase.CONST, 2.2, 3, AIR, data, None)
 
-        # 2.157535, so pressure limit for 30% raises error
-        engine.model.gf_low = 0.3
-        data = Data([1.263320, 2.157535], 0.9)
-        s = Step(Phase.CONST, 1.3127, 3, AIR, data, None)
-
-        mod = DecoModelValidator(engine)()
-        mod.send(s)
+        validator = DecoModelValidator(engine)
+        engine.model.pressure_limit = mock.MagicMock(return_value=2.19)
+        validator._ceiling_limit(s) # no exception expected
 
 
-    def test_tissue_validator_error(self):
+    def test_ceiling_limit_error(self):
         """
-        Test deco model validator error
+        Test ceiling limit validator error
         """
         engine = Engine()
         data = Data([2.263320, 2.957535], 0.9)
         s = Step(Phase.CONST, 1.3127, 3, AIR, data, None)
 
         mod = DecoModelValidator(engine)()
+        engine.model.pressure_limit = mock.MagicMock(return_value=2.21)
         self.assertRaises(EngineError, mod.send, s)
+
+
+    def test_first_stop_at_ceiling(self):
+        """
+        Test first stop at deco ceiling
+        """
+        engine = _engine()
+
+        data = Data([1.263320, 2.157535], 0.3)
+        s1 = Step(Phase.ASCENT, 3.1, 1500, AIR, data, None)
+        s2 = Step(Phase.DECOSTOP, 3.1, 1560, AIR, data, s1)
+
+        validator = DecoModelValidator(engine)
+        # ascent to 18m should not be possible
+        engine.model.pressure_limit = mock.MagicMock(return_value=2.81)
+        validator._first_stop_at_ceiling(s2) # no exception expected
+
+
+    def test_first_stop_at_ceiling_error(self):
+        """
+        Test first stop at deco ceiling
+        """
+        engine = _engine()
+
+        data = Data([1.263320, 2.157535], 0.3)
+        s1 = Step(Phase.ASCENT, 3.1, 1500, AIR, data, None)
+        s2 = Step(Phase.DECOSTOP, 3.1, 1560, AIR, data, s1)
+
+        validator = DecoModelValidator(engine)
+        # ascent to 18m should not be possible, so error expected
+        engine.model.pressure_limit = mock.MagicMock(return_value=2.79)
+        self.assertRaises(EngineError, validator._first_stop_at_ceiling, s2)
 
 
 # vim: sw=4:et:ai
