@@ -2,6 +2,10 @@ Changelog
 =========
 DecoTengu 0.3.0
 ---------------
+- added Buhlmann equation description to the documentation
+
+DecoTengu 0.3.0
+---------------
 - all calculations are performed using pressure instead of depth
 - implemented deco model validator to check if first decompression stop is
   at ascent ceiling
