@@ -224,6 +224,91 @@ inert gas pressure in a tissue compartment is visualized on figure
 
    Inert gas pressure in tissue compartment for a dive profile
 
+Buhlmann Equation
+^^^^^^^^^^^^^^^^^
+Buhlmann equation extended with gradient factors by Eric Baker is
+
+    .. math::
+
+        P_l = (P - A * gf) / (gf / B + 1.0 - gf)
+
+Tissue absolute pressure limit :math:`P_l` determines depth of ascent
+ceiling, which is calculated using inert gas pressure :math:`P` in the
+tissue (result of Schreiner equation), Buhlmann coefficients :math:`A` and
+:math:`B` (for given tissue) and current gradient factor value :math:`gf`.
+
+Current gradient factor is a value, which changes evenly between values of
+*gf low* and *gf high* decompression model parameters. It has *gf low*
+value at first decompression stop and *gf high* value at the surface.
+
+Example
+~~~~~~~
+We continue the example described in Schreiner equation section. In the
+example, the nitrogen pressure in first tissue compartment at various
+depths is
+
+    =========== =============== ==========
+     Depth [m]   Runtime [min]    P [bar]
+    ----------- --------------- ----------
+             0               0       0.79
+            30             1.5   0.959478
+            30            21.5   2.569996
+            10            23.5   2.423739
+    =========== =============== ==========
+
+The Buhlmann coefficients for the first tissue compartment in ZH-L16B-GF
+model are
+
+    .. math::
+
+        A = 1.1696
+
+        B = 0.5578
+
+We attempt to ascend to first decompression stop and use :math:`0.3` as
+current gradient factor value
+
+    .. math::
+
+        (0.79 - 1.1696 * 0.3) / (0.3 / 0.5578 + 1.0 - 0.3) = 0.3547507
+
+        (0.959478 - 1.1696 * 0.3) / (0.3 / 0.5578 + 1.0 - 0.3) = 0.4916664
+
+        (2.569996 - 1.1696 * 0.3) / (0.3 / 0.5578 + 1.0 - 0.3) = 1.7927511
+
+        (2.423739 - 1.1696 * 0.3) / (0.3 / 0.5578 + 1.0 - 0.3) = 1.6745948
+
+Using :func:`eq_gf_limit` function ::
+
+    >>> eq_gf_limit(0.3, 0.79, 0, 1.1696, 0.5578)
+    0.35475065318773
+    >>> eq_gf_limit(0.3, 0.959478, 0, 1.1696, 0.5578)
+    0.49166637372186667
+    >>> eq_gf_limit(0.3, 2.569996, 0, 1.1696, 0.5578)
+    1.7927510714596069
+    >>> eq_gf_limit(0.3, 2.423739, 0, 1.1696, 0.5578)
+    1.6745948356168352
+
+Let's put the calculations into the table
+
+    =========== =============== ========== =============
+     Depth [m]   Runtime [min]    P [bar]   Limit [bar]
+    ----------- --------------- ---------- -------------
+             0               0       0.79     0.3547507
+            30             1.5   0.959478     0.4916664
+            30            21.5   2.569996     1.7927511
+            10            23.5   2.423739     1.6745948
+    =========== =============== ========== =============
+
+As we can see, when starting ascent from 30 meters, the Buhlmann equation,
+for the first tissue compartment, gives us ceiling limit  at about 8m. After
+ascent to 10m, the ceiling limit changes to about 7m - the first tissue
+compartment desaturates during ascent. This suggests, that a non-trivial
+algorithm will be required to find exact depth of first decompression stop,
+which has to be calculated for each tissue compartment.
+
+.. todo:: Add reference to algorithm section, when it is created.
+
 Calculations
 ------------
 Inert gas pressure of each tissue compartment for descent, ascent and at
