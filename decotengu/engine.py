@@ -689,7 +689,7 @@ class Engine(object):
             yield step
 
 
-    def add_gas(self, depth, o2):
+    def add_gas(self, depth, o2, he=0):
         """
         Add gas mix to the gas mix list.
 
@@ -701,7 +701,8 @@ class Engine(object):
            last one.
 
         :param depth: Switch depth of gas mix.
-        :param o2: O2 percentage.
+        :param o2: O2 percentage, i.e. 80.
+        :param he: Helium percentage, i.e. 18.
         """
         if len(self._gas_list) == 0 and depth != 0:
             raise ValueError('First gas mix switch depth should be at 0m')
@@ -713,7 +714,7 @@ class Engine(object):
             raise ValueError('Gas mix switch depth should be shallower than' \
                 ' last one')
 
-        self._gas_list.append(GasMix(depth, o2, 100 - o2, 0))
+        self._gas_list.append(GasMix(depth, o2, 100 - o2 - he, he))
 
 
     def calculate(self, depth, time):

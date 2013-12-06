@@ -717,6 +717,38 @@ class GasMixTestCase(unittest.TestCase):
         self.assertEquals(33, mix.depth)
 
 
+    def test_adding_gas_trimix(self):
+        """
+        Test deco engine adding new trimix gas
+        """
+        self.engine.add_gas(0, 21)
+        self.engine.add_gas(20, 21, 35) # FIXME: travel mix!
+        self.engine.add_gas(15, 18, 45)
+        self.engine.add_gas(10, 15, 55)
+
+        mix1, mix2, mix3, mix4 = self.engine._gas_list
+
+        self.assertEquals(0, mix1.depth)
+        self.assertEquals(21, mix1.o2)
+        self.assertEquals(79, mix1.n2)
+        self.assertEquals(0, mix1.he)
+
+        self.assertEquals(20, mix2.depth)
+        self.assertEquals(21, mix2.o2)
+        self.assertEquals(44, mix2.n2)
+        self.assertEquals(35, mix2.he)
+
+        self.assertEquals(15, mix3.depth)
+        self.assertEquals(18, mix3.o2)
+        self.assertEquals(37, mix3.n2)
+        self.assertEquals(45, mix3.he)
+
+        self.assertEquals(10, mix4.depth)
+        self.assertEquals(15, mix4.o2)
+        self.assertEquals(30, mix4.n2)
+        self.assertEquals(55, mix4.he)
+
+
     def test_adding_gas_first(self):
         """
         Test deco engine adding first gas mix
