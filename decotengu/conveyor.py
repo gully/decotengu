@@ -147,9 +147,16 @@ class Conveyor(object):
                         end.depth, end.time, stop.abs_p, stop.time
                     )
 
-                vt = (v1 - v2 for v1, v2 in zip(end.data.tissues, stop.data.tissues))
+                # check nitrogen
+                vt = (v1[0] - v2[0] for v1, v2 in zip(end.data.tissues, stop.data.tissues))
                 dstr = ' '.join(str(v) for v in vt)
                 assert all(abs(v) < EPSILON for v in vt), dstr
+
+                # check helium
+                vt = (v1[1] - v2[1] for v1, v2 in zip(end.data.tissues, stop.data.tissues))
+                dstr = ' '.join(str(v) for v in vt)
+                assert all(abs(v) < EPSILON for v in vt), dstr
+
                 logger.debug('step expansion validation ok')
 
             yield end
