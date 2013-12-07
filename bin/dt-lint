@@ -130,10 +130,7 @@ engine.descent_rate = args.descent_rate
 if args.gas_list:
     for mix in args.gas_list.split():
         o2, he, depth = re.split('[,@]', mix)
-        if he != '0':
-            print('Helium not supported yet', file=sys.stderr)
-            sys.exit(1)
-        engine.add_gas(int(depth), int(o2))
+        engine.add_gas(int(depth), int(o2), int(he))
 else:
     engine.add_gas(0, 21)
 
