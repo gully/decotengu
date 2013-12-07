@@ -407,7 +407,7 @@ def eq_schreiner(abs_p, time, gas, rate, pressure, half_life,
     return palv + r * (t - 1 / k) - (palv - pressure - r / k) * math.exp(-k * t)
 
 
-def eq_gf_limit(gf, pn2, phe, n2_a_limit, n2_b_limit, he_a_limit, he_b_limit):
+def eq_gf_limit(gf, p_n2, p_he, a_n2, b_n2, a_he, b_he):
     """
     Calculate ascent ceiling limit of a tissue compartment using Buhlmann
     equation extended with gradient factors by Eric Baker.
@@ -415,17 +415,17 @@ def eq_gf_limit(gf, pn2, phe, n2_a_limit, n2_b_limit, he_a_limit, he_b_limit):
     The returned value is absolute pressure of depth of the ascent ceiling.
 
     :param gf: Gradient factor value.
-    :param pn2: Current tissue pressure for N2.
-    :param phe: Current tissue pressure for He.
-    :param n2_a_limit: N2 A Buhlmann coefficient.
-    :param n2_b_limit: N2 B Buhlmann coefficient.
-    :param he_a_limit: He A Buhlmann coefficient.
-    :param he_b_limit: He B Buhlmann coefficient.
+    :param p_n2: Current tissue pressure for N2.
+    :param p_he: Current tissue pressure for He.
+    :param a_n2: N2 A Buhlmann coefficient.
+    :param b_n2: N2 B Buhlmann coefficient.
+    :param a_he: He A Buhlmann coefficient.
+    :param b_he: He B Buhlmann coefficient.
     """
     assert gf > 0 and gf <= 1.5
-    p = pn2 + phe
-    a = (n2_a_limit * pn2 + he_a_limit * phe) / p
-    b = (n2_b_limit * pn2 + he_b_limit * phe) / p
+    p = p_n2 + p_he
+    a = (a_n2 * p_n2 + a_he * p_he) / p
+    b = (b_n2 * p_n2 + b_he * p_he) / p
     return (p - a * gf) / (gf / b + 1.0 - gf)
 
 
