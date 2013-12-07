@@ -241,6 +241,34 @@ Current gradient factor is a value, which changes evenly between values of
 *gf low* and *gf high* decompression model parameters. It has *gf low*
 value at first decompression stop and *gf high* value at the surface.
 
+To support multiple inert gases, i.e. trimix with nitrogen and helium, we
+need to track pressure of each inert gas separately. The Buhlmann equation
+variables then can be supported with the following equations
+
+    .. math::
+
+        P = P_{n2} + P_{he}
+
+        A = (A_{n2} * P_{n2} + A_he * P_{he}) / P
+
+        B = (B_{n2} * P_{n2} + B_he * P_{he}) / P
+
+
+where
+
+:math:`P_{n2}`
+    Pressure of nitrogen in current tissue compartment.
+:math:`P_{he}`
+    Pressure of helium in current tissue compartment.
+:math:`A_{n2}`
+    Buhlmann coefficient :math:`A` for nitrogen.
+:math:`B_{n2}`
+    Buhlmann coefficient :math:`B` for nitrogen.
+:math:`A_{he}`
+    Buhlmann coefficient :math:`A` for helium.
+:math:`B_{he}`
+    Buhlmann coefficient :math:`B` for helium.
+
 Example
 ~~~~~~~
 We continue the example described in Schreiner equation section. In the
@@ -257,7 +285,7 @@ depths is
     =========== =============== ==========
 
 The Buhlmann coefficients for the first tissue compartment in ZH-L16B-GF
-model are
+model are (nitrox dive, therefore we skip trimix extension)
 
     .. math::
 
@@ -278,15 +306,16 @@ current gradient factor value
 
         (2.423739 - 1.1696 * 0.3) / (0.3 / 0.5578 + 1.0 - 0.3) = 1.6745948
 
-Using :func:`eq_gf_limit` function ::
+Using :func:`eq_gf_limit` function (we omit helium parameters by
+substituting them with `0` as the example uses nitrox gas mix only) ::
 
-    >>> eq_gf_limit(0.3, 0.79, 0, 1.1696, 0.5578)
+    >>> eq_gf_limit(0.3, 0.79, 0, 1.1696, 0.5578, 0, 0)
     0.35475065318773
-    >>> eq_gf_limit(0.3, 0.959478, 0, 1.1696, 0.5578)
+    >>> eq_gf_limit(0.3, 0.959478, 0, 1.1696, 0.5578, 0, 0)
     0.49166637372186667
-    >>> eq_gf_limit(0.3, 2.569996, 0, 1.1696, 0.5578)
+    >>> eq_gf_limit(0.3, 2.569996, 0, 1.1696, 0.5578, 0, 0)
     1.7927510714596069
-    >>> eq_gf_limit(0.3, 2.423739, 0, 1.1696, 0.5578)
+    >>> eq_gf_limit(0.3, 2.423739, 0, 1.1696, 0.5578, 0, 0)
     1.6745948356168352
 
 Let's put the calculations into the table
