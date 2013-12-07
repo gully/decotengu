@@ -23,10 +23,9 @@ Engine class.
 """
 
 from decotengu.engine import Phase
-from decotengu.model import Data
 from decotengu.alt.naive import AscentJumper, DecoStopStepper
 
-from ..tools import _step, _engine, AIR
+from ..tools import _step, _engine, _data, AIR
 
 import unittest
 from unittest import mock
@@ -65,7 +64,7 @@ class DecoStopStepperTestCase(unittest.TestCase):
         engine.gf_high = 0.85
         engine._deco_ascent = DecoStopStepper(engine)
 
-        data = Data([2.8, 2.8], 0.3)
+        data = _data(0.3, 2.8, 2.8)
         first_stop = _step(Phase.ASCENT, 1.9, 1200, data=data)
         gf_step = 0.18333333333333335
         steps = list(engine._deco_ascent(first_stop, 1.0, AIR, 0.3, gf_step))
@@ -96,7 +95,7 @@ class DecoStopStepperTestCase(unittest.TestCase):
         engine._deco_ascent = DecoStopStepper(engine)
         pressure = engine._to_pressure
 
-        data = Data([2.5] * 3, 0.3)
+        data = _data(0.3, 2.5, 2.5, 2.5)
         first_stop = _step(Phase.ASCENT, 2.5, 1200, data=data)
 
         steps = list(engine._deco_ascent(first_stop, 1.7, AIR, 0.3, 0.11))

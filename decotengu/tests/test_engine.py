@@ -23,9 +23,8 @@ Tests for DecoTengu dive decompression engine.
 
 from decotengu.engine import Engine, Phase, Step, DecoTable
 from decotengu.error import ConfigError
-from decotengu.model import Data
 
-from .tools import _step, _engine, AIR, EAN50
+from .tools import _step, _engine, _data, AIR, EAN50
 
 import unittest
 from unittest import mock
@@ -118,7 +117,7 @@ class EngineTestCase(unittest.TestCase):
         """
         Test decompression stop invariant
         """
-        data = Data([1.8, 1.8], 0.3)
+        data = _data(0.3, 1.8, 1.8)
         step = _step(Phase.ASCENT, 2.5, 120, data=data)
         self.engine._tissue_pressure_ascent = mock.MagicMock(
             return_value=[2.6, 2.6]
@@ -424,7 +423,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         """
         Test deco free ascent
         """
-        data = Data([1.0, 1.0], 0.3)
+        data = _data(0.3, 1.0, 1.0)
         start = _step(Phase.ASCENT, 4.1, 1200, AIR, data)
 
         stop = self.engine._free_ascent(start, 2.0, AIR)
@@ -436,7 +435,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         """
         Test gas mix switch at current depth
         """
-        data = Data([1.0, 1.0], 0.3)
+        data = _data(0.3, 1.0, 1.0)
         start = _step(Phase.ASCENT, 3.2, 1200, AIR, data)
 
         steps = self.engine._switch_gas(start, EAN50)
@@ -475,7 +474,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         """
         Test gas mix switch validator (allowed)
         """
-        data = Data([0.7, 0.7], 0.3)
+        data = _data(0.3, 0.7, 0.7)
         start = _step(Phase.ASCENT, 3.4, 1200, AIR, data=data)
 
         steps = self.engine._can_switch_gas(start, EAN50)
@@ -486,7 +485,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         """
         Test gas mix switch validator (not allowed)
         """
-        data = Data([4.0, 4.0], 0.3)
+        data = _data(0.3, 4.0, 4.0)
         start = _step(Phase.ASCENT, 3.4, 1200, AIR, data=data)
 
         steps = self.engine._can_switch_gas(start, EAN50)
@@ -585,7 +584,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         - check gf step value (FIXME: this is deco model dependant)
         """
         stages = [(1.0, AIR)]
-        start = _step(Phase.ASCENT, 3.1, 2214, data=Data((3.0, 3.0), 0.3))
+        start = _step(Phase.ASCENT, 3.1, 2214, data=_data(0.3, 3.0, 3.0))
 
         deco_stop = mock.MagicMock()
         deco_stop.data.gf = 0.3
@@ -608,7 +607,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
             (2.2, AIR),
             (1.0, gas_mix),
         ]
-        data = Data((3.0, 3.0), 0.3)
+        data = _data(0.3, 3.0, 3.0)
         start = _step(Phase.ASCENT, 3.1, 2214, data=data)
 
         deco_stop = mock.MagicMock()
@@ -635,7 +634,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         self.engine.model.gf_low = 0.30
         self.engine.model.gf_high = 0.85
 
-        data = Data([2.5] * 3, 0.3)
+        data = _data(0.3, 2.5, 2.5, 2.5)
         first_stop = _step(Phase.ASCENT, 2.5, 1200, data=data)
 
         steps = list(self.engine._deco_ascent(first_stop, 1.0, AIR, 0.3, 0.11))
@@ -667,7 +666,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         self.engine.model.gf_low = 0.30
         self.engine.model.gf_high = 0.85
 
-        data = Data([2.5] * 3, 0.3)
+        data = _data(0.3, 2.5, 2.5, 2.5)
         first_stop = _step(Phase.ASCENT, 2.5, 1200, data=data)
 
         # ascent depth pressure limit is 6m

@@ -26,10 +26,10 @@ import io
 from decotengu.engine import Phase, Step
 from decotengu.output import DiveStepInfoGenerator, csv_writer, \
         InfoSample, InfoTissue
-from decotengu.model import ZH_L16B_GF, Data
+from decotengu.model import ZH_L16B_GF
 from decotengu.flow import coroutine
 
-from .tools import _engine, AIR
+from .tools import _engine, _data, AIR
 
 import unittest
 
@@ -46,9 +46,9 @@ class DiveStepInfoTestCase(unittest.TestCase):
         engine = _engine()
         engine.model = model
 
-        d = Data([2.2, 2.3], 0.3)
+        d = _data(0.3, 2.2, 2.3)
         s1 = Step(Phase.CONST, 3.0, 100, AIR, d, None)
-        d = Data([1.2, 1.3], 0.4)
+        d = _data(0.4, 1.2, 1.3)
         s2 = Step(Phase.DECOSTOP, 2.5, 145, AIR, d, s1)
 
         data = []

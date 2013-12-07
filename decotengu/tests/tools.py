@@ -22,6 +22,7 @@ DecoTengu unit tests tools.
 """
 
 from decotengu.engine import Engine, Step, GasMix
+from decotengu.model import Data
 
 from unittest import mock
 
@@ -45,6 +46,11 @@ def _engine(air=False):
     if air:
         engine.add_gas(0, 21)
     return engine
+
+
+def _data(gf, *pressure):
+    tp = tuple((v, 0.0) for v in pressure)
+    return Data(tp, gf)
 
 
 # vim: sw=4:et:ai
