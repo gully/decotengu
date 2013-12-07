@@ -347,8 +347,8 @@ Data = namedtuple('Data', 'tissues gf')
 Data.__doc__ = """
 Data for ZH-L16-GF decompression model.
 
-:var tissues: Tissues gas loading. Tuple of numbers - tissue pressure of
-              inert gas in each tissue compartment.
+:var tissues: Tissues gas loading. Tuple of pair numbers - each pair holds
+    value of inert gas pressure (N2, He) in a tissue compartment.
 :var gf: Gradient factor value.
 """
 
@@ -378,7 +378,7 @@ def eq_schreiner(abs_p, time, gas, rate, pressure, half_life,
     return palv + r * (t - 1 / k) - (palv - pressure - r / k) * math.exp(-k * t)
 
 
-def eq_gf_limit(gf, pn2, phe, n2_a_limit, n2_b_limit): # FIXME: include he
+def eq_gf_limit(gf, pn2, phe, n2_a_limit, n2_b_limit, he_a_limit, he_b_limit):
     """
     Calculate ascent ceiling limit of a tissue compartment using Buhlmann
     equation extended with gradient factors by Eric Baker.
@@ -390,13 +390,13 @@ def eq_gf_limit(gf, pn2, phe, n2_a_limit, n2_b_limit): # FIXME: include he
     :param phe: Current tissue pressure for He.
     :param n2_a_limit: N2 A Buhlmann coefficient.
     :param n2_b_limit: N2 B Buhlmann coefficient.
-
-    .. todo:: Helium parameters are missing.
+    :param he_a_limit: He A Buhlmann coefficient.
+    :param he_b_limit: He B Buhlmann coefficient.
     """
     assert gf > 0 and gf <= 1.5
     p = pn2 + phe
-    a = (n2_a_limit * pn2 + 0 * phe) / p
-    b = (n2_b_limit * pn2 + 0 * phe) / p
+    a = (n2_a_limit * pn2 + he_a_limit * phe) / p
+    b = (n2_b_limit * pn2 + he_b_limit * phe) / p
     return (p - a * gf) / (gf / b + 1.0 - gf)
 
 
@@ -432,8 +432,9 @@ class ZH_L16_GF(object):
 
         :param surface_pressure: Surface pressure [bar].
         """
-        p = surface_pressure - self.calc.water_vapour_pressure
-        data = Data([0.7902 * p] * self.NUM_COMPARTMENTS, self.gf_low)
+        p_n2 = 0.7902 * (surface_pressure - self.calc.water_vapour_pressure)
+        p_he = 0.0
+        data = Data(tuple([(p_n2, p_he)] * self.NUM_COMPARTMENTS), self.gf_low)
         return data
 
 
@@ -455,8 +456,10 @@ class ZH_L16_GF(object):
             - :func:`decotengu.model.TissueCalculator`
         """
         load = self.calc.load_tissue
-        tp = tuple(load(abs_p, time, gas, rate, tp, k)
-                for k, tp in enumerate(data.tissues))
+        tp = tuple(
+            load(abs_p, time, gas, rate, p_n2, p_he, k) 
+                for k, (p_n2, p_he) in enumerate(data.tissues)
+        )
         data = Data(tp, data.gf)
         return data
 
@@ -499,9 +502,11 @@ class ZH_L16_GF(object):
             gf = self.gf_low
         assert gf > 0 and gf <= 1.5
 
-        # FIXME: include he
-        tissues = zip(data.tissues, self.N2_A, self.N2_B)
-        return tuple(eq_gf_limit(gf, tp, 0, av, bv) for tp, av, bv in tissues)
+        data = zip(data.tissues, self.N2_A, self.N2_B, self.HE_A, self.HE_B)
+        return tuple(
+            eq_gf_limit(gf, p_n2, p_he, n2_a, n2_b, he_a, he_b)
+            for (p_n2, p_he), n2_a, n2_b, he_a, he_b in data
+        )
 
 
 
@@ -579,7 +584,7 @@ class TissueCalculator(object):
         self.he_half_life = he_half_life
 
 
-    def load_tissue(self, abs_p, time, gas, rate, pressure, tissue_no):
+    def load_tissue(self, abs_p, time, gas, rate, p_n2, p_he, tissue_no):
         """
         Calculate gas loading of a tissue.
 
@@ -587,11 +592,15 @@ class TissueCalculator(object):
         :param time: Time of exposure [second] (i.e. time of ascent).
         :param gas: Gas mix configuration.
         :param rate: Pressure rate change [bar/min].
-        :param pressure: Current tissue pressure [bar].
+        :param p_n2: N2 pressure in current tissue compartment [bar].
+        :param p_he: He pressure in Current tissue compartment [bar].
         :param tissue_no: Tissue number.
         """
         hl = self.n2_half_life[tissue_no]
-        return eq_schreiner(abs_p, time, gas.n2 / 100, rate, pressure, hl)
+        p_n2 = eq_schreiner(abs_p, time, gas.n2 / 100, rate, p_n2, hl)
+        hl = self.he_half_life[tissue_no]
+        p_he = eq_schreiner(abs_p, time, gas.he / 100, rate, p_he, hl)
+        return p_n2, p_he
 
 
 

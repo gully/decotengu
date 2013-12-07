@@ -81,16 +81,32 @@ class GradientFactorLimitTestCase(unittest.TestCase):
         """
         Test 30% gradient factor limit for N2
         """
-        v = eq_gf_limit(0.3, 3, 0, 1.1696, 0.5578)
-        self.assertAlmostEqual(2.14013, v, 4)
+        v = eq_gf_limit(0.3, 3.0, 0, 1.1696, 0.5578, 1.6189, 0.4770)
+        self.assertAlmostEqual(2.140137, v, 6)
 
 
     def test_gf_limit_n2_100(self):
         """
         Test 100% gradient factor limit for N2
         """
-        v = eq_gf_limit(1.0, 3, 0, 1.1696, 0.5578)
-        self.assertAlmostEqual(1.02099, v, 4)
+        v = eq_gf_limit(1.0, 3.0, 0, 1.1696, 0.5578, 1.6189, 0.4770)
+        self.assertAlmostEqual(1.020997, v, 6)
+
+
+    def test_gf_limit_tx1845_30(self):
+        """
+        Test 30% gradient factor limit for trimix
+        """
+        v = eq_gf_limit(0.3, 2.2, 0.8, 1.1696, 0.5578, 1.6189, 0.4770)
+        self.assertAlmostEqual(2.074876, v, 6)
+
+
+    def test_gf_limit_tx1845_100(self):
+        """
+        Test 100% gradient factor limit for trimix
+        """
+        v = eq_gf_limit(1.0, 2.2, 0.8, 1.1696, 0.5578, 1.6189, 0.4770)
+        self.assertAlmostEqual(0.917308, v, 6)
 
 
 
@@ -106,7 +122,8 @@ class ZH_L16_GFTestCase(unittest.TestCase):
         data = m.init(1.013)
         tissues = data.tissues
         self.assertEquals(ZH_L16_GF.NUM_COMPARTMENTS, len(tissues))
-        self.assertEquals([0.75092706] * ZH_L16_GF.NUM_COMPARTMENTS, tissues)
+        expected = tuple([(0.75092706, 0.0)] * ZH_L16_GF.NUM_COMPARTMENTS)
+        self.assertEquals(expected, tissues)
 
 
     def test_tissues_load(self):
@@ -117,14 +134,14 @@ class ZH_L16_GFTestCase(unittest.TestCase):
         n = m.NUM_COMPARTMENTS
         c_load = m.calc.load_tissue = mock.MagicMock(side_effect=range(1, 17))
 
-        data = Data([0.79] * n, None)
+        data = Data([(0.79, 0.0)] * n, None)
         v = m.load(4, 60, AIR, -1, data)
 
         self.assertEquals(n, c_load.call_count)
         self.assertEquals(v, Data(tuple(range(1, 17)), None))
 
         expected = tuple(range(n))
-        results = tuple(t[0][5] for t in c_load.call_args_list)
+        results = tuple(t[0][6] for t in c_load.call_args_list)
         self.assertEquals(expected, results)
 
 
@@ -134,7 +151,10 @@ class ZH_L16_GFTestCase(unittest.TestCase):
         Test calculation of pressure limit (default gf)
         """
         m = ZH_L16B_GF()
-        data = Data((1.5, 2.5, 2.0, 2.9, 2.6), 0.3)
+        data = Data(
+            ((1.5, 0.0), (2.5, 0.), (2.0, 0.0), (2.9, 0.0), (2.6, 0.0)),
+            0.3
+        )
         limit = (1.0, 2.0, 1.5, 2.4, 2.1)
         f.side_effect = limit
 
@@ -150,7 +170,10 @@ class ZH_L16_GFTestCase(unittest.TestCase):
         Test calculation of pressure limit (with gf)
         """
         m = ZH_L16B_GF()
-        data = Data((1.5, 2.5, 2.0, 2.9, 2.6), 0.2)
+        data = Data(
+            ((1.5, 0.0), (2.5, 0.), (2.0, 0.0), (2.9, 0.0), (2.6, 0.0)),
+            0.3
+        )
         limit = (1.0, 2.0, 1.5, 2.4, 2.1)
         f.side_effect = limit
 
@@ -158,20 +181,39 @@ class ZH_L16_GFTestCase(unittest.TestCase):
         self.assertEquals(2.4, v)
 
 
-    def test_gf_limit(self):
+    @mock.patch('decotengu.model.eq_gf_limit')
+    def test_gf_limit(self, f):
         """
         Test deco model gradient factor limit calculation
+
+        Check if appropriate parameters are passed from ZH_L16_GF.gf_limit
+        to eq_gf_limit function
         """
-        with mock.patch('decotengu.model.eq_gf_limit') as f:
-            f.side_effect = list(range(1, 17))
-            m = ZH_L16B_GF()
-            v = m.gf_limit(0.3, Data(list(range(1, 17)), None))
-            self.assertEquals(m.NUM_COMPARTMENTS, f.call_count)
-            result = tuple(t[0][3] for t in f.call_args_list)
-            self.assertEquals(m.N2_A, result)
-            result = tuple(t[0][4] for t in f.call_args_list)
-            self.assertEquals(m.N2_B, result)
-            self.assertEquals(v, tuple(range(1, 17)))
+        f.side_effect = list(range(1, 17))
+        m = ZH_L16B_GF()
+        data = Data(
+            tuple((v, 0.1) for v in range(1, 17)),
+            0.3
+        )
+
+        v = m.gf_limit(0.3, data)
+        self.assertEquals(v, tuple(range(1, 17)))
+        self.assertEquals(m.NUM_COMPARTMENTS, f.call_count)
+
+        result = tuple(t[0][0] for t in f.call_args_list)
+        self.assertEquals(tuple([0.3]) * 16, result)
+        result = tuple(t[0][1] for t in f.call_args_list)
+        self.assertEquals(tuple(range(1, 17)), result)
+        result = tuple(t[0][2] for t in f.call_args_list)
+        self.assertEquals(tuple([0.1]) * 16, result)
+        result = tuple(t[0][3] for t in f.call_args_list)
+        self.assertEquals(m.N2_A, result)
+        result = tuple(t[0][4] for t in f.call_args_list)
+        self.assertEquals(m.N2_B, result)
+        result = tuple(t[0][5] for t in f.call_args_list)
+        self.assertEquals(m.HE_A, result)
+        result = tuple(t[0][6] for t in f.call_args_list)
+        self.assertEquals(m.HE_B, result)
 
 
 
@@ -184,12 +226,16 @@ class TissueCalculatorTestCase(unittest.TestCase):
         Test tissue calculator tissue gas loading
         """
         with mock.patch('decotengu.model.eq_schreiner') as f:
-            f.return_value = 2
+            f.side_effect = [2, 3]
             m = ZH_L16B_GF
             c = TissueCalculator(m.N2_HALF_LIFE, m.HE_HALF_LIFE)
-            v = c.load_tissue(4, 60, AIR, -1, 3, 1)
-            f.assert_called_once_with(4, 60, 0.79, -1, 3, 8.0)
-            self.assertEquals(2, v)
+            v = c.load_tissue(4, 60, AIR, -1, 3, 0, 1)
+            self.assertEquals(2, f.call_count) # called once for each inert gas
+
+            args = f.call_args_list
+            self.assertEquals((4, 60, 0.79, -1, 3, 8.0), args[0][0])
+            self.assertEquals((4, 60, 0.0, -1, 0, 3.02), args[1][0])
+            self.assertEquals((2, 3), v)
 
 
 
@@ -229,7 +275,7 @@ class DecoModelValidatorTestCase(unittest.TestCase):
         """
         engine = _engine()
 
-        data = Data([1.263320, 2.157535], 0.3)
+        data = Data([(1.263320, 0), (2.157535, 0)], 0.3)
         s1 = Step(Phase.ASCENT, 3.1, 1500, AIR, data, None)
         s2 = Step(Phase.DECOSTOP, 3.1, 1560, AIR, data, s1)
 
@@ -246,7 +292,7 @@ class DecoModelValidatorTestCase(unittest.TestCase):
         """
         engine = _engine()
 
-        data = Data([1.263320, 2.157535], 0.3)
+        data = Data([(1.263320, 0), (2.157535, 0)], 0.3)
         s1 = Step(Phase.ASCENT, 3.1, 1500, AIR, data, None)
         s2 = Step(Phase.DECOSTOP, 3.1, 1560, AIR, data, s1)
 
