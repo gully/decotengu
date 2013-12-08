@@ -343,7 +343,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         self.engine._deco_ascent_stages = mock.MagicMock()
         self.engine.add_gas(0, 21)
 
-        steps = list(self.engine._dive_ascent(start))
+        steps = list(self.engine._dive_ascent(start, self.engine._gas_list))
         self.assertEquals(1, len(steps))
         self.assertEquals(step, steps[0])
         self.assertFalse(self.engine._deco_ascent_stages.called)
@@ -353,8 +353,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         """
         Test dive ascent stages calculation (single gas, no deco)
         """
-        self.engine.add_gas(0, 21)
-        stages = list(self.engine._free_ascent_stages())
+        stages = list(self.engine._free_ascent_stages([AIR]))
 
         self.assertEquals(1, len(stages))
         self.assertEquals(1.0, stages[0][0])
@@ -369,8 +368,9 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         self.engine.add_gas(22, 50)
         self.engine.add_gas(11, 80)
         self.engine.add_gas(6, 100)
+        gas_list = self.engine._gas_list
 
-        stages = list(self.engine._free_ascent_stages())
+        stages = list(self.engine._free_ascent_stages(gas_list))
         self.assertEquals(4, len(stages))
         self.assertAlmostEquals(3.4, stages[0][0])
         self.assertEquals(21, stages[0][1].o2)
@@ -389,8 +389,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         """
         Test dive ascent stages calculation (single gas, deco)
         """
-        self.engine.add_gas(0, 21)
-        stages = list(self.engine._deco_ascent_stages(22))
+        stages = list(self.engine._deco_ascent_stages([AIR], 3.2))
 
         self.assertEquals(1, len(stages))
         self.assertEquals(1.0, stages[0][0])
@@ -405,8 +404,9 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         self.engine.add_gas(22, 50)
         self.engine.add_gas(11, 80)
         self.engine.add_gas(6, 100)
+        gas_list = self.engine._gas_list
 
-        stages = list(self.engine._deco_ascent_stages(3.2))
+        stages = list(self.engine._deco_ascent_stages(gas_list, 3.2))
         self.assertEquals(3, len(stages))
 
         self.assertEquals(1.9, stages[0][0])
@@ -754,38 +754,6 @@ class GasMixTestCase(unittest.TestCase):
         """
         assert len(self.engine._gas_list) == 0
         self.assertRaises(ValueError, self.engine.add_gas, 33, 32)
-
-
-    def test_adding_gas_depth(self):
-        """
-        Test deco engine adding gas mix with 0m switch depth
-        """
-        self.engine.add_gas(0, 21)
-
-        assert len(self.engine._gas_list) == 1
-        self.assertRaises(ValueError, self.engine.add_gas, 0, 21)
-
-
-    def test_adding_gas_depth(self):
-        """
-        Test deco engine adding gas mix with 0m switch depth
-        """
-        self.engine.add_gas(0, 21)
-        self.engine.add_gas(33, 32)
-
-        assert len(self.engine._gas_list) == 2
-        self.assertRaises(ValueError, self.engine.add_gas, 0, 21)
-
-
-    def test_adding_gas_next_depth(self):
-        """
-        Test deco engine adding gas mix with wrong switch depth order
-        """
-        self.engine.add_gas(0, 21)
-        self.engine.add_gas(12, 80)
-
-        assert len(self.engine._gas_list) == 2
-        self.assertRaises(ValueError, self.engine.add_gas, 22, 50)
 
 
 

@@ -26,6 +26,7 @@ DecoTengu dive decompression engine.
 from functools import partial
 from collections import namedtuple, OrderedDict
 import math
+import operator
 import logging
 
 from .model import ZH_L16B_GF
@@ -330,7 +331,7 @@ class Engine(object):
         logger.debug('descent finished at {:.4f}bar'.format(step.abs_p))
 
 
-    def _dive_ascent(self, start):
+    def _dive_ascent(self, start, gas_list):
         """
         Dive ascent from specified dive step.
 
@@ -340,17 +341,19 @@ class Engine(object):
         - ascent performing decompression stops, if necessary
 
         :param start: Starting dive step.
+        :param gas_list: List of gas mixes - bottom and decompression gas
+            mixes.
         """
         step = start
 
-        stages = self._free_ascent_stages()
+        stages = self._free_ascent_stages(gas_list)
         for step in self._free_staged_ascent(step, stages):
             yield step
 
         if abs(step.abs_p - self.surface_pressure) < EPSILON:
             return
 
-        stages = self._deco_ascent_stages(step.abs_p)
+        stages = self._deco_ascent_stages(gas_list, step.abs_p)
         yield from self._deco_staged_ascent(step, stages)
 
 
@@ -424,7 +427,7 @@ class Engine(object):
         return abs_p
 
 
-    def _free_ascent_stages(self):
+    def _free_ascent_stages(self, gas_list):
         """
         Calculate stages for deco-free ascent.
 
@@ -441,14 +444,16 @@ class Engine(object):
             22m  50%   ->   1.6bar  (6m)  50%
              6m 100%        1.0bar  (0m) 100%
 
+        :param gas_list: List of gas mixes - bottom and decompression gas
+            mixes.
         """
-        mixes = zip(self._gas_list[:-1], self._gas_list[1:])
+        mixes = zip(gas_list[:-1], gas_list[1:])
         _pressure = lambda mix: self._to_pressure(((mix.depth - 1) // 3 + 1) * 3)
         yield from ((_pressure(m2), m1) for m1, m2 in mixes)
-        yield (self.surface_pressure, self._gas_list[-1])
+        yield (self.surface_pressure, gas_list[-1])
 
 
-    def _deco_ascent_stages(self, start_abs_p):
+    def _deco_ascent_stages(self, gas_list, start_abs_p):
         """
         Calculate stages for decompression ascent.
 
@@ -469,15 +474,17 @@ class Engine(object):
         are used for decompression ascent stages calculation.
 
         :param start_abs_p: Absolute pressure of decompression start depth.
+        :param gas_list: List of gas mixes - bottom and decompression gas
+            mixes.
         """
         assert start_abs_p > self.surface_pressure
-        mixes = zip(self._gas_list[:-1], self._gas_list[1:])
+        mixes = zip(gas_list[:-1], gas_list[1:])
         _pressure = lambda mix: self._to_pressure(mix.depth // 3 * 3)
         yield from (
             (_pressure(m2), m1) for m1, m2 in mixes
             if self._to_pressure(m2.depth) < start_abs_p
         )
-        yield (self.surface_pressure, self._gas_list[-1])
+        yield (self.surface_pressure, gas_list[-1])
 
 
     def _switch_gas(self, step, gas):
@@ -693,12 +700,8 @@ class Engine(object):
         """
         Add gas mix to the gas mix list.
 
-        Rules
-
-        #. First gas mix switch depth should be 0m.
-        #. Second or later gas mix switch depth should be greater than 0m.
-        #. Third or later gas mix switch depth should be shallower than the
-           last one.
+        The first gas to be added is bottom gas and its switch depth should
+        be 0m.
 
         :param depth: Switch depth of gas mix.
         :param o2: O2 percentage, i.e. 80.
@@ -706,14 +709,6 @@ class Engine(object):
         """
         if len(self._gas_list) == 0 and depth != 0:
             raise ValueError('First gas mix switch depth should be at 0m')
-        elif len(self._gas_list) > 0 and depth == 0:
-            raise ValueError('Second or later gas mix switch depth should' \
-                ' be > 0m')
-
-        if len(self._gas_list) > 1 and self._gas_list[-1].depth < depth:
-            raise ValueError('Gas mix switch depth should be shallower than' \
-                ' last one')
-
         self._gas_list.append(GasMix(depth, o2, 100 - o2 - he, he))
 
 
@@ -729,16 +724,20 @@ class Engine(object):
         if len(self._gas_list) == 0:
             raise ConfigError('No gas mixes configured')
 
-        gas = self._gas_list[0]
+        # sort decompression gases, first gas is assumed to be bottom gas
+        bottom_gas = self._gas_list[0]
+        key = operator.attrgetter('depth')
+        gas_list = sorted(self._gas_list[1:], key=key, reverse=True)
+        gas_list.insert(0, bottom_gas)
 
         abs_p = self._to_pressure(depth)
-        for step in self._dive_descent(abs_p, gas):
+        for step in self._dive_descent(abs_p, bottom_gas):
             yield step
 
-        step = self._step_next(step, time * 60, gas)
+        step = self._step_next(step, time * 60, bottom_gas)
         yield step
 
-        yield from self._dive_ascent(step)
+        yield from self._dive_ascent(step, gas_list)
 
 
 
