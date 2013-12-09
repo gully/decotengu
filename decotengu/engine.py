@@ -312,22 +312,40 @@ class Engine(object):
         return tp
 
 
-    def _dive_descent(self, abs_p, gas):
+    def _dive_descent(self, abs_p, gas_list):
         """
         Dive descent from surface to specified depth.
 
+        The last gas on the gas mix list is bottom gas, others are travel
+        gas mixes.
+
         :param abs_p: Absolute pressure of destination depth.
-        :param gas: Gas mix configuration.
+        :param gas_list: List of gas mixes - travel and bottom gas mixes.
         """
+        gas = gas_list[0]
         data = self.model.init(self.surface_pressure)
         step = Step(Phase.START, self.surface_pressure, 0, gas, data, None)
         yield step
 
-        p = abs_p - self.surface_pressure
-        time = self._pressure_to_time(p, self.descent_rate)
-        logger.debug('descent for {}s'.format(time))
-        step = self._step_next_descent(step, time, gas)
-        yield step
+        stages = self._descent_stages(gas_list, abs_p)
+        for i, (depth, gas) in enumerate(stages):
+            if i > 0: # perform gas switch
+                step = step._replace(gas=gas)
+                logger.debug('switch to gas {}'.format(gas))
+                yield step
+            p = depth - step.abs_p
+            time = self._pressure_to_time(p, self.descent_rate)
+            logger.debug('descent for {}s using gas {}'.format(time, gas))
+            step = self._step_next_descent(step, time, gas)
+            yield step
+
+        last = gas_list[-1]
+        if abs(step.abs_p - self._to_pressure(last.depth)) < EPSILON:
+            assert gas != last
+            step = step._replace(gas=last)
+            yield step
+            logger.debug('switch to gas {}'.format(last))
+
         logger.debug('descent finished at {:.4f}bar'.format(step.abs_p))
 
 
@@ -425,6 +443,40 @@ class Engine(object):
                 ' pressure {}bar ({}m)'.format(abs_p, depth)
 
         return abs_p
+
+
+    def _descent_stages(self, gas_list, end_abs_p):
+        """
+        Calculate stages for dive descent.
+
+        Descent stage is a tuple
+
+        - absolute pressure of destination depth
+        - gas mix
+
+        The descent stages are calculated using gas mix list. The absolute
+        pressure of destination depth is switch depth of next gas mix
+        absolute pressure of destination depth, for
+        example for `end_abs_p = 6.6bar`::
+
+             0m  30%        4.6bar (36m)  30%
+            36m  21%   ->   6.6bar (56m)  21%
+
+        If switch depth of last gas mix is equal to the destination depth,
+        then descent stage is not included for it. It means that descent
+        is performed to the bottom on travel gas only and it is
+        responsbility of the caller to perform appropriate bottom gas
+        switch.
+
+        :param gas_list: List of gas mixes - travel and bottom gas mixes.
+        :param end_abs_p: Absolute pressure of destination depth.
+        """
+        mixes = zip(gas_list[:-1], gas_list[1:])
+        _pressure = lambda mix: self._to_pressure(mix.depth)
+        yield from ((_pressure(m2), m1) for m1, m2 in mixes)
+        last = gas_list[-1]
+        if abs(_pressure(last) - end_abs_p) > 0:
+            yield (end_abs_p, last)
 
 
     def _free_ascent_stages(self, gas_list):
@@ -731,7 +783,7 @@ class Engine(object):
         gas_list.insert(0, bottom_gas)
 
         abs_p = self._to_pressure(depth)
-        for step in self._dive_descent(abs_p, bottom_gas):
+        for step in self._dive_descent(abs_p, [bottom_gas]):
             yield step
 
         step = self._step_next(step, time * 60, bottom_gas)

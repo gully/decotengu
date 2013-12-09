@@ -21,7 +21,7 @@
 Tests for DecoTengu dive decompression engine.
 """
 
-from decotengu.engine import Engine, Phase, Step, DecoTable
+from decotengu.engine import Engine, DecoTable, Phase, GasMix
 from decotengu.error import ConfigError
 
 from .tools import _step, _engine, _data, AIR, EAN50
@@ -237,22 +237,6 @@ class EngineTestCase(unittest.TestCase):
         self.assertEquals([1.2, 1.3], v)
 
 
-    def test_dive_descent(self):
-        """
-        Test dive descent
-        """
-        self.engine.descent_rate = 10
-        steps = list(self.engine._dive_descent(3.1, AIR))
-        self.assertEquals(2, len(steps)) # should contain start of a dive
-
-        s1, s2 = steps
-        self.assertEquals(1.0, s1.abs_p)
-        self.assertEquals(0, s1.time)
-        self.assertEquals(3.1, s2.abs_p)
-        self.assertEquals(126, s2.time) # 1m is 6s at 10m/min
-        self.assertEquals(AIR, s2.gas)
-
-
     @mock.patch('decotengu.engine.bisect_find')
     def test_first_stop_finder(self, f_bf):
         """
@@ -318,6 +302,129 @@ class EngineTestCase(unittest.TestCase):
         engine = Engine()
         it = engine.calculate(25, 15)
         self.assertRaises(ConfigError, next, it)
+
+
+
+class EngineDiveDescentTestCase(unittest.TestCase):
+    """
+    Deco engine dive descent related tests.
+    """
+    def setUp(self):
+        """
+        Create decompression engine and set unit test friendly pressure
+        parameters.
+        """
+        self.engine = _engine()
+
+
+    def test_descent_stages(self):
+        """
+        Test dive descent stages calculation
+        """
+        ean30 = GasMix(0, 50, 50, 0)
+        air = GasMix(36, 30, 70, 0)
+        gas_list = (ean30, air)
+
+        stages = list(self.engine._descent_stages(gas_list, 6.6))
+
+        self.assertEquals(2, len(stages))
+
+        s1, s2 = stages
+        self.assertEquals(4.6, s1[0])
+        self.assertEquals(ean30, s1[1])
+        self.assertEquals(6.6, s2[0])
+        self.assertEquals(air, s2[1])
+
+
+    def test_descent_stages_exact(self):
+        """
+        Test dive descent stages calculation for exact destination depth
+        """
+        ean30 = GasMix(0, 50, 50, 0)
+        air = GasMix(36, 30, 70, 0)
+        gas_list = (ean30, air)
+
+        stages = list(self.engine._descent_stages(gas_list, 4.6))
+
+        self.assertEquals(1, len(stages))
+
+        s1 = stages[0]
+        self.assertEquals(4.6, s1[0])
+        self.assertEquals(ean30, s1[1])
+
+
+    def test_dive_descent(self):
+        """
+        Test dive descent with bottom gas only
+        """
+        self.engine.descent_rate = 10
+        steps = list(self.engine._dive_descent(3.1, [AIR]))
+        self.assertEquals(2, len(steps)) # should contain start of a dive
+
+        s1, s2 = steps
+        self.assertEquals(1.0, s1.abs_p)
+        self.assertEquals(0, s1.time)
+        self.assertEquals(3.1, s2.abs_p)
+        self.assertEquals(126, s2.time) # 1m is 6s at 10m/min
+        self.assertEquals(AIR, s2.gas)
+
+
+    def test_dive_descent_travel(self):
+        """
+        Test dive descent with one travel gas
+        """
+        self.engine.descent_rate = 10
+        ean30 = GasMix(0, 30, 70, 0)
+        air = GasMix(36, 21, 79, 0)
+        gas_list = (ean30, air)
+
+        steps = list(self.engine._dive_descent(6.6, gas_list))
+        self.assertEquals(4, len(steps)) # should contain start of a dive
+
+        s1, s2, s3, s4 = steps # includes gas switch
+        self.assertEquals(1.0, s1.abs_p)
+        self.assertEquals(0, s1.time)
+        self.assertEquals(ean30, s1.gas)
+
+        self.assertEquals(4.6, s2.abs_p)
+        self.assertAlmostEquals(216, s2.time) # 1m is 6s at 10m/min
+        self.assertEquals(ean30, s2.gas)
+
+        # test gas switch
+        self.assertEquals(4.6, s3.abs_p)
+        self.assertAlmostEquals(216, s3.time)
+        self.assertEquals(air, s3.gas)
+
+        self.assertEquals(6.6, s4.abs_p)
+        self.assertAlmostEquals(336, s4.time) # 1m is 6s at 10m/min
+        self.assertEquals(air, s4.gas)
+
+
+    def test_dive_descent_travel_exact(self):
+        """
+        Test dive descent with travel gas to bottom depth
+        """
+        self.engine.descent_rate = 10
+        ean30 = GasMix(0, 30, 70, 0)
+        air = GasMix(36, 21, 79, 0)
+        gas_list = (ean30, air)
+
+        steps = list(self.engine._dive_descent(4.6, gas_list))
+        self.assertEquals(3, len(steps)) # should contain start of a dive
+
+        s1, s2, s3 = steps # s3 is gas switch to air
+        self.assertEquals(1.0, s1.abs_p)
+        self.assertEquals(0, s1.time)
+        self.assertEquals(ean30, s1.gas)
+
+        self.assertEquals(4.6, s2.abs_p)
+        self.assertAlmostEquals(216, s2.time) # 1m is 6s at 10m/min
+        self.assertEquals(ean30, s2.gas)
+
+        # test gas switch
+        self.assertEquals(4.6, s3.abs_p)
+        self.assertAlmostEquals(216, s3.time)
+        self.assertEquals(air, s3.gas)
 
 
 
