@@ -1,6 +1,6 @@
 Changelog
 =========
-DecoTengu 0.3.0
+DecoTengu 0.4.0
 ---------------
 - trimix support implemented
 - added Buhlmann equation description to the documentation
