@@ -328,7 +328,7 @@ class Engine(object):
         step = Step(Phase.START, self.surface_pressure, 0, gas, data, None)
         yield step
 
-        stages = self._descent_stages(gas_list, abs_p)
+        stages = self._descent_stages(abs_p, gas_list)
         for i, (depth, gas) in enumerate(stages):
             if i > 0: # perform gas switch
                 step = step._replace(gas=gas)
@@ -373,7 +373,7 @@ class Engine(object):
             return
 
         bottom_gas = gas_list[0]
-        stages = self._deco_ascent_stages(gas_list, step.abs_p)
+        stages = self._deco_ascent_stages(step.abs_p, gas_list)
         yield from self._deco_staged_ascent(step, bottom_gas, stages)
 
 
@@ -447,7 +447,7 @@ class Engine(object):
         return abs_p
 
 
-    def _descent_stages(self, gas_list, end_abs_p):
+    def _descent_stages(self, end_abs_p, gas_list):
         """
         Calculate stages for dive descent.
 
@@ -470,8 +470,8 @@ class Engine(object):
         responsbility of the caller to perform appropriate bottom gas
         switch.
 
-        :param gas_list: List of gas mixes - travel and bottom gas mixes.
         :param end_abs_p: Absolute pressure of destination depth.
+        :param gas_list: List of gas mixes - travel and bottom gas mixes.
         """
         mixes = zip(gas_list[:-1], gas_list[1:])
         _pressure = lambda mix: self._to_pressure(mix.depth)
@@ -507,7 +507,7 @@ class Engine(object):
         yield (self.surface_pressure, gas_list[-1])
 
 
-    def _deco_ascent_stages(self, gas_list, start_abs_p):
+    def _deco_ascent_stages(self, start_abs_p, gas_list):
         """
         Calculate stages for decompression ascent.
 
@@ -527,9 +527,9 @@ class Engine(object):
         Only gas mixes, which switch depth is shallower than start depth,
         are used for decompression ascent stages calculation.
 
-        :param start_abs_p: Absolute pressure of decompression start depth.
         :param gas_list: List of gas mixes - bottom and decompression gas
             mixes.
+        :param start_abs_p: Absolute pressure of decompression start depth.
         """
         assert start_abs_p > self.surface_pressure
         mixes = zip(gas_list[:-1], gas_list[1:])

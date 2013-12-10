@@ -325,7 +325,7 @@ class EngineDiveDescentTestCase(unittest.TestCase):
         air = GasMix(36, 30, 70, 0)
         gas_list = (ean30, air)
 
-        stages = list(self.engine._descent_stages(gas_list, 6.6))
+        stages = list(self.engine._descent_stages(6.6, gas_list))
 
         self.assertEquals(2, len(stages))
 
@@ -344,7 +344,7 @@ class EngineDiveDescentTestCase(unittest.TestCase):
         air = GasMix(36, 30, 70, 0)
         gas_list = (ean30, air)
 
-        stages = list(self.engine._descent_stages(gas_list, 4.6))
+        stages = list(self.engine._descent_stages(4.6, gas_list))
 
         self.assertEquals(1, len(stages))
 
@@ -496,7 +496,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         """
         Test dive ascent stages calculation (single gas, deco)
         """
-        stages = list(self.engine._deco_ascent_stages([AIR], 3.2))
+        stages = list(self.engine._deco_ascent_stages(3.2, [AIR]))
 
         self.assertEquals(1, len(stages))
         self.assertEquals(1.0, stages[0][0])
@@ -513,7 +513,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         self.engine.add_gas(6, 100)
         gas_list = self.engine._gas_list
 
-        stages = list(self.engine._deco_ascent_stages(gas_list, 3.2))
+        stages = list(self.engine._deco_ascent_stages(3.2, gas_list))
         self.assertEquals(3, len(stages))
 
         self.assertEquals(1.9, stages[0][0])
