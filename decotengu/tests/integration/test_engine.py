@@ -74,6 +74,23 @@ class EngineTestCase(unittest.TestCase):
             self.assertEquals(times[depth], dt.total)
 
 
+    def test_dive_with_travel_gas(self):
+        """
+        Test a dive with travel gas mix
+        """
+        engine, dt = create()
+        engine.model.gf_low = 0.2
+        engine.model.gf_high = 0.75
+        engine.add_gas(0, 36, travel=True)
+        engine.add_gas(33, 13, 50)
+        engine.add_gas(33, 36)
+        engine.add_gas(21, 50)
+        engine.add_gas(9, 80)
+
+        data = list(engine.calculate(90, 20))
+        self.assertEquals(117, dt.total)
+
+
 
 class ProfileTestCase(unittest.TestCase):
     """

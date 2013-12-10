@@ -552,8 +552,7 @@ class Engine(object):
         #. If no travel gas mixes, then first gas mix is bottom gas and its
            switch depth is 0m.
         #. All travel gas mixes have different switch depth.
-        #. Bottom gas and decompression gas mixes should have different
-           switch depth.
+        #. All decompression gas mixes have different switch depth.
         #. There is no gas mix with switch depth deeper than maximum dive
            depth.
 
@@ -572,12 +571,12 @@ class Engine(object):
                 'Two or more travel gas mixes have the same switch depth'
             )
 
-        k = len(self._gas_list)
-        depths = (m.depth for m in self._gas_list)
+        k = len(self._gas_list[1:])
+        depths = (m.depth for m in self._gas_list[1:])
         if len(set(depths)) != k:
             raise ConfigError(
-                'Two or more bottom or decompression gas mixes have the'
-                ' same switch depth'
+                'Two or more decompression gas mixes have the same'
+                ' switch depth'
             )
 
         mixes = self._gas_list + self._travel_gas_list
@@ -702,8 +701,9 @@ class Engine(object):
         gf_step = (self.model.gf_high - self.model.gf_low) / n_stops
         logger.debug('deco engine: gf step={:.4}'.format(gf_step))
         first_stop = step.abs_p
+        bottom_gas = self._gas_list[0]
         for depth, gas in stages:
-            if step.abs_p >= self._to_pressure(gas.depth) and gas.depth != 0:
+            if step.abs_p >= self._to_pressure(gas.depth) and gas != bottom_gas:
                 for step in self._switch_gas(step, gas):
                     yield step
             gf = self.model.gf_low + (first_stop - step.abs_p) / self._p3m * gf_step

@@ -873,9 +873,9 @@ class GasMixTestCase(unittest.TestCase):
         self.assertRaises(ConfigError, self.engine._validate_gas_list, 56)
 
 
-    def test_gas_list_validation_depth(self):
+    def test_gas_list_validation_deco_depth(self):
         """
-        Test gas list validation rule about bottom gas and deco gas mixes depths
+        Test gas list validation rule about deco gas mixes depths
         """
         self.engine.add_gas(0, 21)
         self.engine.add_gas(12, 79)
