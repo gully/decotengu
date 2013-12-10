@@ -3,6 +3,7 @@ Changelog
 DecoTengu 0.4.0
 ---------------
 - trimix support implemented
+- travel gas mixes can be added to gas mix list
 - added Buhlmann equation description to the documentation
 
 DecoTengu 0.3.0
