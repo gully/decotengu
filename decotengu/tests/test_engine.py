@@ -855,14 +855,6 @@ class GasMixTestCase(unittest.TestCase):
         self.assertEquals(55, mix4.he)
 
 
-    def test_adding_gas_first(self):
-        """
-        Test deco engine adding first gas mix
-        """
-        assert len(self.engine._gas_list) == 0
-        self.assertRaises(ValueError, self.engine.add_gas, 33, 32)
-
-
 
 class DecoTableTestCase(unittest.TestCase):
     """

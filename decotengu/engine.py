@@ -124,6 +124,7 @@ class Engine(object):
         self.descent_rate = 20.0
 
         self._gas_list = []
+        self._travel_gas_list = []
         self._deco_stop_search_time = 64
 
         self._meter_to_bar = METER_TO_BAR
@@ -748,20 +749,22 @@ class Engine(object):
             yield step
 
 
-    def add_gas(self, depth, o2, he=0):
+    def add_gas(self, depth, o2, he=0, travel=False):
         """
         Add gas mix to the gas mix list.
 
-        The first gas to be added is bottom gas and its switch depth should
-        be 0m.
+        First non-travel gas mix is bottom gas mix. Any other non-travel
+        gas mix is decompression gas mix.
 
         :param depth: Switch depth of gas mix.
         :param o2: O2 percentage, i.e. 80.
         :param he: Helium percentage, i.e. 18.
+        :param travel: Travel gas mix if true.
         """
-        if len(self._gas_list) == 0 and depth != 0:
-            raise ValueError('First gas mix switch depth should be at 0m')
-        self._gas_list.append(GasMix(depth, o2, 100 - o2 - he, he))
+        if travel:
+            self._travel_gas_list.append(GasMix(depth, o2, 100 - o2 - he, he))
+        else:
+            self._gas_list.append(GasMix(depth, o2, 100 - o2 - he, he))
 
 
     def calculate(self, depth, time):
@@ -776,16 +779,20 @@ class Engine(object):
         if len(self._gas_list) == 0:
             raise ConfigError('No gas mixes configured')
 
-        # sort decompression gases, first gas is assumed to be bottom gas
+        # prepare travel and bottom gas mixes
+        depth_key = operator.attrgetter('depth')
         bottom_gas = self._gas_list[0]
-        key = operator.attrgetter('depth')
-        gas_list = sorted(self._gas_list[1:], key=key, reverse=True)
-        gas_list.insert(0, bottom_gas)
+        gas_list = sorted(self._travel_gas_list, key=depth_key)
+        gas_list.append(bottom_gas)
 
         abs_p = self._to_pressure(depth)
-        for step in self._dive_descent(abs_p, [bottom_gas]):
+        for step in self._dive_descent(abs_p, gas_list):
             yield step
 
+        # prepare decompression gases, first gas mix is assumed to be
+        # bottom gas mix
+        gas_list = sorted(self._gas_list[1:], key=depth_key, reverse=True)
+        gas_list.insert(0, bottom_gas)
         step = self._step_next(step, time * 60, bottom_gas)
         yield step
 
