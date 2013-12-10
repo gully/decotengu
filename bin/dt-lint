@@ -130,7 +130,8 @@ engine.descent_rate = args.descent_rate
 if args.gas_list:
     for mix in args.gas_list.split():
         o2, he, depth = re.split('[,@]', mix)
-        engine.add_gas(int(depth), int(o2), int(he))
+        travel = o2[0] == '+'
+        engine.add_gas(int(depth), int(o2), int(he), travel=travel)
 else:
     engine.add_gas(0, 21)
 
@@ -167,9 +168,10 @@ print('Surface pressure: {:.2f} millibar'.format(engine.surface_pressure * 1000)
 print()
 
 print('Gas list:')
+for m in engine._travel_gas_list:
+    print(' o2={}%, he={}% at {}m (travel gas mix)'.format(m.o2, m.he, m.depth))
 for m in engine._gas_list:
-    #print(' o2={}%, he={}% at {}m'.format(m.o2, m.he, m.depth))
-    print(' o2={}% at {}m'.format(m.o2, m.depth))
+    print(' o2={}%, he={}% at {}m'.format(m.o2, m.he, m.depth))
 print()
 
 stops = deco_table.stops
