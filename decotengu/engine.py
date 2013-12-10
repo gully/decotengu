@@ -372,8 +372,9 @@ class Engine(object):
         if abs(step.abs_p - self.surface_pressure) < EPSILON:
             return
 
+        bottom_gas = gas_list[0]
         stages = self._deco_ascent_stages(gas_list, step.abs_p)
-        yield from self._deco_staged_ascent(step, stages)
+        yield from self._deco_staged_ascent(step, bottom_gas, stages)
 
 
     def _find_first_stop(self, start, abs_p, gas):
@@ -684,11 +685,12 @@ class Engine(object):
                 yield step
 
 
-    def _deco_staged_ascent(self, start, stages):
+    def _deco_staged_ascent(self, start, bottom_gas, stages):
         """
         Perform staged asccent within decompression zone.
 
         :param start: Starting dive step.
+        :param bottom_gas: Bottom gas mix.
         :param stages: Dive stages.
 
         .. seealso:: :func:`decotengu.engine.Engine._ascent_stages_deco`
@@ -701,7 +703,6 @@ class Engine(object):
         gf_step = (self.model.gf_high - self.model.gf_low) / n_stops
         logger.debug('deco engine: gf step={:.4}'.format(gf_step))
         first_stop = step.abs_p
-        bottom_gas = self._gas_list[0]
         for depth, gas in stages:
             if step.abs_p >= self._to_pressure(gas.depth) and gas != bottom_gas:
                 for step in self._switch_gas(step, gas):

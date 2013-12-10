@@ -698,7 +698,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         deco_steps = [deco_stop] * 7
         self.engine._deco_ascent = mock.MagicMock(side_effect=[deco_steps])
 
-        steps = list(self.engine._deco_staged_ascent(start, stages))
+        steps = list(self.engine._deco_staged_ascent(start, AIR, stages))
         self.assertEquals(7, len(steps)) # deco stops 21m -> 0m
         self.assertEquals(1, self.engine._deco_ascent.call_count)
         gf_step = self.engine._deco_ascent.call_args[0][-1]
@@ -727,7 +727,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         # add gas switch step at 12m
         self.engine._switch_gas = mock.MagicMock(return_value=[deco_steps[3]])
 
-        steps = list(self.engine._deco_staged_ascent(start, stages))
+        steps = list(self.engine._deco_staged_ascent(start, AIR, stages))
         self.assertEquals(8, len(steps)) # deco stops 21m -> 0m + gas switch
                                          # step at 12m
         self.assertEquals(2, self.engine._deco_ascent.call_count)
