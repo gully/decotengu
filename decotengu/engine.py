@@ -540,6 +540,53 @@ class Engine(object):
         yield (self.surface_pressure, gas_list[-1])
 
 
+    def _validate_gas_list(self, depth):
+        """
+        Validate gas mix list.
+
+        `ConfigError` is raised if any of gas mix rules are violated.
+
+        The gas mix rules are
+
+        #. There is one non-travel gas mix on gas mix list.
+        #. If no travel gas mixes, then first gas mix is bottom gas and its
+           switch depth is 0m.
+        #. All travel gas mixes have different switch depth.
+        #. Bottom gas and decompression gas mixes should have different
+           switch depth.
+        #. There is no gas mix with switch depth deeper than maximum dive
+           depth.
+
+        :param depth: Maximum dive depth.
+        """
+        if not self._gas_list:
+            raise ConfigError('No bottom gas mix configured')
+
+        if not self._travel_gas_list and self._gas_list[0].depth != 0:
+            raise ConfigError('Bottom gas mix switch depth is not 0m')
+
+        k = len(self._travel_gas_list)
+        depths = (m.depth for m in self._travel_gas_list)
+        if k and len(set(depths)) != k:
+            raise ConfigError(
+                'Two or more travel gas mixes have the same switch depth'
+            )
+
+        k = len(self._gas_list)
+        depths = (m.depth for m in self._gas_list)
+        if len(set(depths)) != k:
+            raise ConfigError(
+                'Two or more bottom or decompression gas mixes have the'
+                ' same switch depth'
+            )
+
+        mixes = self._gas_list + self._travel_gas_list
+        mixes = [m for m in mixes if m.depth > depth]
+        if mixes:
+            raise ConfigError(
+                'Gas mix switch depth deeper than maximum dive depth'
+            )
+
     def _switch_gas(self, step, gas):
         """
         Switch to specified gas mix, ascending if necessary.
@@ -756,10 +803,15 @@ class Engine(object):
         First non-travel gas mix is bottom gas mix. Any other non-travel
         gas mix is decompression gas mix.
 
+        See :func:`decotengu.engine.Engine._validate_gas_list` method
+        documentation for more gas mix list rules.
+
         :param depth: Switch depth of gas mix.
         :param o2: O2 percentage, i.e. 80.
         :param he: Helium percentage, i.e. 18.
         :param travel: Travel gas mix if true.
+
+        .. seealso:: :func:`decotengu.engine.Engine._validate_gas_list`
         """
         if travel:
             self._travel_gas_list.append(GasMix(depth, o2, 100 - o2 - he, he))
@@ -769,15 +821,22 @@ class Engine(object):
 
     def calculate(self, depth, time):
         """
-        Start dive calculations for specified dive depth and bottom time.
+        Start dive profile calculation for specified dive depth and bottom
+        time.
 
         The method returns an iterator of dive steps.
 
+        Before the calculation the gas mix list is validated. See
+        :func:`decotengu.engine.Engine._validate_gas_list` method
+        documentation for the list of gas mix list rules.
+
         :param depth: Maximum depth [m].
         :param time: Bottom time [min].
+
+        .. seealso:: :func:`decotengu.engine.Engine._validate_gas_list`
+        .. seealso:: :func:`decotengu.engine.Engine.add_gas`
         """
-        if len(self._gas_list) == 0:
-            raise ConfigError('No gas mixes configured')
+        self._validate_gas_list(depth)
 
         # prepare travel and bottom gas mixes
         depth_key = operator.attrgetter('depth')

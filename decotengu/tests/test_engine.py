@@ -855,6 +855,62 @@ class GasMixTestCase(unittest.TestCase):
         self.assertEquals(55, mix4.he)
 
 
+    def test_gas_list_empty(self):
+        """
+        Test gas list validation rule about empty gas mix list
+        """
+        assert not self.engine._gas_list
+        assert not self.engine._travel_gas_list
+        self.assertRaises(ConfigError, self.engine._validate_gas_list, 56)
+
+
+    def test_gas_list_validation_bottom_gas(self):
+        """
+        Test gas list validation rule about first gas mix (no travel gas mixes)
+        """
+        self.engine.add_gas(1, 21)
+        assert not self.engine._travel_gas_list
+        self.assertRaises(ConfigError, self.engine._validate_gas_list, 56)
+
+
+    def test_gas_list_validation_depth(self):
+        """
+        Test gas list validation rule about bottom gas and deco gas mixes depths
+        """
+        self.engine.add_gas(0, 21)
+        self.engine.add_gas(12, 79)
+        self.engine.add_gas(12, 80)
+        self.assertRaises(ConfigError, self.engine._validate_gas_list, 56)
+
+
+    def test_gas_list_validation_travel_depth(self):
+        """
+        Test gas list validation rule about travel gas mixes depths
+        """
+        self.engine.add_gas(0, 21, travel=True)
+        self.engine.add_gas(36, 30, travel=True)
+        self.engine.add_gas(36, 29, travel=True)
+        self.assertRaises(ConfigError, self.engine._validate_gas_list, 56)
+
+
+    def test_gas_list_validation_max_depth(self):
+        """
+        Test gas list validation rule about maximum dive depth
+        """
+        self.engine.add_gas(0, 21)
+        self.engine.add_gas(12, 80)
+        self.assertRaises(ConfigError, self.engine._validate_gas_list, 11)
+
+
+    def test_gas_list_validation_max_depth_travel(self):
+        """
+        Test gas list validation rule about maximum dive depth (for travel gas mix)
+        """
+        self.engine.add_gas(0, 21)
+        self.engine.add_gas(12, 80, travel=True)
+        self.assertRaises(ConfigError, self.engine._validate_gas_list, 11)
+
+
 
 class DecoTableTestCase(unittest.TestCase):
     """
