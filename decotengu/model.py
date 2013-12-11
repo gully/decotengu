@@ -37,15 +37,15 @@ ZH-L16C-GF
 Parameters
 ----------
 The Buhlmann decompression model describes human body as 16 tissue
-compartments. For an inert gas and for each of the compartments the model
-assigns the following parameters
+compartments. For an inert gas and for each compartment the model assigns
+the following parameters
 
 A
     Buhlmann coefficient A.
 B
     Buhlmann coefficient B.
 half life
-    Inert gas half-life time constant.
+    Half-life time constant for inert gas, i.e. nitrogen, helium.
 
 The gradient factors extension defines two parameters expressed as
 percentage
@@ -81,11 +81,11 @@ The Schreiner equation is
         P = P_alv + R * (t - 1 / k) - (P_alv - P - R / k) * e^{-k * t}
 
 Pressure of inert gas in tissue compartment :math:`P` (on the right of the
-equation) is initial pressure in tissue compartment, i.e. `0.79` bar for
-air on the surface. The result of equation is pressure in tissue
-compartment :math:`P` (on the left of the equation) after time of exposure
-:math:`t`, which we feed recursively to the equation from start till end of
-a dive.
+equation) is initial pressure in tissue compartment, i.e. `0.79` bar on the
+surface. The result of equation is pressure in tissue compartment :math:`P`
+(on the left of the equation) after time of exposure :math:`t`. The inert
+gas pressure value is fed recursively to the equation from start till end
+of a dive.
 
 The variables of the equation are
 
@@ -107,10 +107,11 @@ where
     Absolute pressure of current depth [bar].
 
 :math:`F_gas`
-    Inert gas fraction, i.e. for air it is 0.79.
+    Inert gas fraction, i.e. `0.79` for air.
 
 :math:`P_rate`
-    Pressure rate change [bar/min].
+    Pressure rate change [bar/min] (for example, about 1 bar/min is
+    10m/min).
 
 :math:`T_hl`
     Inert gas half-life time for tissue compartment.
@@ -135,10 +136,10 @@ ZH-L16B-GF decompression model and for dive profile described below when
 using EAN32
 
 - descent from 0m to 30m at rate 20m/min
-- dive time at 30m for 20min
+- dive at 30m for 20min
 - ascent from 30m to 10m at rate 10m/min
 
-For the above example, the following assumptions are made
+For the example, the following assumptions are made
 
 - surface pressure is 1 bar
 - change of 10m depth is change of 1 bar pressure
@@ -171,7 +172,8 @@ and pressure in the first tissue compartment is
 
 Next, continue dive at 30m for 20 minutes
 
-    :math:`P = 0.959477` (inert gas pressure in tissue compartment after descent)
+    :math:`P = 0.959477` (inert gas pressure in tissue compartment after
+    descent to 30m)
 
     :math:`P_abs = 4` (30m or 4 bar)
 
@@ -191,7 +193,8 @@ Finally, ascent from 30m to 10m
 
     :math:`P = 2.569995`
 
-    :math:`R = 0.68 * (-1)` (10m/min is 1 bar per minute pressure change, negative because of ascent)
+    :math:`R = 0.68 * (-1)` (10m/min is 1 bar per minute pressure change,
+    negative as it is ascent)
 
     :math:`t = 2` (2 minutes to ascend from 30m to 10m at 10m/min)
 
@@ -243,7 +246,7 @@ value at first decompression stop and *gf high* value at the surface.
 
 To support multiple inert gases, i.e. trimix with nitrogen and helium, we
 need to track pressure of each inert gas separately. The Buhlmann equation
-variables then can be supported with the following equations
+variables can be supported then with the following equations
 
     .. math::
 
@@ -320,14 +323,14 @@ substituting them with `0` as the example uses nitrox gas mix only) ::
 
 Let's put the calculations into the table
 
-    =========== =============== ========== =============
-     Depth [m]   Runtime [min]    P [bar]   Limit [bar]
-    ----------- --------------- ---------- -------------
+    =========== =============== ========== ============= ======
+     Depth [m]   Runtime [min]    P [bar]   Limit [bar]   Note
+    ----------- --------------- ---------- ------------- ------
              0               0       0.79     0.3547507
             30             1.5   0.959478     0.4916664
-            30            21.5   2.569996     1.7927511
-            10            23.5   2.423739     1.6745948
-    =========== =============== ========== =============
+            30            21.5   2.569996     1.7927511    ~8m
+            10            23.5   2.423739     1.6745948    ~7m
+    =========== =============== ========== ============= ======
 
 As we can see, when starting ascent from 30 meters, the Buhlmann equation,
 for the first tissue compartment, gives us ceiling limit  at about 8m. After
@@ -340,6 +343,9 @@ which has to be calculated for each tissue compartment.
 
 Calculations
 ------------
+The main code for decompression model is implemented in :class:`ZH_L16_GF`
+class.
+
 Inert gas pressure of each tissue compartment for descent, ascent and at
 constant depth is calculated by the :func:`ZH_L16_GF.load` method. It uses
 :func:`Schreiner equation <eq_schreiner>` function.
