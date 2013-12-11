@@ -421,12 +421,12 @@ def eq_gf_limit(gf, p_n2, p_he, a_n2, b_n2, a_he, b_he):
     The returned value is absolute pressure of depth of the ascent ceiling.
 
     :param gf: Gradient factor value.
-    :param p_n2: Current tissue pressure for N2.
-    :param p_he: Current tissue pressure for He.
-    :param a_n2: N2 A Buhlmann coefficient.
-    :param b_n2: N2 B Buhlmann coefficient.
-    :param a_he: He A Buhlmann coefficient.
-    :param b_he: He B Buhlmann coefficient.
+    :param p_n2: Current tissue pressure for nitrogen.
+    :param p_he: Current tissue pressure for helium.
+    :param a_n2: Nitrox Buhlmann coefficient A.
+    :param b_n2: Nitrox Buhlmann coefficient B.
+    :param a_he: Helium Buhlmann coefficient A.
+    :param b_he: Helium Buhlmann coefficient B.
     """
     assert gf > 0 and gf <= 1.5
     p = p_n2 + p_he
