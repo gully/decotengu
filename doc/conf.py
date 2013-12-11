@@ -1,5 +1,6 @@
 import sys
 import os.path
+import sphinx_rtd_theme
 
 import decotengu
 
@@ -24,7 +25,7 @@ todo_include_todos = True
 
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['static']
-html_theme_path = ['_themes']
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 html_style = 'decotengu.css'
 
 
