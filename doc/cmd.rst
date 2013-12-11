@@ -102,6 +102,7 @@ red
 .. _cmd-plot-leading-tissue:
 
 .. figure:: dive.png
+   :align: center
 
    Leading tissue data plot
 
