@@ -1,65 +1,12 @@
-@import url('agogo.css');
-
-div.header a:link,
-div.header a:visited,
-div.header a:hover,
-div.header a:active {
-    color: black;
-}
-
-div.footer a:link,
-div.footer a:visited,
-div.footer a:hover,
-div.footer a:active {
-    color: black;
-}
-
-div.header  {
-    color: black;
-}
-
-div.header-wrapper {
-    height: 80px;
-}
-
-div.footer  {
-    color: black;
-}
+@import url('css/theme.css');
 
 div.diagram pre {
-    padding: 20px;
+    font-family: monospace;
+    font-size: 12px;
+    padding: 5px;
     line-height: 95%;
-    background: #eeeeec;
-    border-top: solid #dddddd 2px;
-    border-bottom: solid #dddddd 2px;
+    border: 1px solid #e1e4e5;
+    background: #fff;
+    margin: 1px 0 24px 0;
 }
 
-dl.class, dl.function {
-    padding: 5px;
-    margin: 10px;
-}
-
-dl.class > dt {
-    border: solid black 1px;
-    padding: 5px;
-}
-
-dl.method > dt {
-    border-bottom: solid black 1px;
-    padding: 5px;
-}
-
-dl.function > dt {
-    border: solid black 1px;
-    padding: 5px;
-}
-
-div.section > table.longtable {
-    border: 0px;
-    margin-bottom: 30px;
-}
-
-div.section > table.longtable td {
-    border: solid black 1px;
-    padding: 5px;
-}

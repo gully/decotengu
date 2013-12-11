@@ -22,8 +22,10 @@ epub_author = 'DecoTengu Team'
 
 todo_include_todos = True
 
-html_theme = 'agogo'
-html_style = 'decotengu.css'
+html_theme = 'sphinx_rtd_theme'
 html_static_path = ['static']
+html_theme_path = ['_themes']
+html_style = 'decotengu.css'
+
 
 # vim: sw=4:et:ai
