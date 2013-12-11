@@ -611,7 +611,7 @@ class Engine(object):
         :param step: Current dive step.
         :param gas: Gas to switch to.
 
-        .. seealso:: :func:`decotengu.engine.Engine._can_switch_gas`
+        .. seealso:: :func:`decotengu.Engine._can_switch_gas`
         """
         gp = self._to_pressure(gas.depth)
         logger.debug(
@@ -642,7 +642,7 @@ class Engine(object):
         :param step: Current dive step.
         :param gas: Gas to switch to.
 
-        .. seealso:: :func:`decotengu.engine.Engine._switch_gas`
+        .. seealso:: :func:`decotengu.Engine._switch_gas`
         """
         gs_steps = self._switch_gas(start, gas)
         return gs_steps if self._inv_ascent(gs_steps[-1]) else None
@@ -655,7 +655,7 @@ class Engine(object):
         :param start: Starting dive step.
         :param stages: Dive stages.
 
-        .. seealso:: :func:`decotengu.engine.Engine._ascent_stages_free`
+        .. seealso:: :func:`decotengu.Engine._ascent_stages_free`
         """
         step = start
         for depth, gas in stages:
@@ -693,7 +693,7 @@ class Engine(object):
         :param bottom_gas: Bottom gas mix.
         :param stages: Dive stages.
 
-        .. seealso:: :func:`decotengu.engine.Engine._ascent_stages_deco`
+        .. seealso:: :func:`decotengu.Engine._ascent_stages_deco`
         """
         step = start
         if __debug__:
@@ -812,7 +812,7 @@ class Engine(object):
         :param he: Helium percentage, i.e. 18.
         :param travel: Travel gas mix if true.
 
-        .. seealso:: :func:`decotengu.engine.Engine._validate_gas_list`
+        .. seealso:: :func:`decotengu.Engine._validate_gas_list`
         """
         if travel:
             self._travel_gas_list.append(GasMix(depth, o2, 100 - o2 - he, he))
@@ -834,8 +834,8 @@ class Engine(object):
         :param depth: Maximum depth [m].
         :param time: Bottom time [min].
 
-        .. seealso:: :func:`decotengu.engine.Engine._validate_gas_list`
-        .. seealso:: :func:`decotengu.engine.Engine.add_gas`
+        .. seealso:: :func:`decotengu.Engine._validate_gas_list`
+        .. seealso:: :func:`decotengu.Engine.add_gas`
         """
         self._validate_gas_list(depth)
 
