@@ -448,12 +448,55 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         step = _step(Phase.ASCENT, 1, 1200)
         self.engine._free_staged_ascent = mock.MagicMock(return_value=[step])
         self.engine._deco_ascent_stages = mock.MagicMock()
+        self.engine._ndl_ascent = mock.MagicMock(return_value=None)
         self.engine.add_gas(0, 21)
 
         steps = list(self.engine._dive_ascent(start, self.engine._gas_list))
         self.assertEquals(1, len(steps))
         self.assertEquals(step, steps[0])
         self.assertFalse(self.engine._deco_ascent_stages.called)
+        self.assertTrue(self.engine._ndl_ascent.called)
+
+
+    def test_dive_ascent_ndl(self):
+        """
+        Test deco engine dive ascent and ndl ascent
+        """
+        start = _step(Phase.ASCENT, 4, 1000)
+        step = _step(Phase.ASCENT, 1, 1200)
+        self.engine._ndl_ascent = mock.MagicMock(return_value=step)
+        self.engine.add_gas(0, 21)
+
+        steps = list(self.engine._dive_ascent(start, self.engine._gas_list))
+        self.assertEquals(1, len(steps))
+        self.assertEquals(step, steps[0])
+        self.assertTrue(self.engine._ndl_ascent.called)
+
+
+    def test_ndl_ascent_for_ndl_dive(self):
+        """
+        Test deco engine ndl ascent (ndl dive)
+        """
+        start = _step(Phase.ASCENT, 4.0, 1000)
+        step = _step(Phase.ASCENT, 1.0, 1200)
+        self.engine._free_ascent = mock.MagicMock(return_value=step)
+        self.engine.model.pressure_limit = mock.MagicMock(return_value=1.0)
+
+        result = self.engine._ndl_ascent(start, AIR)
+        self.assertEquals(step, result)
+
+
+    def test_ndl_ascent_not_ndl(self):
+        """
+        Test deco engine ndl ascent (not ndl dive)
+        """
+        start = _step(Phase.ASCENT, 4.0, 1000)
+        step = _step(Phase.ASCENT, 1.0, 1200)
+        self.engine._free_ascent = mock.MagicMock(return_value=step)
+        self.engine.model.pressure_limit = mock.MagicMock(return_value=1.5)
+
+        result = self.engine._ndl_ascent(start, AIR)
+        self.assertIsNone(result)
 
 
     def test_free_ascent_stages_single(self):

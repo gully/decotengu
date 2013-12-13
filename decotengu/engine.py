@@ -352,29 +352,67 @@ class Engine(object):
 
     def _dive_ascent(self, start, gas_list):
         """
-        Dive ascent from specified dive step.
+        Dive ascent from starting dive step.
 
         The ascent is divided into two phases
 
         - ascent to first decompression stop or surface
         - ascent performing decompression stops, if necessary
 
+        The method checks if the ascent is part of NDL dive before above
+        procedure commences.
+
         :param start: Starting dive step.
         :param gas_list: List of gas mixes - bottom and decompression gas
             mixes.
         """
+        bottom_gas = gas_list[0]
+
+        # check if ndl dive
+        step = self._ndl_ascent(start, bottom_gas)
+        if step:
+            yield step
+            return
+
         step = start
 
         stages = self._free_ascent_stages(gas_list)
         for step in self._free_staged_ascent(step, stages):
             yield step
 
+        # arrived at the surface
         if abs(step.abs_p - self.surface_pressure) < EPSILON:
             return
 
-        bottom_gas = gas_list[0]
         stages = self._deco_ascent_stages(step.abs_p, gas_list)
         yield from self._deco_staged_ascent(step, bottom_gas, stages)
+
+
+    def _ndl_ascent(self, start, gas):
+        """
+        Check if NDL ascent to the surface is possible from starting dive
+        step.
+
+        Return the surface dive step if NDL ascent is possible, null
+        otherwise.
+
+        NDL ascent is performed to the surface usually using bottom gas
+        (NOTE: not always possible - exceptions not implemented yet).
+
+        To calculate surface dive step, the surface decompression model
+        parameters are applied, i.e. for ZH-L16-GF decompression model,
+        gradient factor value is set to GF high parameter.
+
+        :param start: Starting dive step.
+        :param gas: Gas mix used during NDL ascent.
+        """
+        gf = self.model.gf_high
+        step = self._free_ascent(start, self.surface_pressure, gas, gf=gf)
+        # FIXME: method is decompression model dependant
+        limit = self.model.pressure_limit(step.data, gf)
+        if step.abs_p < limit:
+            step = None
+        return step
 
 
     def _find_first_stop(self, start, abs_p, gas):
@@ -713,7 +751,7 @@ class Engine(object):
         logger.debug('deco engine: gf at surface={:.4f}'.format(step.data.gf))
 
 
-    def _free_ascent(self, start, abs_p, gas):
+    def _free_ascent(self, start, abs_p, gas, gf=None):
         """
         Ascent to absolute pressure of destination depth using gas mix.
 
@@ -727,7 +765,7 @@ class Engine(object):
         """
         dt = self._pressure_to_time(start.abs_p - abs_p, self.ascent_rate)
         time = start.time + dt
-        return self._step_next_ascent(start, dt, gas)
+        return self._step_next_ascent(start, dt, gas, gf=gf)
 
 
     def _deco_ascent(self, first_stop, abs_p, gas, gf_start, gf_step):

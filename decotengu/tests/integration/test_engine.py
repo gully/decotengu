@@ -92,6 +92,47 @@ class EngineTestCase(unittest.TestCase):
 
 
 
+class NDLTestCase(unittest.TestCase):
+    """
+    NDL dive tests
+    """
+    def test_ndl_dive_30m_100(self):
+        """
+        Test NDL dive to 30m (gf high 100)
+        """
+        engine, dt = create()
+        engine.model.gf_high = 1.0
+        engine.add_gas(0, 21)
+
+        list(engine.calculate(30, 19))
+        self.assertEquals(0, dt.total)
+
+
+    def test_ndl_dive_30m_90(self):
+        """
+        Test NDL dive to 30m (gf high 90)
+        """
+        engine, dt = create()
+        engine.model.gf_high = 0.9
+        engine.add_gas(0, 21)
+
+        list(engine.calculate(30, 15))
+        self.assertEquals(0, dt.total)
+
+
+    def test_non_ndl_dive_30m_90(self):
+        """
+        Test non-NDL dive to 30m (gf high 90)
+        """
+        engine, dt = create()
+        engine.model.gf_high = 0.9
+        engine.add_gas(0, 21)
+
+        list(engine.calculate(30, 16))
+        self.assertTrue(dt.total > 0)
+
+
+
 class ProfileTestCase(unittest.TestCase):
     """
     Integration tests for various dive profiles
