@@ -1,5 +1,11 @@
 Changelog
 =========
+DecoTengu 0.5.0
+---------------
+- check if dive is NDL dive before starting dive ascent
+- dt-plot script reimplemented to use R core plotting functions (ggplot2 no
+  longer required)
+
 DecoTengu 0.4.0
 ---------------
 - trimix support implemented
