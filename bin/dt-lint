@@ -49,7 +49,7 @@ class ValidateAlternative(argparse.Action):
         setattr(args, self.dest, tuple(sorted(alt)))
 
 
-parser = argparse.ArgumentParser(description='DecoTengu 0.4.0.')
+parser = argparse.ArgumentParser(description='DecoTengu 0.5.0.')
 parser.add_argument('-v', '--verbose',
         action='store_true', dest='verbose', default=False,
         help='explain what is being done')
