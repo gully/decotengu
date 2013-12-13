@@ -18,61 +18,57 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-suppressPackageStartupMessages(library(ggplot2))
-
-plot_start <- function (dive, xmax, ymax) {
-#        guides(colour=guide_legend(override.aes=list(colour='black'))) +
-    p = ggplot(NULL, aes(x=time / 60)) +
-        xlim(0, xmax) +
-        ylim(0, ymax) +
-        scale_color_manual(
-            name='Legend',
-            values=c('blue', 'black', 'orange', 'red'),
-            labels=c('absolute pressure', 'pressure', 'gf pressure limit', 'pressure limit')) +
-        xlab('Time [min]') +
-        ylab('Pressure [Bar]') +
-        theme_bw()
-    p
+col2alpha <- function(name, alpha) {
+    c3 = col2rgb(name) / 255
+    rgb(c3[1,], c3[2,], c3[3,], alpha)
 }
 
-aes_now <- function(...) {
-  structure(list(...),  class = "uneval")
-}
-
-
-plot_dive_panel <- function(dive, lty='solid', pch=20, alpha=1, lwd=1, ps=2, points=T) {
-    if (points)
-        pt = geom_point(data=dive, aes(y=pressure), col='blue', size=ps, alpha=alpha, shape=pch)
-    else
-        pt = NULL
-
-    p = list(
-        pt,
-        geom_line(data=dive, aes(y=tissue_pressure), col='black', linetype=lty, size=lwd, alpha=alpha),
-        geom_line(data=dive, aes(y=tissue_gf_limit), col='orange', linetype=lty, size=lwd, alpha=alpha),
-        geom_line(data=dive, aes(y=tissue_limit), col='red', linetype=lty, size=lwd, alpha=alpha),
-        geom_line(data=dive, aes(y=pressure), col='blue', linetype=lty, size=lwd, alpha=alpha)
+plot_start <- function(dive, xmax, ymax) {
+    plot(
+        NA, xlim=c(0, xmax), ylim=c(0, ymax),
+        xlab='Time [min]',
+        ylab='Pressure [Bar]'
     )
-    p
+    grid()
 }
 
-plot_dive_basic <- function(dive, points=T) {
-    p = plot_start(dive, max(dive$time / 60), max(dive$pressure)) + plot_dive_panel(dive, points=points)
-    p
+plot_dive_panel <- function(dive, lty='solid', pch=20, alpha=1, lwd=2, ps=0.75, pt=T) {
+    time = dive$time / 60
+    lines(time, dive$tissue_pressure, col=col2alpha('black', alpha), lty=lty, lwd=lwd)
+    lines(time, dive$tissue_gf_limit, col=col2alpha('orange', alpha), lty=lty, lwd=lwd)
+    lines(time, dive$tissue_limit, col=col2alpha('red', alpha), lty=lty, lwd=lwd)
+    lines(time, dive$pressure, col=col2alpha('blue', alpha), lty=lty, lwd=lwd)
+
+    if (pt)
+        points(time, dive$pressure, col=col2alpha('blue', alpha), cex=ps, pch=pch)
+}
+
+plot_dive_basic <- function(dive, pt=T) {
+    plot_start(
+        dive,
+        max(dive$time / 60),
+        max(dive$pressure)
+    )
+    plot_dive_panel(dive, pt=pt)
 }
 
 plot_dive <- function(dive) {
-    p = plot_dive_basic(dive, points=F) + facet_wrap(~tissue_no)
-    print(p)
-
-    md = aggregate_leading_tissue(dive)
-    p = plot_dive_basic(md) + ggtitle('Leading Tissue')
-    print(p)
-
+    layout(matrix(1:16, 4, 4, byrow=T))
     for (i in 1:16) {
         d = dive[dive$tissue_no == i,]
-        p = plot_dive_basic(d) + ggtitle(sprintf('Tissue %02d', i))
-        print(p)
+        plot_dive_basic(d, pt=F)
+        title(sprintf('Tissue %02d', i))
+    }
+
+    layout(matrix(1))
+    md = aggregate_leading_tissue(dive)
+    p = plot_dive_basic(md)
+    title('Leading Tissue')
+ 
+    for (i in 1:16) {
+        d = dive[dive$tissue_no == i,]
+        p = plot_dive_basic(d)
+        title(sprintf('Tissue %02d', i))
     }
 }
 
@@ -81,35 +77,35 @@ aggregate_leading_tissue <- function(dive) {
     md[order(md$time),]
 }
 
-plot_cmp_dives_basic <- function(ref_dive, dive, lab1, lab2, points=T) {
-    p1 = plot_dive_panel(ref_dive, pch=18, alpha=0.3, lwd=4, ps=6, points=points)
-    p2 = plot_dive_panel(ref_dive, lty='dashed', lwd=0.5, points=points)
-    p3 = plot_dive_panel(dive, ps=3, points=points)
-
-    xmax = max(ref_dive$time / 60, dive$time / 60)
+plot_cmp_dives_basic <- function(ref_dive, dive, lab1, lab2, pt=T) {
+    xmax = max(ref_dive$time,  dive$time) / 60
     ymax = max(ref_dive$pressure, dive$pressure)
-    p = plot_start(dive, xmax, ymax) + p1 + p2 + p3 +
-        scale_linetype(
-            name='',
-            labels=c(lab1, lab2))
-
-    p
+    plot_start(dive, xmax, ymax)
+    plot_dive_panel(ref_dive, pch=18, alpha=0.3, lwd=10, ps=1.2, pt=pt)
+    plot_dive_panel(ref_dive, lty='dashed', pt=F)
+    plot_dive_panel(dive, pt=pt)
 }
 
 plot_cmp_dives <- function(ref_dive, dive, lab1, lab2) {
-    p = plot_cmp_dives_basic(ref_dive, dive, lab1, lab2, points=F) + facet_wrap(~tissue_no)
-    print(p)
+    layout(matrix(1:16, 4, 4, byrow=T))
+    for (i in 1:16) {
+        d = dive[dive$tissue_no == i,]
+        r = ref_dive[ref_dive$tissue_no == i,]
+        plot_cmp_dives_basic(r, d, lab1, lab2, pt=F)
+        title(sprintf('Tissue %02d', i))
+    }
+    layout(matrix(1))
 
     ref_md = aggregate_leading_tissue(ref_dive)
     md = aggregate_leading_tissue(dive)
-    p = plot_cmp_dives_basic(ref_md, md, lab1, lab2) + ggtitle('Leading Tissue')
-    print(p)
+    plot_cmp_dives_basic(ref_md, md, lab1, lab2)
+    title('Leading Tissue')
 
     for (i in 1:16) {
         d = dive[dive$tissue_no == i,]
         r = ref_dive[ref_dive$tissue_no == i,]
-        p = plot_cmp_dives_basic(r, d, lab1, lab2) + ggtitle(sprintf('Tissue %02d', i))
-        print(p)
+        plot_cmp_dives_basic(r, d, lab1, lab2)
+        title(sprintf('Tissue %02d', i))
     }
 }
 
