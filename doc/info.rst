@@ -47,4 +47,6 @@ or ::
     $ python3 setup.py build
     $ python3 setup.py install --user
 
+DecoTengu provides `dt-plot` script, which requires R. This is optional.
+
 .. vim: sw=4:et:ai
