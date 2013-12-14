@@ -18,6 +18,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+LEGEND_WIDTH_STR = 'Inert gas pressure'
+
 col2alpha <- function(name, alpha) {
     c3 = col2rgb(name) / 255
     rgb(c3[1,], c3[2,], c3[3,], alpha)
@@ -55,7 +57,7 @@ plot_dive_basic <- function(dive, pt=T) {
 add_legend <- function() {
     colors = c('blue', 'black', 'orange', 'red')
     legend(
-        'bottomright',
+        'topright',
         c(
             'Absolute pressure', 'Inert gas pressure',
             'GF ceiling limit', 'Ceiling limit'
@@ -63,7 +65,8 @@ add_legend <- function() {
         fill=colors,
         border=colors,
         bg='white',
-        inset=c(0.015, 0.02)
+        inset=c(0.015, 0.02),
+        text.width=strwidth(LEGEND_WIDTH_STR)
     )
 }
 
@@ -99,8 +102,24 @@ plot_cmp_dives_basic <- function(ref_dive, dive, lab1, lab2, pt=T) {
     ymax = max(ref_dive$pressure, dive$pressure)
     plot_start(dive, xmax, ymax)
     plot_dive_panel(ref_dive, pch=18, alpha=0.3, lwd=10, ps=1.2, pt=pt)
-    plot_dive_panel(ref_dive, lty='dashed', pt=F)
+    plot_dive_panel(ref_dive, lty='dashed', lwd=1, pt=F)
     plot_dive_panel(dive, pt=pt)
+}
+
+add_legend_cmp <- function() {
+    op = par(lend='butt')
+    legend(
+        'topright',
+        c('Reference dive', 'Dive'),
+        lwd=c(10, 2),
+        pch=c(18, 20),
+        col=c(col2alpha('blue', 0.3), 'blue'),
+        bg='white',
+        inset=c(0.015, 0.15),
+        seg.len=1.5,
+        text.width=strwidth(LEGEND_WIDTH_STR)
+    )
+    par(op)
 }
 
 plot_cmp_dives <- function(ref_dive, dive, lab1, lab2) {
@@ -117,12 +136,16 @@ plot_cmp_dives <- function(ref_dive, dive, lab1, lab2) {
     md = aggregate_leading_tissue(dive)
     plot_cmp_dives_basic(ref_md, md, lab1, lab2)
     title('Leading Tissue')
+    add_legend()
+    add_legend_cmp()
 
     for (i in 1:16) {
         d = dive[dive$tissue_no == i,]
         r = ref_dive[ref_dive$tissue_no == i,]
         plot_cmp_dives_basic(r, d, lab1, lab2)
         title(sprintf('Tissue %02d', i))
+        add_legend()
+        add_legend_cmp()
     }
 }
 
