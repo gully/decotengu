@@ -6,6 +6,8 @@ DecoTengu 0.5.0
 - `dt-plot` script reimplemented to use R core plotting functions (ggplot2 no
   longer required)
 - added legend to plots created by `dt-plot` script
+- added documentation section about comparing dive decompression data with
+  `dt-plot` script
 
 DecoTengu 0.4.0
 ---------------
