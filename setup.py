@@ -43,7 +43,7 @@ DecoTengu - dive decompression library.
     classifiers=[
         'License :: OSI Approved :: GNU General Public License (GPL)',
         'Programming Language :: Python',
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
     ],
     keywords='diving dive decompression',
     license='GPL',
