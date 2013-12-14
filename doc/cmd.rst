@@ -106,7 +106,24 @@ red
 
    Leading tissue data plot
 
-.. todo:: describe plotting data of two different dives (i.e. to compare
-   two different implementations of an algorithm)
+Comparing Dive Decompression Data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The ``dt-plot`` script allows to compare two dive profiles, i.e. to
+visualize differences between two decompression models, decompression model
+parameters or various gas mix configurations.
+
+For example, to compare two dive profiles for ZH-L16B-GF and ZH-L16C-GF
+decompression models::
+
+    $ dt-lint -f dive.csv -t 60 -gl 20 -gh 90 -l '21,0@0 50,0@21 100,0@6' 40 35
+    $ dt-lint -f dive-c.csv -m zh-l16c-gf -t 60 -gl 20 -gh 90 -l '21,0@0 50,0@21 100,0@6' 40 35
+    $ dt-plot dive.csv dive-c.csv dive.pdf
+
+.. _cmd-plot-leading-tissue-cmd:
+
+.. figure:: dive-cmp.png
+   :align: center
+
+   Comparison of leading tissue data between ZH-L16B-GF and ZH-L16C-GF
 
 .. vim: sw=4:et:ai
