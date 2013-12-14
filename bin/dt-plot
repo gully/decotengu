@@ -25,12 +25,16 @@ col2alpha <- function(name, alpha) {
     rgb(c3[1,], c3[2,], c3[3,], alpha)
 }
 
-plot_start <- function(dive, xmax, ymax) {
-    plot(
-        NA, xlim=c(0, xmax), ylim=c(0, ymax),
-        xlab='Time [min]',
-        ylab='Pressure [Bar]'
-    )
+plot_start <- function(dive, xmax, ymax, labels=T) {
+    xlab = NA
+    ylab = NA
+
+    if (labels) {
+        xlab = 'Time [min]'
+        ylab = 'Pressure [Bar]'
+    }
+    
+    plot(NA, xlim=c(0, xmax), ylim=c(0, ymax), xlab=xlab, ylab=ylab)
     grid()
 }
 
@@ -97,11 +101,11 @@ aggregate_leading_tissue <- function(dive) {
     md[order(md$time),]
 }
 
-plot_cmp_dives_basic <- function(ref_dive, dive, lab1, lab2, pt=T) {
+plot_cmp_dives_basic <- function(ref_dive, dive, lab1, lab2, pt=T, lwd=10, labels=T) {
     xmax = max(ref_dive$time,  dive$time) / 60
     ymax = max(ref_dive$pressure, dive$pressure)
-    plot_start(dive, xmax, ymax)
-    plot_dive_panel(ref_dive, pch=18, alpha=0.3, lwd=10, ps=1.2, pt=pt)
+    plot_start(dive, xmax, ymax, labels=labels)
+    plot_dive_panel(ref_dive, pch=18, alpha=0.3, lwd=lwd, ps=1.2, pt=pt)
     plot_dive_panel(ref_dive, lty='dashed', lwd=1, pt=F)
     plot_dive_panel(dive, pt=pt)
 }
@@ -124,13 +128,15 @@ add_legend_cmp <- function() {
 
 plot_cmp_dives <- function(ref_dive, dive, lab1, lab2) {
     layout(matrix(1:16, 4, 4, byrow=T))
+    op = par(mar=c(2.5, 2.5, 2, 1) + 0.1, font.main=1)
     for (i in 1:16) {
         d = dive[dive$tissue_no == i,]
         r = ref_dive[ref_dive$tissue_no == i,]
-        plot_cmp_dives_basic(r, d, lab1, lab2, pt=F)
+        plot_cmp_dives_basic(r, d, lab1, lab2, pt=F, lwd=5, labels=F)
         title(sprintf('Tissue %02d', i))
     }
     layout(matrix(1))
+    par(op)
 
     ref_md = aggregate_leading_tissue(ref_dive)
     md = aggregate_leading_tissue(dive)
