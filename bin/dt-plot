@@ -52,6 +52,21 @@ plot_dive_basic <- function(dive, pt=T) {
     plot_dive_panel(dive, pt=pt)
 }
 
+add_legend <- function() {
+    colors = c('blue', 'black', 'orange', 'red')
+    legend(
+        'bottomright',
+        c(
+            'Absolute pressure', 'Inert gas pressure',
+            'GF ceiling limit', 'Ceiling limit'
+        ),
+        fill=colors,
+        border=colors,
+        bg='white',
+        inset=c(0.015, 0.02)
+    )
+}
+
 plot_dive <- function(dive) {
     layout(matrix(1:16, 4, 4, byrow=T))
     for (i in 1:16) {
@@ -64,11 +79,13 @@ plot_dive <- function(dive) {
     md = aggregate_leading_tissue(dive)
     p = plot_dive_basic(md)
     title('Leading Tissue')
+    add_legend()
  
     for (i in 1:16) {
         d = dive[dive$tissue_no == i,]
         p = plot_dive_basic(d)
         title(sprintf('Tissue %02d', i))
+        add_legend()
     }
 }
 

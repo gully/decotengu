@@ -3,8 +3,9 @@ Changelog
 DecoTengu 0.5.0
 ---------------
 - check if dive is NDL dive before starting dive ascent
-- dt-plot script reimplemented to use R core plotting functions (ggplot2 no
+- `dt-plot` script reimplemented to use R core plotting functions (ggplot2 no
   longer required)
+- added legend to plots created by `dt-plot` script
 
 DecoTengu 0.4.0
 ---------------
