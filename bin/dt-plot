@@ -49,12 +49,8 @@ plot_dive_panel <- function(dive, lty='solid', pch=20, alpha=1, lwd=2, ps=0.75, 
         points(time, dive$pressure, col=col2alpha('blue', alpha), cex=ps, pch=pch)
 }
 
-plot_dive_basic <- function(dive, pt=T) {
-    plot_start(
-        dive,
-        max(dive$time / 60),
-        max(dive$pressure)
-    )
+plot_dive_basic <- function(dive, pt=T, labels=T) {
+    plot_start(dive, max(dive$time / 60), max(dive$pressure), labels=labels)
     plot_dive_panel(dive, pt=pt)
 }
 
@@ -76,11 +72,13 @@ add_legend <- function() {
 
 plot_dive <- function(dive) {
     layout(matrix(1:16, 4, 4, byrow=T))
+    op = par(mar=c(2.5, 2.5, 2, 1) + 0.1, font.main=1)
     for (i in 1:16) {
         d = dive[dive$tissue_no == i,]
-        plot_dive_basic(d, pt=F)
+        plot_dive_basic(d, pt=F, labels=F)
         title(sprintf('Tissue %02d', i))
     }
+    par(op)
 
     layout(matrix(1))
     md = aggregate_leading_tissue(dive)
