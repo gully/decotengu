@@ -2,6 +2,7 @@ Changelog
 =========
 DecoTengu 0.6.0
 ---------------
+- dive bottom time includes descent time
 - various bug fixes
 
 DecoTengu 0.5.0

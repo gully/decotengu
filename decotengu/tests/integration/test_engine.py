@@ -46,8 +46,8 @@ class EngineTestCase(unittest.TestCase):
 
             data = list(engine.calculate(40, 35))
 
-            self.assertEquals(7, len(dt.stops))
-            self.assertEquals(16, dt.total)
+            self.assertEquals(6, len(dt.stops))
+            self.assertEquals(14, dt.total)
 
 
     def test_various_time_delta_gas_switch(self):
@@ -59,7 +59,8 @@ class EngineTestCase(unittest.TestCase):
         """
         time_delta = [None, 60, 0.1, 0.5, 5]
         mix_depth = [21, 22, 24]
-        times = {21: 22, 22: 22, 24: 21}
+        times = {21: 20, 22: 19, 24: 19}
+        stops = {21: 8, 22: 7, 24: 7}
         for delta, depth in itertools.product(time_delta, mix_depth):
             engine, dt = create(time_delta=delta)
             engine.model.gf_low = 0.2
@@ -70,7 +71,7 @@ class EngineTestCase(unittest.TestCase):
 
             data = list(engine.calculate(40, 35))
 
-            self.assertEquals(8, len(dt.stops), dt.stops)
+            self.assertEquals(stops[depth], len(dt.stops), dt.stops)
             self.assertEquals(times[depth], dt.total)
 
 
@@ -88,7 +89,7 @@ class EngineTestCase(unittest.TestCase):
         engine.add_gas(9, 80)
 
         data = list(engine.calculate(90, 20))
-        self.assertEquals(117, dt.total)
+        self.assertEquals(89, dt.total)
 
 
 
@@ -116,7 +117,7 @@ class NDLTestCase(unittest.TestCase):
         engine.model.gf_high = 0.9
         engine.add_gas(0, 21)
 
-        list(engine.calculate(30, 15))
+        list(engine.calculate(30, 17))
         self.assertEquals(0, dt.total)
 
 
@@ -128,7 +129,7 @@ class NDLTestCase(unittest.TestCase):
         engine.model.gf_high = 0.9
         engine.add_gas(0, 21)
 
-        list(engine.calculate(30, 16))
+        list(engine.calculate(30, 18))
         self.assertTrue(dt.total > 0)
 
 

@@ -44,11 +44,11 @@ an iterator with dive profile steps::
     ...     print(step)     # doctest:+ELLIPSIS
     Step(phase="start", abs_p=1.0132, time=0, gf=0.3000)
     Step(phase="descent", abs_p=4.5080, time=105.0, gf=0.3000)
-    Step(phase="const", abs_p=4.5080, time=2505.0, gf=0.3000)
+    Step(phase="const", abs_p=4.5080, time=2400.0, gf=0.3000)
     ...
-    Step(phase="ascent", abs_p=1.9119, time=3081.0, gf=0.5750)
+    Step(phase="ascent", abs_p=1.9119, time=2916.0, gf=0.5750)
     ...
-    Step(phase="ascent", abs_p=1.0133, time=5595.0, gf=0.8500)
+    Step(phase="ascent", abs_p=1.0133, time=5250.0, gf=0.8500)
 
 After dive profile iterator is fully exhausted, the dive table can be used
 to obtain all information about decompression stops::
@@ -57,15 +57,15 @@ to obtain all information about decompression stops::
     ...     print(stop)
     DecoStop(depth=18.0, time=1)
     DecoStop(depth=15.0, time=1)
-    DecoStop(depth=12.0, time=5)
-    DecoStop(depth=9.0, time=5)
-    DecoStop(depth=6.0, time=12)
-    DecoStop(depth=3.0, time=24)
+    DecoStop(depth=12.0, time=4)
+    DecoStop(depth=9.0, time=6)
+    DecoStop(depth=6.0, time=10)
+    DecoStop(depth=3.0, time=22)
 
 and total time of dive decompression obligations::
 
     >>> deco_table.total
-    48
+    44
 
 Configuring Decompression Model
 -------------------------------
@@ -89,11 +89,11 @@ We can switch to ZH-L16C-GF decompression model easily::
     >>> list(profile)            # doctest:+ELLIPSIS
     [Step...]
     >>> deco_table.total
-    56
+    51
     >>> deco_table.stops[0]
     DecoStop(depth=18.0, time=1)
     >>> deco_table.stops[-1]
-    DecoStop(depth=3.0, time=28)
+    DecoStop(depth=3.0, time=26)
 
 Above, the total dive decompression time is longer due to ZH-L16C-GF being
 more conservative comparing to ZH-L16B-GF.
@@ -109,11 +109,11 @@ attributes::
     >>> list(profile)            # doctest:+ELLIPSIS
     [Step...]
     >>> deco_table.total
-    51
+    47
     >>> deco_table.stops[0]
     DecoStop(depth=21.0, time=1)
     >>> deco_table.stops[-1]
-    DecoStop(depth=3.0, time=25)
+    DecoStop(depth=3.0, time=24)
 
 """
 
@@ -140,7 +140,7 @@ def create(time_delta=None, validate=True):
     >>> engine.add_gas(0, 21)
     >>> data = list(engine.calculate(35, 40))
     >>> dt.total
-    48
+    44
 
     :param time_delta: Time between dive steps.
     :param validate: Validate decompression data with decompression model

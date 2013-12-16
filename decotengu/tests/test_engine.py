@@ -22,7 +22,7 @@ Tests for DecoTengu dive decompression engine.
 """
 
 from decotengu.engine import Engine, DecoTable, Phase, GasMix
-from decotengu.error import ConfigError
+from decotengu.error import ConfigError, EngineError
 
 from .tools import _step, _engine, _data, AIR, EAN50
 
@@ -302,6 +302,31 @@ class EngineTestCase(unittest.TestCase):
         engine = Engine()
         it = engine.calculate(25, 15)
         self.assertRaises(ConfigError, next, it)
+
+
+    def test_bottom_time(self):
+        """
+        Test deco engine bottom time calculation
+        """
+        step = _step(Phase.ASCENT, 11, 60 * 5)
+        self.engine._dive_descent = mock.MagicMock(side_effect=[[step]])
+        self.engine._dive_ascent = mock.MagicMock()
+        self.engine._step_next = mock.MagicMock()
+        p = self.engine.calculate(100, 30) # 5min to descent at 20m/min
+        list(p)
+        self.engine._step_next.assert_called_once_with(step, 25 * 60, AIR)
+
+
+    def test_bottom_time_error(self):
+        """
+        Test deco engine bottom time error
+
+        EngineError to be raised when bottom time shorter than descent
+        time.
+        """
+        p = self.engine.calculate(100, 5) # 5min to descent at 20m/min
+        with self.assertRaises(EngineError):
+            list(p)
 
 
 

@@ -30,7 +30,7 @@ import operator
 import logging
 
 from .model import ZH_L16B_GF
-from .error import ConfigError
+from .error import ConfigError, EngineError
 from .ft import recurse_while, bisect_find
 from .flow import coroutine
 from .const import METER_TO_BAR
@@ -891,7 +891,13 @@ class Engine(object):
         # bottom gas mix
         gas_list = sorted(self._gas_list[1:], key=depth_key, reverse=True)
         gas_list.insert(0, bottom_gas)
-        step = self._step_next(step, time * 60, bottom_gas)
+
+        t = time * 60 - step.time
+        if t <= 0:
+            raise EngineError('Bottom time shorter than descent time')
+        logger.debug('bottom time {}s (descent is {}s)'.format(t, step.time))
+        assert t > 0
+        step = self._step_next(step, t, bottom_gas)
         yield step
 
         yield from self._dive_ascent(step, gas_list)
