@@ -21,7 +21,10 @@
 Conveyor tests.
 """
 
+from decotengu.engine import Phase
 from decotengu.conveyor import Conveyor
+
+from .tools import _step, AIR, EAN50
 
 import unittest
 from unittest import mock
@@ -69,6 +72,23 @@ class ConveyorTestCase(unittest.TestCase):
         k, r = t.trays(100, 160)
         self.assertEquals(499, k)
         self.assertEquals(0.12, round(r, 10))
+
+
+    def test_gas_switch(self):
+        """
+        Test conveyor on gas switch
+
+        Conveyor simply forwards dive steps on gas switch
+        """
+        s1 = _step(Phase.ASCENT, 3.1, 1000)
+        s2 = _step(Phase.ASCENT, 3.1, 1000, prev=s1)
+        conveyor = Conveyor(mock.MagicMock(), 0.12)
+        conveyor.f_calc = lambda *args: iter((s1, s2))
+        t = conveyor()
+        v1 = next(t)
+        v2 = next(t)
+        self.assertEquals(s1, v1)
+        self.assertEquals(s2, v2)
 
 
 # FIXME: readd the tests below

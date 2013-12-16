@@ -118,14 +118,17 @@ class Conveyor(object):
 
         for end in data:
             prev = end.prev
+            if end.time - prev.time == 0: # this is the case on gas switch
+                yield end                 # FIXME: introduce gas switch phase
+                continue
 
             # determine descent/ascent/const engine method
             f_step = self.engine._step_next # default const
             if end.phase == Phase.ASCENT:
-                assert end.abs_p - prev.abs_p < 0
+                #assert end.abs_p - prev.abs_p < 0
                 f_step = partial(self.engine._step_next_ascent, gf=end.data.gf)
             elif end.phase == Phase.DESCENT:
-                assert end.abs_p - prev.abs_p > 0
+                #assert end.abs_p - prev.abs_p > 0
                 f_step = self.engine._step_next_descent
 
             k, tr = self.trays(prev.time, end.time)
@@ -143,8 +146,8 @@ class Conveyor(object):
                 # validate steps expansion: (step + time(tr) = stop) == end?
                 stop = f_step(step, tr, end.gas)
                 assert abs(end.abs_p - stop.abs_p) < EPSILON, \
-                    '{}m ({}s) vs. {}m ({}s)'.format(
-                        end.depth, end.time, stop.abs_p, stop.time
+                    '{} bar ({}s) vs. {} bar ({}s)'.format(
+                        end.abs_p, end.time, stop.abs_p, stop.time
                     )
 
                 # check nitrogen

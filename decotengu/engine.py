@@ -331,7 +331,7 @@ class Engine(object):
         stages = self._descent_stages(abs_p, gas_list)
         for i, (depth, gas) in enumerate(stages):
             if i > 0: # perform gas switch
-                step = step._replace(gas=gas)
+                step = step._replace(gas=gas, prev=step)
                 logger.debug('switch to gas {}'.format(gas))
                 yield step
             p = depth - step.abs_p
@@ -343,7 +343,7 @@ class Engine(object):
         last = gas_list[-1]
         if abs(step.abs_p - self._to_pressure(last.depth)) < EPSILON:
             assert gas != last
-            step = step._replace(gas=last)
+            step = step._replace(gas=last, prev=step)
             yield step
             logger.debug('switch to gas {}'.format(last))
 
@@ -657,11 +657,11 @@ class Engine(object):
         )
         assert step.abs_p - gp < self._p3m
         if abs(step.abs_p - gp) < EPSILON:
-            steps = (step._replace(gas=gas),)
+            steps = (step._replace(gas=gas, prev=step),)
         else:
             assert step.abs_p > gp
             s1 = self._free_ascent(step, gp, gas)
-            s2 = s1._replace(gas=gas)
+            s2 = s1._replace(gas=gas, prev=s1)
             s3 = self._free_ascent(
                 s2, self._to_pressure(gas.depth // 3 * 3), gas
             )

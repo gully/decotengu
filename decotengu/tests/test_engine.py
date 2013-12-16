@@ -389,15 +389,18 @@ class EngineDiveDescentTestCase(unittest.TestCase):
         self.assertEquals(4.6, s2.abs_p)
         self.assertAlmostEquals(216, s2.time) # 1m is 6s at 10m/min
         self.assertEquals(ean30, s2.gas)
+        self.assertEquals(s1, s2.prev)
 
         # test gas switch
         self.assertEquals(4.6, s3.abs_p)
         self.assertAlmostEquals(216, s3.time)
         self.assertEquals(air, s3.gas)
+        self.assertEquals(s2, s3.prev)
 
         self.assertEquals(6.6, s4.abs_p)
         self.assertAlmostEquals(336, s4.time) # 1m is 6s at 10m/min
         self.assertEquals(air, s4.gas)
+        self.assertEquals(s3, s4.prev)
 
 
     def test_dive_descent_travel_exact(self):
@@ -420,11 +423,13 @@ class EngineDiveDescentTestCase(unittest.TestCase):
         self.assertEquals(4.6, s2.abs_p)
         self.assertAlmostEquals(216, s2.time) # 1m is 6s at 10m/min
         self.assertEquals(ean30, s2.gas)
+        self.assertEquals(s1, s2.prev)
 
         # test gas switch
         self.assertEquals(4.6, s3.abs_p)
         self.assertAlmostEquals(216, s3.time)
         self.assertEquals(air, s3.gas)
+        self.assertEquals(s2, s3.prev)
 
 
 
@@ -574,7 +579,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         Test deco free ascent
         """
         data = _data(0.3, 1.0, 1.0)
-        start = _step(Phase.ASCENT, 4.1, 1200, AIR, data)
+        start = _step(Phase.ASCENT, 4.1, 1200, AIR, data=data)
 
         stop = self.engine._free_ascent(start, 2.0, AIR)
         self.assertEquals(2.0, stop.abs_p)
@@ -586,12 +591,13 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         Test gas mix switch at current depth
         """
         data = _data(0.3, 1.0, 1.0)
-        start = _step(Phase.ASCENT, 3.2, 1200, AIR, data)
+        start = _step(Phase.ASCENT, 3.2, 1200, AIR, data=data)
 
         steps = self.engine._switch_gas(start, EAN50)
         self.assertEquals(1, len(steps))
         self.assertEquals(3.2, steps[0].abs_p)
         self.assertEquals(1200, steps[0].time)
+        self.assertEquals(start, steps[0].prev)
 
 
     def test_switch_gas(self):
@@ -611,13 +617,20 @@ class EngineDiveAscentTestCase(unittest.TestCase):
 
         start = _step(Phase.ASCENT, 3.4, 1200, AIR)
         gas = EAN50._replace(depth=23)
+
         steps = self.engine._switch_gas(start, gas)
+
         self.assertAlmostEquals(3.3, steps[0].abs_p)
         self.assertEquals(1206, steps[0].time)
+        self.assertEquals(start, steps[0].prev)
+
         self.assertAlmostEquals(3.3, steps[1].abs_p)
         self.assertEquals(1206, steps[1].time)
+        self.assertEquals(steps[0], steps[1].prev)
+
         self.assertEquals(3.1, steps[2].abs_p)
         self.assertEquals(1218, steps[2].time)
+        self.assertEquals(steps[1], steps[2].prev)
 
 
     def test_can_switch_gas_ok(self):
