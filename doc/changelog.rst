@@ -1,5 +1,9 @@
 Changelog
 =========
+DecoTengu 0.6.0
+---------------
+- various bug fixes
+
 DecoTengu 0.5.0
 ---------------
 - check if dive is NDL dive before starting dive ascent
