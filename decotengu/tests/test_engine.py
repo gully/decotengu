@@ -618,7 +618,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         data = _data(0.3, 1.0, 1.0)
         start = _step(Phase.ASCENT, 3.2, 1200, AIR, data=data)
 
-        steps = self.engine._switch_gas(start, EAN50)
+        steps = self.engine._ascent_switch_gas(start, EAN50)
         self.assertEquals(1, len(steps))
         self.assertEquals(3.2, steps[0].abs_p)
         self.assertEquals(1200, steps[0].time)
@@ -631,7 +631,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         """
         start = _step(Phase.ASCENT, 3.4, 1200, AIR)
 
-        steps = self.engine._switch_gas(start, EAN50)
+        steps = self.engine._ascent_switch_gas(start, EAN50)
         self.assertEquals(3, len(steps))
         self.assertEquals(3.2, steps[0].abs_p)
         self.assertEquals(1212, steps[0].time)
@@ -643,7 +643,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         start = _step(Phase.ASCENT, 3.4, 1200, AIR)
         gas = EAN50._replace(depth=23)
 
-        steps = self.engine._switch_gas(start, gas)
+        steps = self.engine._ascent_switch_gas(start, gas)
 
         self.assertAlmostEquals(3.3, steps[0].abs_p)
         self.assertEquals(1206, steps[0].time)
@@ -806,13 +806,17 @@ class EngineDiveAscentTestCase(unittest.TestCase):
             side_effect=[deco_steps[:3], deco_steps[3:]]
         )
         # add gas switch step at 12m
-        self.engine._switch_gas = mock.MagicMock(return_value=[deco_steps[3]])
+        self.engine._ascent_switch_gas = mock.MagicMock(
+            return_value=[deco_steps[3]]
+        )
 
         steps = list(self.engine._deco_staged_ascent(start, AIR, stages))
         self.assertEquals(8, len(steps)) # deco stops 21m -> 0m + gas switch
                                          # step at 12m
         self.assertEquals(2, self.engine._deco_ascent.call_count)
-        self.engine._switch_gas.assert_called_once_with(deco_steps[3], gas_mix)
+        self.engine._ascent_switch_gas.assert_called_once_with(
+            deco_steps[3], gas_mix
+        )
 
 
     def test_deco_ascent(self):

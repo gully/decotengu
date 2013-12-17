@@ -625,7 +625,8 @@ class Engine(object):
                 'Gas mix switch depth deeper than maximum dive depth'
             )
 
-    def _switch_gas(self, step, gas):
+
+    def _ascent_switch_gas(self, step, gas):
         """
         Switch to specified gas mix, ascending if necessary.
 
@@ -680,9 +681,9 @@ class Engine(object):
         :param step: Current dive step.
         :param gas: Gas to switch to.
 
-        .. seealso:: :func:`decotengu.Engine._switch_gas`
+        .. seealso:: :func:`decotengu.Engine._ascent_switch_gas`
         """
-        gs_steps = self._switch_gas(start, gas)
+        gs_steps = self._ascent_switch_gas(start, gas)
         return gs_steps if self._inv_ascent(gs_steps[-1]) else None
 
 
@@ -743,7 +744,7 @@ class Engine(object):
         first_stop = step.abs_p
         for depth, gas in stages:
             if step.abs_p >= self._to_pressure(gas.depth) and gas != bottom_gas:
-                for step in self._switch_gas(step, gas):
+                for step in self._ascent_switch_gas(step, gas):
                     yield step
             gf = self.model.gf_low + (first_stop - step.abs_p) / self._p3m * gf_step
             for step in self._deco_ascent(step, depth, gas, gf, gf_step):
