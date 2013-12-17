@@ -125,10 +125,10 @@ class Conveyor(object):
             # determine descent/ascent/const engine method
             f_step = self.engine._step_next # default const
             if end.phase == Phase.ASCENT:
-                #assert end.abs_p - prev.abs_p < 0
+                assert end.abs_p - prev.abs_p < 0
                 f_step = partial(self.engine._step_next_ascent, gf=end.data.gf)
             elif end.phase == Phase.DESCENT:
-                #assert end.abs_p - prev.abs_p > 0
+                assert end.abs_p - prev.abs_p > 0
                 f_step = self.engine._step_next_descent
 
             k, tr = self.trays(prev.time, end.time)
