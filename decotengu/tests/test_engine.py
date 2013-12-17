@@ -93,6 +93,19 @@ class EngineTestCase(unittest.TestCase):
         self.assertEquals(4, engine._n_stops(p1, p2))
 
 
+    def test_gas_switch(self):
+        """
+        Test gas switch
+        """
+        start = _step(Phase.ASCENT, 3.0, 120)
+        step = self.engine._switch_gas(start, EAN50)
+
+        self.assertEquals(Phase.GAS_SWITCH, step.phase)
+        self.assertEquals(3.0, step.abs_p)
+        self.assertEquals(120, step.time)
+        self.assertEquals(start, step.prev)
+
+
     def test_ascent_invariant(self):
         """
         Test ascent invariant
@@ -611,7 +624,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         self.assertEquals(1326, stop.time)
 
 
-    def test_switch_gas_same_depth(self):
+    def test_ascent_switch_gas_same_depth(self):
         """
         Test gas mix switch at current depth
         """
@@ -625,7 +638,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         self.assertEquals(start, steps[0].prev)
 
 
-    def test_switch_gas(self):
+    def test_ascent_switch_gas(self):
         """
         Test gas mix switch
         """

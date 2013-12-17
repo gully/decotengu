@@ -58,12 +58,16 @@ class Phase(object):
     DECOSTOP
         Decompression stop. Current dive step is at the same depth as previous
         one and ascent is not possible until allowed by decompression model.
+    GAS_SWITCH
+        Gas mix switch. Current dive step is at the same depth as previous
+        one. The time of current and previous dive steps is the same.
     """
     START = 'start'
     DESCENT = 'descent'
     CONST = 'const'
     ASCENT = 'ascent'
     DECOSTOP = 'decostop'
+    GAS_SWITCH = 'gas_switch'
 
 
 Step = namedtuple('Step', 'phase abs_p time gas data prev')
@@ -313,6 +317,17 @@ class Engine(object):
         return tp
 
 
+    def _switch_gas(self, step, gas):
+        """
+        Switch gas mix.
+
+        The switch results in new dive step.
+        """
+        step = step._replace(phase=Phase.GAS_SWITCH, gas=gas, prev=step)
+        logger.debug('switched to gas mix {}'.format(gas))
+        return step
+
+
     def _dive_descent(self, abs_p, gas_list):
         """
         Dive descent from surface to specified depth.
@@ -331,8 +346,7 @@ class Engine(object):
         stages = self._descent_stages(abs_p, gas_list)
         for i, (depth, gas) in enumerate(stages):
             if i > 0: # perform gas switch
-                step = step._replace(gas=gas, prev=step)
-                logger.debug('switch to gas {}'.format(gas))
+                step = self._switch_gas(step, gas)
                 yield step
             p = depth - step.abs_p
             time = self._pressure_to_time(p, self.descent_rate)
@@ -343,9 +357,8 @@ class Engine(object):
         last = gas_list[-1]
         if abs(step.abs_p - self._to_pressure(last.depth)) < EPSILON:
             assert gas != last
-            step = step._replace(gas=last, prev=step)
+            step = self._switch_gas(step, last)
             yield step
-            logger.debug('switch to gas {}'.format(last))
 
         logger.debug('descent finished at {:.4f}bar'.format(step.abs_p))
 
@@ -658,11 +671,11 @@ class Engine(object):
         )
         assert step.abs_p - gp < self._p3m
         if abs(step.abs_p - gp) < EPSILON:
-            steps = (step._replace(gas=gas, prev=step),)
+            steps = (self._switch_gas(step, gas),)
         else:
             assert step.abs_p > gp
             s1 = self._free_ascent(step, gp, gas)
-            s2 = s1._replace(gas=gas, prev=s1)
+            s2 = self._switch_gas(s1, gas)
             s3 = self._free_ascent(
                 s2, self._to_pressure(gas.depth // 3 * 3), gas
             )

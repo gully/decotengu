@@ -118,8 +118,8 @@ class Conveyor(object):
 
         for end in data:
             prev = end.prev
-            if end.time - prev.time == 0: # this is the case on gas switch
-                yield end                 # FIXME: introduce gas switch phase
+            if end.phase == 'gas_switch':
+                yield end
                 continue
 
             # determine descent/ascent/const engine method

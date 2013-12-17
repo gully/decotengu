@@ -142,6 +142,7 @@ in DecoTengu are modeled by :class:`Phase enumeration
    | CONST = 'const'       |
    | ASCENT = 'ascent'     |
    | DECOSTOP = 'decostop' |
+   | GAS_MIX = 'gas_mix'   |
    +-----------------------+
 
 

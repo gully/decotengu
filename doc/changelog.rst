@@ -3,6 +3,7 @@ Changelog
 DecoTengu 0.6.0
 ---------------
 - dive bottom time includes descent time
+- added new dive phase to the DecoTengu API to identify gas mix switches
 - various bug fixes
 
 DecoTengu 0.5.0
