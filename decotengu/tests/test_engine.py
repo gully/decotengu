@@ -1022,11 +1022,11 @@ class DecoTableTestCase(unittest.TestCase):
 
         s1 = _step(Phase.CONST, 3.5, 40)
         s2 = _step(Phase.ASCENT, 2.5, 100, prev=s1)
-        s3 = _step(Phase.DECOSTOP, 2.5, 160, prev=s2)
-        s4 = _step(Phase.DECOSTOP, 2.5, 200, prev=s3)
-        s5 = _step(Phase.DECOSTOP, 2.5, 250, prev=s4) # 3min
+        s3 = _step(Phase.DECO_STOP, 2.5, 160, prev=s2)
+        s4 = _step(Phase.DECO_STOP, 2.5, 200, prev=s3)
+        s5 = _step(Phase.DECO_STOP, 2.5, 250, prev=s4) # 3min
         s6 = _step(Phase.ASCENT, 2.2, 258, prev=s5)
-        s7 = _step(Phase.DECOSTOP, 2.2, 300, prev=s6) # 1min
+        s7 = _step(Phase.DECO_STOP, 2.2, 300, prev=s6) # 1min
         # start of next stop at 9m, to be skipped
         s8 = _step(Phase.ASCENT, 1.9, 318, prev=s7)
 
@@ -1061,14 +1061,14 @@ class DecoTableTestCase(unittest.TestCase):
         the main test case deco table.
         """
         s1 = _step(Phase.ASCENT, 3.5, 0)
-        s2 = _step(Phase.DECOSTOP, 2.8, 5, prev=s1)
-        s3 = _step(Phase.DECOSTOP, 2.8, 10, prev=s2)
+        s2 = _step(Phase.DECO_STOP, 2.8, 5, prev=s1)
+        s3 = _step(Phase.DECO_STOP, 2.8, 10, prev=s2)
         s4 = _step(Phase.ASCENT, 2.5, 100, prev=s3)
-        s5 = _step(Phase.DECOSTOP, 2.5, 160, prev=s4)
-        s6 = _step(Phase.DECOSTOP, 2.5, 200, prev=s5)
-        s7 = _step(Phase.DECOSTOP, 2.5, 250, prev=s6) # 3min
+        s5 = _step(Phase.DECO_STOP, 2.5, 160, prev=s4)
+        s6 = _step(Phase.DECO_STOP, 2.5, 200, prev=s5)
+        s7 = _step(Phase.DECO_STOP, 2.5, 250, prev=s6) # 3min
         s8 = _step(Phase.ASCENT, 2.2, 258, prev=s7)
-        s9 = _step(Phase.DECOSTOP, 2.2, 300, prev=s8) # 1min
+        s9 = _step(Phase.DECO_STOP, 2.2, 300, prev=s8) # 1min
         # start of next stop at 9m, to be skipped
         s10 = _step(Phase.ASCENT, 1.9, 318, prev=s9)
 

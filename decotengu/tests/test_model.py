@@ -277,7 +277,7 @@ class DecoModelValidatorTestCase(unittest.TestCase):
 
         data = Data([(1.263320, 0), (2.157535, 0)], 0.3)
         s1 = Step(Phase.ASCENT, 3.1, 1500, AIR, data, None)
-        s2 = Step(Phase.DECOSTOP, 3.1, 1560, AIR, data, s1)
+        s2 = Step(Phase.DECO_STOP, 3.1, 1560, AIR, data, s1)
 
         validator = DecoModelValidator(engine)
         # ascent to 18m should not be possible
@@ -294,7 +294,7 @@ class DecoModelValidatorTestCase(unittest.TestCase):
 
         data = Data([(1.263320, 0), (2.157535, 0)], 0.3)
         s1 = Step(Phase.ASCENT, 3.1, 1500, AIR, data, None)
-        s2 = Step(Phase.DECOSTOP, 3.1, 1560, AIR, data, s1)
+        s2 = Step(Phase.DECO_STOP, 3.1, 1560, AIR, data, s1)
 
         validator = DecoModelValidator(engine)
         # ascent to 18m should not be possible, so error expected

@@ -133,17 +133,17 @@ in DecoTengu are modeled by :class:`Phase enumeration
 .. code::
    :class: diagram
 
-   +-----------------------+
-   |       <<enum>>        |
-   |        Phase          |
-   +-----------------------+
-   | START = 'start'       |
-   | DESCENT = 'descent'   |
-   | CONST = 'const'       |
-   | ASCENT = 'ascent'     |
-   | DECOSTOP = 'decostop' |
-   | GAS_MIX = 'gas_mix'   |
-   +-----------------------+
+   +-------------------------+
+   |       <<enum>>          |
+   |        Phase            |
+   +-------------------------+
+   | START = 'start'         |
+   | DESCENT = 'descent'     |
+   | CONST = 'const'         |
+   | ASCENT = 'ascent'       |
+   | DECO_STOP = 'deco_stop' |
+   | GAS_MIX = 'gas_mix'     |
+   +-------------------------+
 
 
 Dive Profile Expansion

@@ -49,7 +49,7 @@ class DiveStepInfoTestCase(unittest.TestCase):
         d = _data(0.3, 2.2, 2.3)
         s1 = Step(Phase.CONST, 3.0, 100, AIR, d, None)
         d = _data(0.4, 1.2, 1.3)
-        s2 = Step(Phase.DECOSTOP, 2.5, 145, AIR, d, s1)
+        s2 = Step(Phase.DECO_STOP, 2.5, 145, AIR, d, s1)
 
         data = []
         @coroutine
@@ -76,7 +76,7 @@ class DiveStepInfoTestCase(unittest.TestCase):
         self.assertEquals(145, i2.time)
         self.assertEquals(2.5, i2.pressure)
         self.assertEquals(AIR, i2.gas)
-        self.assertEquals('decostop', i2.phase)
+        self.assertEquals('deco_stop', i2.phase)
         self.assertEquals(2, len(i2.tissues))
 
         t1, t2 = i1.tissues

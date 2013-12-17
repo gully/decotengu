@@ -55,7 +55,7 @@ class Phase(object):
         previous one.
     ASCENT
         Ascent during dive - current dive step is shallower than previous one.
-    DECOSTOP
+    DECO_STOP
         Decompression stop. Current dive step is at the same depth as previous
         one and ascent is not possible until allowed by decompression model.
     GAS_SWITCH
@@ -66,7 +66,7 @@ class Phase(object):
     DESCENT = 'descent'
     CONST = 'const'
     ASCENT = 'ascent'
-    DECOSTOP = 'decostop'
+    DECO_STOP = 'deco_stop'
     GAS_SWITCH = 'gas_switch'
 
 
@@ -841,7 +841,7 @@ class Engine(object):
             )
             assert t % 60 == 0, t
 
-            step = self._step_next(step, t, gas, phase='decostop')
+            step = self._step_next(step, t, gas, phase=Phase.DECO_STOP)
             yield step
 
             ts_3m = self._pressure_to_time(self._p3m, self.ascent_rate)
@@ -975,7 +975,7 @@ class DecoTable(object):
         stops = self._stops = OrderedDict()
         while True:
             step = yield
-            if step.phase == 'decostop':
+            if step.phase == Phase.DECO_STOP:
                 depth = self.engine._to_depth(step.abs_p)
                 if depth in stops:
                     stops[depth][1] = step.time

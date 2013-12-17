@@ -92,7 +92,7 @@ class AscentJumper(object):
         for i in range(start.time, end_time, 60):
             abs_p = step.abs_p - dp # jump
             data = model.load(abs_p, 60, gas, 0, step.data)
-            step = Step(Phase.DECOSTOP, abs_p, step.time + 60, gas, data, step)
+            step = Step(Phase.DECO_STOP, abs_p, step.time + 60, gas, data, step)
             yield step
 
 
@@ -144,7 +144,7 @@ class DecoStopStepper(object):
             gf = gf_start + k_stop * gf_step
 
             # stay 1 min
-            step = engine._step_next(step, 60, gas, phase=Phase.DECOSTOP)
+            step = engine._step_next(step, 60, gas, phase=Phase.DECO_STOP)
             logger.debug(
                 'stepper: {}bar {}s, gas={.o2}, gf={:.4f}'
                 .format(step.abs_p, step.time, gas, gf)

@@ -73,10 +73,10 @@ class DecoStopStepperTestCase(unittest.TestCase):
         self.assertEquals(8, len(steps))
 
         self.assertEquals(1.9, steps[0].abs_p)
-        self.assertEquals('decostop', steps[0].phase)
+        self.assertEquals('deco_stop', steps[0].phase)
         self.assertAlmostEquals(0.30, steps[0].data.gf)
         self.assertEquals(1.3, round(steps[-2].abs_p, 10))
-        self.assertEquals('decostop', steps[-2].phase)
+        self.assertEquals('deco_stop', steps[-2].phase)
         self.assertEquals(1.0, round(steps[-1].abs_p, 10))
         self.assertEquals('ascent', steps[-1].phase)
         self.assertAlmostEquals(0.85, steps[-1].data.gf)

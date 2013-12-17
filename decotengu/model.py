@@ -689,8 +689,8 @@ class DecoModelValidator(object):
 
         :param step: Dive step to verify.
         """
-        # FIXME: Phase circular import, so using 'decostop' below
-        if not self._first_stop_checked and step.phase == 'decostop':
+        # FIXME: Phase circular import, so using 'deco_stop' below
+        if not self._first_stop_checked and step.phase == 'deco_stop':
             first_stop = step.prev
             ts_3m = self.engine._pressure_to_time(
                 self.engine._p3m, self.engine.ascent_rate
