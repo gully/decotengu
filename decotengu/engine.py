@@ -204,7 +204,7 @@ class Engine(object):
         return step.abs_p > self.model.pressure_limit(step.data)
 
 
-    def _inv_deco_stop(self, step, gas, gf):
+    def _inv_deco_stop(self, step, gas, gf, pressure=None):
         """
         Return true if one should stay at a decompression stop.
 
@@ -215,11 +215,18 @@ class Engine(object):
         :param step: Dive step - current decompression stop.
         :param gas: Gas mix configuration.
         :param gf: Gradient factor value for next decompression stop.
+        :param pressure: Pressure change required to get to next stop [bar].
+            By default it is relative pressure equivalent of ascending by 3m.
         """
-        ts_3m = self._pressure_to_time(self._p3m, self.ascent_rate)
-        data = self._tissue_pressure_ascent(step.abs_p, ts_3m, gas, step.data)
-        max_tp = self.model.pressure_limit(data, gf=gf)
-        return step.abs_p - self._p3m <= max_tp
+        if pressure is None:
+            pressure = self._p3m
+        t = self._pressure_to_time(pressure, self.ascent_rate)
+        data = self._tissue_pressure_ascent(step.abs_p, t, gas, step.data)
+        ceiling = self.model.pressure_limit(data, gf=gf)
+
+        # ascent should be possible, when next deco stop depth is equal to
+        # ceiling depth
+        return step.abs_p - pressure < ceiling
 
 
     def _step_next(self, step, time, gas, phase='const'):
