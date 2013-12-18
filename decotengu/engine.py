@@ -553,7 +553,8 @@ class Engine(object):
             mixes.
         """
         mixes = zip(gas_list[:-1], gas_list[1:])
-        _pressure = lambda mix: self._to_pressure(((mix.depth - 1) // 3 + 1) * 3)
+        _pressure = lambda mix: \
+            self._to_pressure(((mix.depth - 1) // 3 + 1) * 3)
         yield from ((_pressure(m2), m1) for m1, m2 in mixes)
         yield (self.surface_pressure, gas_list[-1])
 
@@ -754,12 +755,14 @@ class Engine(object):
         n_stops = self._n_stops(step.abs_p)
         gf_step = (self.model.gf_high - self.model.gf_low) / n_stops
         logger.debug('deco engine: gf step={:.4}'.format(gf_step))
+
         first_stop = step.abs_p
+        gf_low = self.model.gf_low
         for depth, gas in stages:
             if step.abs_p >= self._to_pressure(gas.depth) and gas != bottom_gas:
                 for step in self._ascent_switch_gas(step, gas):
                     yield step
-            gf = self.model.gf_low + (first_stop - step.abs_p) / self._p3m * gf_step
+            gf = gf_low + (first_stop - step.abs_p) / self._p3m * gf_step
             for step in self._deco_ascent(step, depth, gas, gf, gf_step):
                 yield step
         logger.debug('deco engine: gf at surface={:.4f}'.format(step.data.gf))
@@ -820,9 +823,10 @@ class Engine(object):
         )
 
         for k_stop in range(n_stops):
-            logger.debug('deco stop: k_stop={}, pressure={}bar'.format(
-                k_stop, step.abs_p
-            ))
+            logger.debug(
+                'deco stop: k_stop={}, pressure={}bar'
+                .format(k_stop, step.abs_p)
+            )
             gf = gf_start + k_stop * gf_step
 
             inv_f = partial(self._inv_deco_stop, gas=gas, gf=gf + gf_step)
