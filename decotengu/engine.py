@@ -208,9 +208,10 @@ class Engine(object):
         """
         Return true if one should stay at a decompression stop.
 
-        Tissue pressure limit is calculated for next decompression stop
-        (using gradient factor value) and it is checked that ascent to next
-        stop is not possible.
+        Ceiling limit is calculated for next decompression stop (using
+        gradient factor value) and it is checked that ascent to next stop
+        is not possible (depth of ceiling limit is deeper than depth of
+        next decompression stop).
 
         :param step: Dive step - current decompression stop.
         :param gas: Gas mix configuration.
