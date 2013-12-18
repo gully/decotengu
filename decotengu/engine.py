@@ -192,16 +192,17 @@ class Engine(object):
 
 
 
-    def _inv_ascent(self, step):
+    def _inv_limit(self, step):
         """
-        Return true if ascent from a depth is possible.
+        Return true if current dive step does not violate decompression
+        model ceiling limit.
 
-        Step's pressure is compared to maximum allowed tissue pressure. The
-        latter is calculated using configured gradient factor low value.
+        Absolute pressure (depth) of current dive step has to be deeper or
+        at the same depth as absolute pressure of ceiling limit.
 
-        :param step: Dive step containing pressure information.
+        :param step: Current dive step.
         """
-        return step.abs_p > self.model.pressure_limit(step.data)
+        return step.abs_p >= self.model.pressure_limit(step.data)
 
 
     def _inv_deco_stop(self, step, gas, gf, pressure=None):
@@ -477,7 +478,7 @@ class Engine(object):
         # for each k ascent for (k + 1) * t(3m) + dt seconds and check if
         # ascent invariant is not violated; (k + 1) * t(3m) + dt formula
         # gives first stop candidates as multiples of 3m
-        f = lambda k, step: self._inv_ascent(
+        f = lambda k, step: self._inv_limit(
             self._step_next_ascent(step, (k + 1) * ts_3m + dt, gas)
         )
         # find largest k for which ascent without decompression is possible
@@ -706,7 +707,7 @@ class Engine(object):
         .. seealso:: :func:`decotengu.Engine._ascent_switch_gas`
         """
         gs_steps = self._ascent_switch_gas(start, gas)
-        return gs_steps if self._inv_ascent(gs_steps[-1]) else None
+        return gs_steps if self._inv_limit(gs_steps[-1]) else None
 
 
     def _free_staged_ascent(self, start, stages):
@@ -806,8 +807,8 @@ class Engine(object):
 
         The length of a decompression stop is guarded by gradient factor
         start value and gradient factor step - the decompression stop lasts
-        until it is allowed to ascent to next stop (see _inv_ascent
-        method).
+        until it is allowed to ascent to next stop
+        (see func:`Engine._inv_deco_stop` method).
 
         :param first_stop: Dive stop indicating first decompression stop.
         :param abs_p: Absolute pressure of destination depth.

@@ -194,7 +194,7 @@ class FirstStopTabFinder(object):
                 )
 
         # execute ascent invariant until surface is hit
-        f_inv = lambda step: step is not None and engine._inv_ascent(step)
+        f_inv = lambda step: step is not None and engine._inv_limit(step)
 
         # ascent until deco zone or surface is hit (but stay deeper than
         # first deco stop)
@@ -211,7 +211,7 @@ class FirstStopTabFinder(object):
         def f(k, step):
             assert k <= len(model.calc._n2_exp_time)
             return True if k == 0 else \
-                engine._inv_ascent(
+                engine._inv_limit(
                     engine._step_next_ascent(step, k * ts_3m, gas)
                 )
 

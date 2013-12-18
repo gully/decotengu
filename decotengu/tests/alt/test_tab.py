@@ -225,7 +225,7 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
 
         # trigger bisect_find to use 2nd maximum time allowed by tabular
         # tissue calculator...
-        self.engine._inv_ascent = mock.MagicMock(
+        self.engine._inv_limit = mock.MagicMock(
             side_effect=[True, True, False]
         )
 
@@ -249,7 +249,7 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         """
         Test first stop tabular finder when no deco required
         """
-        self.engine._inv_ascent = mock.MagicMock()
+        self.engine._inv_limit = mock.MagicMock()
         self.engine.surface_pressure = 1
         start = _step(Phase.ASCENT, 30, 1200)
 

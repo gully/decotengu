@@ -106,14 +106,14 @@ class EngineTestCase(unittest.TestCase):
         self.assertEquals(start, step.prev)
 
 
-    def test_ascent_invariant(self):
+    def test_ceiling_invariant(self):
         """
-        Test ascent invariant
+        Test ceiling limit invariant
         """
         step = _step(Phase.CONST, 3.0, 120)
-        self.engine.model.pressure_limit = mock.MagicMock(return_value=3.1)
-        v = self.engine._inv_ascent(step)
-        self.assertFalse(v)
+        self.engine.model.pressure_limit = mock.MagicMock(return_value=3.0)
+        v = self.engine._inv_limit(step)
+        self.assertTrue(v)
 
 
     def test_ascent_invariant_edge(self):
@@ -121,8 +121,8 @@ class EngineTestCase(unittest.TestCase):
         Test ascent invariant (at limit)
         """
         step = _step(Phase.CONST, 3.1, 120)
-        self.engine.model.pressure_limit = mock.MagicMock(return_value=3.1)
-        v = self.engine._inv_ascent(step)
+        self.engine.model.pressure_limit = mock.MagicMock(return_value=3.101)
+        v = self.engine._inv_limit(step)
         self.assertFalse(v)
 
 
