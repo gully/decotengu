@@ -504,24 +504,6 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         self.engine = _engine()
 
 
-    def test_dive_ascent_no_deco(self):
-        """
-        Test deco engine dive deco-free ascent
-        """
-        start = _step(Phase.ASCENT, 4, 1000)
-        step = _step(Phase.ASCENT, 1, 1200)
-        self.engine._free_staged_ascent = mock.MagicMock(return_value=[step])
-        self.engine._deco_ascent_stages = mock.MagicMock()
-        self.engine._ndl_ascent = mock.MagicMock(return_value=None)
-        self.engine.add_gas(0, 21)
-
-        steps = list(self.engine._dive_ascent(start, self.engine._gas_list))
-        self.assertEquals(1, len(steps))
-        self.assertEquals(step, steps[0])
-        self.assertFalse(self.engine._deco_ascent_stages.called)
-        self.assertTrue(self.engine._ndl_ascent.called)
-
-
     def test_dive_ascent_ndl(self):
         """
         Test deco engine dive ascent and ndl ascent
@@ -807,13 +789,14 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         """
         stages = [(1.0, AIR)]
         start = _step(Phase.ASCENT, 3.1, 2214, data=_data(0.3, 3.0, 3.0))
+        self.engine._gas_list = [AIR]
 
         deco_stop = mock.MagicMock()
         deco_stop.data.gf = 0.3
         deco_steps = [deco_stop] * 7
         self.engine._deco_ascent = mock.MagicMock(side_effect=[deco_steps])
 
-        steps = list(self.engine._deco_staged_ascent(start, AIR, stages))
+        steps = list(self.engine._deco_staged_ascent(start, stages))
         self.assertEquals(7, len(steps)) # deco stops 21m -> 0m
         self.assertEquals(1, self.engine._deco_ascent.call_count)
         gf_step = self.engine._deco_ascent.call_args[0][-1]
@@ -831,6 +814,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         ]
         data = _data(0.3, 3.0, 3.0)
         start = _step(Phase.ASCENT, 3.1, 2214, data=data)
+        self.engine._gas_list = [AIR, gas_mix]
 
         deco_stop = mock.MagicMock()
         deco_stop.data.gf = 0.3
@@ -844,7 +828,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
             return_value=[deco_steps[3]]
         )
 
-        steps = list(self.engine._deco_staged_ascent(start, AIR, stages))
+        steps = list(self.engine._deco_staged_ascent(start, stages))
         self.assertEquals(8, len(steps)) # deco stops 21m -> 0m + gas switch
                                          # step at 12m
         self.assertEquals(2, self.engine._deco_ascent.call_count)

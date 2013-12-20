@@ -376,21 +376,21 @@ class Engine(object):
         """
         Dive ascent from starting dive step.
 
-        The ascent is divided into two phases
+        The method checks if the ascent is part of NDL dive before dive
+        ascent starts.
 
-        - ascent to first decompression stop or surface
-        - ascent performing decompression stops, if necessary
+        If dive is decompression dive, then ascent is divided into two
+        phases
 
-        The method checks if the ascent is part of NDL dive before above
-        procedure commences.
+        - ascent to first decompression stop
+        - ascent performing decompression stops
 
         :param start: Starting dive step.
         :param gas_list: List of gas mixes - bottom and decompression gas
             mixes.
         """
-        bottom_gas = gas_list[0]
-
         # check if ndl dive
+        bottom_gas = gas_list[0]
         step = self._ndl_ascent(start, bottom_gas)
         if step:
             yield step
@@ -402,12 +402,12 @@ class Engine(object):
         for step in self._free_staged_ascent(step, stages):
             yield step
 
-        # arrived at the surface
-        if abs(step.abs_p - self.surface_pressure) < EPSILON:
-            return
+        # we should not arrive at the surface - it is non-ndl dive at this
+        # stage
+        assert not abs(step.abs_p - self.surface_pressure) < EPSILON
 
         stages = self._deco_ascent_stages(step.abs_p, gas_list)
-        yield from self._deco_staged_ascent(step, bottom_gas, stages)
+        yield from self._deco_staged_ascent(step, stages)
 
 
     def _ndl_ascent(self, start, gas):
@@ -747,12 +747,11 @@ class Engine(object):
                 yield step
 
 
-    def _deco_staged_ascent(self, start, bottom_gas, stages):
+    def _deco_staged_ascent(self, start, stages):
         """
         Perform staged asccent within decompression zone.
 
         :param start: Starting dive step.
-        :param bottom_gas: Bottom gas mix.
         :param stages: Dive stages.
 
         .. seealso:: :func:`decotengu.Engine._ascent_stages_deco`
@@ -765,6 +764,7 @@ class Engine(object):
         gf_step = (self.model.gf_high - self.model.gf_low) / n_stops
         logger.debug('deco engine: gf step={:.4}'.format(gf_step))
 
+        bottom_gas = self._gas_list[0]
         first_stop = step.abs_p
         gf_low = self.model.gf_low
         for depth, gas in stages:
