@@ -52,8 +52,8 @@ class BisectFindTestCase(unittest.TestCase):
     Bisection algorithm search tests.
     """
     def _f(self, k, at, bt):
-        a = at[k]
-        b = bt[k]
+        a = at[k - 1]
+        b = bt[k - 1]
         return a >= b
 
 
@@ -64,7 +64,7 @@ class BisectFindTestCase(unittest.TestCase):
         at = [  1,   2,   3,   4, 5, 6, 7, 8, 9, 10]
         bt = [0.1, 0.2, 2.9, 4.1, 6, 7, 8, 9, 10, 11]
         k = bisect_find(10, self._f, at, bt)
-        self.assertEquals(2, k)
+        self.assertEquals(3, k)
 
 
     def test_find_left(self):
@@ -74,7 +74,7 @@ class BisectFindTestCase(unittest.TestCase):
         at = [0.2, 0.1,   2,   4, 5, 6, 7, 8, 9, 10]
         bt = [0.1, 0.2, 2.9, 4.1, 6, 7, 8, 9, 10, 11]
         k = bisect_find(10, self._f, at, bt)
-        self.assertEquals(0, k)
+        self.assertEquals(1, k)
 
 
     def test_find_last(self):
@@ -84,7 +84,7 @@ class BisectFindTestCase(unittest.TestCase):
         at = [ 0.1, 0.2, 2.9, 4.1, 6, 7, 8, 9, 10, 9]
         bt = [0.05, 0.1,   2,   4, 5, 6, 7, 8, 9, 10]
         k = bisect_find(10, self._f, at, bt)
-        self.assertEquals(8, k)
+        self.assertEquals(9, k)
 
 
     def test_no_solution(self):
@@ -95,13 +95,13 @@ class BisectFindTestCase(unittest.TestCase):
         at = [0.05, 0.1,   2,   4, 5, 6, 7, 8, 9, 10]
         bt = [ 0.1, 0.2, 2.9, 4.1, 6, 7, 8, 9, 10, 11]
         k = bisect_find(10, self._f, at, bt)
-        self.assertEquals(-1, k)
+        self.assertEquals(0, k)
 
         # each at >= bt
         at = [ 0.1, 0.2, 2.9, 4.1, 6, 7, 8, 9, 10, 11]
         bt = [0.05, 0.1,   2,   4, 5, 6, 7, 8, 9, 10]
         k = bisect_find(10, self._f, at, bt)
-        self.assertEquals(9, k)
+        self.assertEquals(10, k)
 
 
 # vim: sw=4:et:ai

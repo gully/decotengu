@@ -463,9 +463,6 @@ class Engine(object):
         t = self._pressure_to_time(start.abs_p - abs_p, self.ascent_rate)
         dt = t % ts_3m
 
-        # bisect search solution range: 0 <= k < n - 1; the invariant
-        # function will use k + 1 as it does not make sense to ascent
-        # by 0m
         n = t // ts_3m
         logger.debug(
             'find first stop: {}bar -> {}bar, {}s, n={}, dt={}s'
@@ -473,17 +470,15 @@ class Engine(object):
         )
         assert t >= 0
         assert 0 <= dt < ts_3m, dt
-        #assert start.depth - n * 3 == depth
 
-        # for each k ascent for (k + 1) * t(3m) + dt seconds and check if
-        # ascent invariant is not violated; (k + 1) * t(3m) + dt formula
-        # gives first stop candidates as multiples of 3m
+        # for each k ascent for k * t(3m) + dt seconds and check if ascent
+        # invariant is not violated; k * t(3m) + dt formula gives first
+        # stop candidates as multiples of 3m
         f = lambda k, step: self._inv_limit(
-            self._step_next_ascent(step, (k + 1) * ts_3m + dt, gas)
+            self._step_next_ascent(step, k * ts_3m + dt, gas)
         )
         # find largest k for which ascent without decompression is possible
         k = bisect_find(n, f, start)
-        k += 1  # the invariant function uses k + 1
 
         if k == n:
             abs_p = None
@@ -859,9 +854,9 @@ class Engine(object):
         logger.debug('deco stop: linear find finished at {}'.format(l_step))
 
         b_step_next_f = lambda k, step: \
-                inv_f(self._step_next(step, (k + 1) * 60, gas, gf))
-        k = bisect_find(max_time + 1, b_step_next_f, l_step)
-        k += 2 # (k + 1) deco stop invariant true, so ascent minute later
+                inv_f(self._step_next(step, k * 60, gas, gf))
+        k = bisect_find(max_time, b_step_next_f, l_step)
+        k += 1 # at k * 60 deco stop invariant true, so ascent minute later
 
         t = round(l_step.time - step.time + k * 60)
         logger.debug(

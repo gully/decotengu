@@ -282,7 +282,7 @@ class EngineTestCase(unittest.TestCase):
         start = _step(Phase.ASCENT, 4.1, 1200)
         self.engine._step_next_ascent = mock.MagicMock()
 
-        f_bf.return_value = 5 # 31m -> 30m - (k + 1) * 3m == 12m
+        f_bf.return_value = 6 # 31m -> 30m - k * 3m == 12m
         stop = self.engine._find_first_stop(start, 1.0, AIR)
         self.assertEquals(2.2, stop)
 
@@ -295,7 +295,7 @@ class EngineTestCase(unittest.TestCase):
         start = _step(Phase.ASCENT, 2.2, 1200)
         self.engine._step_next_ascent = mock.MagicMock()
 
-        f_bf.return_value = -1 # the 12m is depth of deco stop
+        f_bf.return_value = 0 # the 12m is depth of deco stop
         stop = self.engine._find_first_stop(start, 1.0, AIR)
         self.assertFalse(self.engine._step_next_ascent.called)
         self.assertEquals(start.abs_p, stop)
@@ -309,7 +309,7 @@ class EngineTestCase(unittest.TestCase):
         self.engine._step_next_ascent = mock.MagicMock()
         start = _step(Phase.ASCENT, 4.1, 1200)
 
-        f_bf.return_value = 5
+        f_bf.return_value = 6
         self.engine._find_first_stop(start, 1.0, AIR)
 
         assert f_bf.called # test precondition
@@ -324,7 +324,7 @@ class EngineTestCase(unittest.TestCase):
         start = _step(Phase.ASCENT, 4.1, 1200)
         self.engine._step_next_ascent = mock.MagicMock()
 
-        f_bf.return_value = 9 # 31m -> 30m - (k + 1) * 3m == 0m
+        f_bf.return_value = 10 # 31m -> 30m - k * 3m == 0m
         stop = self.engine._find_first_stop(start, 1.0, AIR)
         self.assertIsNone(stop)
 

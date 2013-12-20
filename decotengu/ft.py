@@ -46,16 +46,16 @@ def bisect_find(n, f, *args, **kw):
     """
     Find largest `k` for which `f(k)` is true.
 
-    The k is integer in range 0 <= k < n - 1 or -1.  If there is no `k` for
-    which `f(k)` is true, then return `-1`.
+    The k is integer in range 1 <= k <= n.  If there is no `k` for which
+    `f(k)` is true, then return `0`.
 
-    :param n: Range for `k`, so :math:`0 <= k < n - 1`.
+    :param n: Range for `k`, so :math:`1 <= k <= n`.
     :param f: Invariant function accepting `k`.
     :param *args: Additional positional parameters of `f`.
     :param **kw: Additional named parameters of `f`.
     """
-    lo = 0
-    hi = n
+    lo = 1
+    hi = n + 1
     if __debug__:
         logger.debug('bisect n: {}'.format(n))
 
