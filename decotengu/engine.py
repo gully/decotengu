@@ -333,7 +333,7 @@ class Engine(object):
         The switch results in new dive step.
         """
         step = step._replace(phase=Phase.GAS_SWITCH, gas=gas, prev=step)
-        logger.debug('switched to gas mix {}'.format(gas))
+        logger.debug('switched to gas mix {} at {}'.format(gas, step))
         return step
 
 
@@ -676,9 +676,7 @@ class Engine(object):
         .. seealso:: :func:`decotengu.Engine._can_switch_gas`
         """
         gp = self._to_pressure(gas.depth)
-        logger.debug(
-            'switching to gas {} starting at {}bar'.format(gas, step.abs_p)
-        )
+        logger.debug('ascent gas switch to {} at {}bar'.format(gas, step.abs_p))
         assert step.abs_p - gp < self._p3m
         if abs(step.abs_p - gp) < EPSILON:
             steps = (self._switch_gas(step, gas),)
@@ -724,11 +722,12 @@ class Engine(object):
             if step.abs_p - self._to_pressure(gas.depth) < self._p3m:
                 # if gas switch drives us into deco zone, then stop ascent
                 # leaving `step` as first decompression stop
+                logger.debug('attempt to switch gas {} at {}'.format(gas, step))
                 gs_steps = self._can_switch_gas(step, gas)
                 if gs_steps:
                     step = gs_steps[-1]
                     yield from gs_steps
-                    logger.debug('gas switch performed {}'.format(gas))
+                    logger.debug('gas switch performed')
                 else:
                     logger.debug('gas switch into deco zone, revert')
                     break
