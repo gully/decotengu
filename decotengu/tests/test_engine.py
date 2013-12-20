@@ -837,9 +837,9 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         )
 
 
-    def test_deco_ascent(self):
+    def test_deco_ascent_surface(self):
         """
-        Test ascent with decompression stops
+        Test ascent with decompression stops till surface
         """
         self.engine.model.gf_low = 0.30
         self.engine.model.gf_high = 0.85
@@ -871,7 +871,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
 
     def test_deco_ascent_depth(self):
         """
-        Test ascent with decompression stops with depth pressure limit
+        Test ascent with decompression stops to destination depth
         """
         self.engine.model.gf_low = 0.30
         self.engine.model.gf_high = 0.85
@@ -895,7 +895,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         self.assertAlmostEquals(1.9, steps[4].abs_p)
         self.assertEquals(1416, steps[4].time)
 
-        # last stop at 6m due to pressure limit
+        # destination depth at 6m, last dive step
         self.assertEquals(1.6, steps[5].abs_p)
         self.assertEquals(1434, steps[5].time)
         self.assertEquals(0.63, steps[5].data.gf)

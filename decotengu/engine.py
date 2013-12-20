@@ -793,10 +793,9 @@ class Engine(object):
         return self._step_next_ascent(start, dt, gas, gf=gf)
 
 
-    def _deco_ascent(self, first_stop, abs_p, gas, gf_start, gf_step):
+    def _deco_ascent(self, step, abs_p, gas, gf_start, gf_step):
         """
-        Ascent from first decompression stop to absolute pressure of
-        destination depth.
+        Ascent to destination depth executing decompression stops.
 
         The depth of first stop should be divisible by 3. The depth of last
         step is at absolute pressure of destination depth. There is no
@@ -804,21 +803,13 @@ class Engine(object):
 
         Tissue gas loading is performed using gas mix configuration.
 
-        The length of a decompression stop is guarded by gradient factor
-        start value and gradient factor step - the decompression stop lasts
-        until it is allowed to ascent to next stop
-        (see func:`Engine._inv_deco_stop` method).
-
-        :param first_stop: Dive stop indicating first decompression stop.
+        :param step: Start of decompression stop.
         :param abs_p: Absolute pressure of destination depth.
         :param gas: Gas mix configuration.
         :param gf_start: Gradient factor start value for the first stop.
         :param gf_step: Gradient factor step to calculate gradient factor
             value for next stops.
         """
-        step = first_stop
-        max_time = self._deco_stop_search_time * 60
-
         if __debug__:
             depth = self._to_depth(step.abs_p)
             assert depth % 3 == 0 and depth > 0, depth
@@ -837,28 +828,50 @@ class Engine(object):
             )
             gf = gf_start + k_stop * gf_step
 
-            inv_f = partial(self._inv_deco_stop, gas=gas, gf=gf + gf_step)
-            l_step_next_f = partial(self._step_next, time=max_time, gas=gas)
-            l_step = recurse_while(inv_f, l_step_next_f, step)
-            logger.debug('deco stop: linear find finished at {}'.format(l_step))
-
-            b_step_next_f = lambda k, step: True if k == 0 else \
-                    inv_f(self._step_next(step, k * 60, gas, gf))
-            k = bisect_find(max_time + 1, b_step_next_f, l_step)
-
-            t = round(l_step.time - step.time + (k + 1) * 60)
-            logger.debug(
-                'deco stop: search completed {}bar, {}s, n2={.n2}%, gf={:.4}'
-                .format(step.abs_p, t, gas, gf)
-            )
-            assert t % 60 == 0, t
-
-            step = self._step_next(step, t, gas, phase=Phase.DECO_STOP)
+            step = self._deco_stop(step, gas, gf, gf_step)
             yield step
 
             ts_3m = self._pressure_to_time(self._p3m, self.ascent_rate)
             step = self._step_next_ascent(step, ts_3m, gas, gf + gf_step)
             yield step
+
+
+    def _deco_stop(self, step, gas, gf, gf_step):
+        """
+        Calculate decompression stop.
+
+        The length of a decompression stop is guarded by gradient factor
+        start value and gradient factor step - the decompression stop lasts
+        until it is allowed to ascent to next stop
+        (see func:`Engine._inv_deco_stop` method).
+
+        :param step: Start of decompression stop.
+        :param gas: Gas mix configuration.
+        :param gf_start: Gradient factor start value for the first stop.
+        :param gf_step: Gradient factor step to calculate gradient factor
+            value for next stops.
+        """
+        max_time = self._deco_stop_search_time * 60
+
+        inv_f = partial(self._inv_deco_stop, gas=gas, gf=gf + gf_step)
+        l_step_next_f = partial(self._step_next, time=max_time, gas=gas)
+        l_step = recurse_while(inv_f, l_step_next_f, step)
+        logger.debug('deco stop: linear find finished at {}'.format(l_step))
+
+        b_step_next_f = lambda k, step: \
+                inv_f(self._step_next(step, (k + 1) * 60, gas, gf))
+        k = bisect_find(max_time + 1, b_step_next_f, l_step)
+        k += 2 # (k + 1) deco stop invariant true, so ascent minute later
+
+        t = round(l_step.time - step.time + k * 60)
+        logger.debug(
+            'deco stop: search completed {}bar, {}s, n2={.n2}%, gf={:.4}'
+            .format(step.abs_p, t, gas, gf)
+        )
+        assert t % 60 == 0 and t > 0, t
+
+        step = self._step_next(step, t, gas, phase=Phase.DECO_STOP)
+        return step
 
 
     def add_gas(self, depth, o2, he=0, travel=False):
