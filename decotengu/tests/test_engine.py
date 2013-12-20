@@ -111,7 +111,7 @@ class EngineTestCase(unittest.TestCase):
         Test ceiling limit invariant
         """
         step = _step(Phase.CONST, 3.0, 120)
-        self.engine.model.pressure_limit = mock.MagicMock(return_value=3.0)
+        self.engine.model.ceiling_limit = mock.MagicMock(return_value=3.0)
         v = self.engine._inv_limit(step)
         self.assertTrue(v)
 
@@ -121,7 +121,7 @@ class EngineTestCase(unittest.TestCase):
         Test ascent invariant (at limit)
         """
         step = _step(Phase.CONST, 3.1, 120)
-        self.engine.model.pressure_limit = mock.MagicMock(return_value=3.101)
+        self.engine.model.ceiling_limit = mock.MagicMock(return_value=3.101)
         v = self.engine._inv_limit(step)
         self.assertFalse(v)
 
@@ -136,10 +136,10 @@ class EngineTestCase(unittest.TestCase):
             return_value=[2.6, 2.6]
         )
         # ascent ceiling still at current deco stop
-        self.engine.model.pressure_limit = mock.MagicMock(return_value=2.201)
+        self.engine.model.ceiling_limit = mock.MagicMock(return_value=2.201)
 
         v = self.engine._inv_deco_stop(step, AIR, gf=0.4)
-        self.engine.model.pressure_limit.assert_called_once_with(
+        self.engine.model.ceiling_limit.assert_called_once_with(
             [2.6, 2.6], gf=0.4
         )
         self.assertTrue(v)
@@ -155,11 +155,11 @@ class EngineTestCase(unittest.TestCase):
             return_value=[2.6, 2.6]
         )
         # ascent ceiling still at current deco stop
-        self.engine.model.pressure_limit = mock.MagicMock(return_value=1.901)
+        self.engine.model.ceiling_limit = mock.MagicMock(return_value=1.901)
 
         p = self.engine._p3m * 2
         v = self.engine._inv_deco_stop(step, AIR, gf=0.4, pressure=p)
-        self.engine.model.pressure_limit.assert_called_once_with(
+        self.engine.model.ceiling_limit.assert_called_once_with(
             [2.6, 2.6], gf=0.4
         )
         self.assertTrue(v)
@@ -544,7 +544,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         start = _step(Phase.ASCENT, 4.0, 1000)
         step = _step(Phase.ASCENT, 1.0, 1200)
         self.engine._free_ascent = mock.MagicMock(return_value=step)
-        self.engine.model.pressure_limit = mock.MagicMock(return_value=1.0)
+        self.engine.model.ceiling_limit = mock.MagicMock(return_value=1.0)
 
         result = self.engine._ndl_ascent(start, AIR)
         self.assertEquals(step, result)
@@ -557,7 +557,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         start = _step(Phase.ASCENT, 4.0, 1000)
         step = _step(Phase.ASCENT, 1.0, 1200)
         self.engine._free_ascent = mock.MagicMock(return_value=step)
-        self.engine.model.pressure_limit = mock.MagicMock(return_value=1.5)
+        self.engine.model.ceiling_limit = mock.MagicMock(return_value=1.5)
 
         result = self.engine._ndl_ascent(start, AIR)
         self.assertIsNone(result)

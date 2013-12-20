@@ -202,7 +202,7 @@ class Engine(object):
 
         :param step: Current dive step.
         """
-        return step.abs_p >= self.model.pressure_limit(step.data)
+        return step.abs_p >= self.model.ceiling_limit(step.data)
 
 
     def _inv_deco_stop(self, step, gas, gf, pressure=None):
@@ -224,7 +224,7 @@ class Engine(object):
             pressure = self._p3m
         t = self._pressure_to_time(pressure, self.ascent_rate)
         data = self._tissue_pressure_ascent(step.abs_p, t, gas, step.data)
-        ceiling = self.model.pressure_limit(data, gf=gf)
+        ceiling = self.model.ceiling_limit(data, gf=gf)
 
         # ascent should be possible, when next deco stop depth is equal to
         # ceiling depth
@@ -431,7 +431,7 @@ class Engine(object):
         gf = self.model.gf_high
         step = self._free_ascent(start, self.surface_pressure, gas, gf=gf)
         # FIXME: method is decompression model dependant
-        limit = self.model.pressure_limit(step.data, gf)
+        limit = self.model.ceiling_limit(step.data, gf)
         if step.abs_p < limit:
             step = None
         return step

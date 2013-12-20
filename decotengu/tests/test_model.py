@@ -146,7 +146,7 @@ class ZH_L16_GFTestCase(unittest.TestCase):
 
 
     @mock.patch('decotengu.model.eq_gf_limit')
-    def test_pressure_limit(self, f):
+    def test_ceiling_limit(self, f):
         """
         Test calculation of pressure limit (default gf)
         """
@@ -160,12 +160,12 @@ class ZH_L16_GFTestCase(unittest.TestCase):
 
         m.gf_low = 0.1
 
-        v = m.pressure_limit(data)
+        v = m.ceiling_limit(data)
         self.assertEquals(2.4, v)
 
 
     @mock.patch('decotengu.model.eq_gf_limit')
-    def test_pressure_limit_gf(self, f):
+    def test_ceiling_limit_gf(self, f):
         """
         Test calculation of pressure limit (with gf)
         """
@@ -177,7 +177,7 @@ class ZH_L16_GFTestCase(unittest.TestCase):
         limit = (1.0, 2.0, 1.5, 2.4, 2.1)
         f.side_effect = limit
 
-        v = m.pressure_limit(data, gf=0.2)
+        v = m.ceiling_limit(data, gf=0.2)
         self.assertEquals(2.4, v)
 
 
@@ -252,7 +252,7 @@ class DecoModelValidatorTestCase(unittest.TestCase):
         s = Step(Phase.CONST, 2.2, 3, AIR, data, None)
 
         validator = DecoModelValidator(engine)
-        engine.model.pressure_limit = mock.MagicMock(return_value=2.19)
+        engine.model.ceiling_limit = mock.MagicMock(return_value=2.19)
         validator._ceiling_limit(s) # no exception expected
 
 
@@ -265,7 +265,7 @@ class DecoModelValidatorTestCase(unittest.TestCase):
         s = Step(Phase.CONST, 1.3127, 3, AIR, data, None)
 
         mod = DecoModelValidator(engine)()
-        engine.model.pressure_limit = mock.MagicMock(return_value=2.21)
+        engine.model.ceiling_limit = mock.MagicMock(return_value=2.21)
         self.assertRaises(EngineError, mod.send, s)
 
 
@@ -281,7 +281,7 @@ class DecoModelValidatorTestCase(unittest.TestCase):
 
         validator = DecoModelValidator(engine)
         # ascent to 18m should not be possible
-        engine.model.pressure_limit = mock.MagicMock(return_value=2.81)
+        engine.model.ceiling_limit = mock.MagicMock(return_value=2.81)
         validator._first_stop_at_ceiling(s2) # no exception expected
         self.assertTrue(validator._first_stop_checked)
 
@@ -298,7 +298,7 @@ class DecoModelValidatorTestCase(unittest.TestCase):
 
         validator = DecoModelValidator(engine)
         # ascent to 18m should not be possible, so error expected
-        engine.model.pressure_limit = mock.MagicMock(return_value=2.79)
+        engine.model.ceiling_limit = mock.MagicMock(return_value=2.79)
         self.assertRaises(EngineError, validator._first_stop_at_ceiling, s2)
         self.assertFalse(validator._first_stop_checked)
 
