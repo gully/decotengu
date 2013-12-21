@@ -205,7 +205,7 @@ class Engine(object):
         return step.abs_p >= self.model.ceiling_limit(step.data)
 
 
-    def _inv_deco_stop(self, step, gas, gf, pressure=None):
+    def _inv_deco_stop(self, step, time, gas, gf):
         """
         Return true if one should stay at a decompression stop.
 
@@ -214,21 +214,22 @@ class Engine(object):
         is not possible (depth of ceiling limit is deeper than depth of
         next decompression stop).
 
+        The time to ascent to next stop is usually constant (time required
+        to ascent by 3m), but it can differ when last decompression stop is
+        at 6m.
+
         :param step: Dive step - current decompression stop.
+        :param time: Time required to ascent to next stop [s].
         :param gas: Gas mix configuration.
         :param gf: Gradient factor value for next decompression stop.
-        :param pressure: Pressure change required to get to next stop [bar].
-            By default it is relative pressure equivalent of ascending by 3m.
         """
-        if pressure is None:
-            pressure = self._p3m
-        t = self._pressure_to_time(pressure, self.ascent_rate)
-        data = self._tissue_pressure_ascent(step.abs_p, t, gas, step.data)
+        data = self._tissue_pressure_ascent(step.abs_p, time, gas, step.data)
         ceiling = self.model.ceiling_limit(data, gf=gf)
 
-        # ascent should be possible, when next deco stop depth is equal to
-        # ceiling depth
-        return step.abs_p - pressure < ceiling
+        # ascent should not be possible when depth of next stop shallower
+        # than depth of ceiling
+        abs_p = step.abs_p - self._time_to_pressure(time, self.ascent_rate)
+        return abs_p < ceiling
 
 
     def _step_next(self, step, time, gas, phase='const'):
@@ -761,13 +762,21 @@ class Engine(object):
         bottom_gas = self._gas_list[0]
         first_stop = step.abs_p
         gf_low = self.model.gf_low
-        for depth, gas in stages:
+        stages = self._deco_stops(start, stages)
+        for depth, gas, time, gf in stages:
+            # switch gas
             if step.abs_p >= self._to_pressure(gas.depth) and gas != bottom_gas:
                 for step in self._ascent_switch_gas(step, gas):
                     yield step
-            gf = gf_low + (first_stop - step.abs_p) / self._p3m * gf_step
-            for step in self._deco_ascent(step, depth, gas, gf, gf_step):
-                yield step
+
+            # execute deco stop
+            step = self._deco_stop(step, time, gas, gf)
+            yield step
+
+            # ascend to next deco stop
+            step = self._step_next_ascent(step, time, gas, gf)
+            yield step
+
         logger.debug('deco engine: gf at surface={:.4f}'.format(step.data.gf))
 
 
@@ -788,50 +797,45 @@ class Engine(object):
         return self._step_next_ascent(start, dt, gas, gf=gf)
 
 
-    def _deco_ascent(self, step, abs_p, gas, gf_start, gf_step):
+    def _deco_stops(self, step, stages):
         """
-        Ascent to destination depth executing decompression stops.
+        Calculate collection of decompression stops.
 
-        The depth of first stop should be divisible by 3. The depth of last
-        step is at absolute pressure of destination depth. There is no
-        decompression at the destination depth performed.
+        The method returns collection of tuples
 
-        Tissue gas loading is performed using gas mix configuration.
+        - destination depth (see :func:`Engine._deco_ascent_stages` method)
+        - gas mix (see :func:`Engine._deco_ascent_stages` method)
+        - time required to ascent to next decompression stops (usually time
+          required to ascent by 3m)
+        - gradient factor value for next decompression stop or surface
 
-        :param step: Start of decompression stop.
-        :param abs_p: Absolute pressure of destination depth.
-        :param gas: Gas mix configuration.
-        :param gf_start: Gradient factor start value for the first stop.
-        :param gf_step: Gradient factor step to calculate gradient factor
-            value for next stops.
+        :param step: Current dive step.
+        :param stages: Decompression ascent stages.
+
+        .. seealso:: :func:`decotengu.Engine._deco_ascent_stages`
         """
-        if __debug__:
-            depth = self._to_depth(step.abs_p)
-            assert depth % 3 == 0 and depth > 0, depth
-            assert step.abs_p > abs_p, '{} vs. {}'.format(step.abs_p, abs_p)
+        k = self._n_stops(step.abs_p)
+        gf_step = (self.model.gf_high - self.model.gf_low) / k
+        ts_3m = self._pressure_to_time(self._p3m, self.ascent_rate)
+        gf = step.data.gf
 
-        n_stops = self._n_stops(step.abs_p, abs_p)
-        logger.debug(
-            'stops={}, gf start={:.4}, gf step={:.4}'
-            .format(n_stops, gf_start, gf_step)
-        )
-
-        for k_stop in range(n_stops):
-            logger.debug(
-                'deco stop: k_stop={}, pressure={}bar'
-                .format(k_stop, step.abs_p)
-            )
-            gf = gf_start + k_stop * gf_step
-
-            step = self._deco_stop(step, gas, gf, gf_step)
-            yield step
-
-            ts_3m = self._pressure_to_time(self._p3m, self.ascent_rate)
-            step = self._step_next_ascent(step, ts_3m, gas, gf + gf_step)
-            yield step
+        abs_p = step.abs_p
+        stop_at_6m = self.surface_pressure + 2 * self._p3m
+        last_stop_6m = False # FIXME: make 6m last stop configurable
+        for depth, gas in stages:
+            n = self._n_stops(abs_p, depth)
+            for k in range(n):
+                gf += gf_step
+                if last_stop_6m and abs(abs_p - k * self._p3m - stop_at_6m) < EPSILON:
+                    yield depth, gas, 2 * ts_3m, gf + gf_step
+                    assert abs(self.model.gf_high - gf - gf_step) < EPSILON
+                    break
+                else:
+                    yield depth, gas, ts_3m, gf
+            abs_p = depth
 
 
-    def _deco_stop(self, step, gas, gf, gf_step):
+    def _deco_stop(self, step, time, gas, gf):
         """
         Calculate decompression stop.
 
@@ -841,27 +845,30 @@ class Engine(object):
         (see func:`Engine._inv_deco_stop` method).
 
         :param step: Start of decompression stop.
+        :param time: Time required to ascent to next deco stop [s].
         :param gas: Gas mix configuration.
-        :param gf_start: Gradient factor start value for the first stop.
-        :param gf_step: Gradient factor step to calculate gradient factor
-            value for next stops.
+        :param gf: Gradient factor value of next decompression stop.
         """
+        if __debug__:
+            depth = self._to_depth(step.abs_p)
+            assert depth % 3 == 0 and depth > 0, depth
+
         max_time = self._deco_stop_search_time * 60
 
-        inv_f = partial(self._inv_deco_stop, gas=gas, gf=gf + gf_step)
+        inv_f = partial(self._inv_deco_stop, time=time, gas=gas, gf=gf)
         l_step_next_f = partial(self._step_next, time=max_time, gas=gas)
         l_step = recurse_while(inv_f, l_step_next_f, step)
         logger.debug('deco stop: linear find finished at {}'.format(l_step))
 
         b_step_next_f = lambda k, step: \
-                inv_f(self._step_next(step, k * 60, gas, gf))
+                inv_f(self._step_next(step, k * 60, gas))
         k = bisect_find(max_time, b_step_next_f, l_step)
         k += 1 # at k * 60 deco stop invariant true, so ascent minute later
 
         t = round(l_step.time - step.time + k * 60)
         logger.debug(
             'deco stop: search completed {}bar, {}s, n2={.n2}%, gf={:.4}'
-            .format(step.abs_p, t, gas, gf)
+            .format(step.abs_p, t, gas, step.data.gf)
         )
         assert t % 60 == 0 and t > 0, t
 

@@ -99,12 +99,14 @@ class AscentJumper(object):
 
 class DecoStopStepper(object):
     """
-    Perform dive decompression using 1min intervals.
+    Execute decompression stop using 1min intervals.
 
     The algorithm is quite inefficient, but is used by some of the
     implementations, so this class is created for comparison purposes.
 
     :var engine: DecoTengu decompression engine.
+
+    .. seealso:: :func:`decotengu.Engine._deco_stop`
     """
     def __init__(self, engine):
         """
@@ -115,47 +117,31 @@ class DecoStopStepper(object):
         self.engine = engine
 
 
-    def __call__(self, first_stop, abs_p, gas, gf_start, gf_step):
+    def __call__(self, step, time, gas, gf):
         """
-        Perform dive decompression stop using 1min intervals.
+        Execute dive decompression stop using 1min intervals.
 
         .. seealso:: `decotengu.Engine._deco_ascent`
         """
         logger.debug('executing deco stepper')
 
         engine = self.engine
-        ts_3m = engine._pressure_to_time(engine._p3m, engine.ascent_rate)
-        step = first_stop
 
-        assert engine._to_depth(step.abs_p) % 3 == 0
-
-        n_stops = engine._n_stops(step.abs_p, abs_p)
-        logger.debug(
-            'stepper: stops={}, gf step={:.4}'.format(n_stops, gf_step)
-        )
+        if __debug__:
+            assert engine._to_depth(step.abs_p) % 3 == 0
 
         k_stop = 0
-        while k_stop < n_stops:
-            logger.debug(
-                'stepper: k_stop={}, pressure={}bar'
-                .format(k_stop, step.abs_p)
-            )
-
-            gf = gf_start + k_stop * gf_step
-
+        while True:
             # stay 1 min
             step = engine._step_next(step, 60, gas, phase=Phase.DECO_STOP)
             logger.debug(
                 'stepper: {}bar {}s, gas={.o2}, gf={:.4f}'
                 .format(step.abs_p, step.time, gas, gf)
             )
+            if not engine._inv_deco_stop(step, time, gas, gf):
+                break
 
-            yield step
-
-            if not engine._inv_deco_stop(step, gas, gf + gf_step):
-                step = engine._step_next_ascent(step, ts_3m, gas, gf + gf_step)
-                yield step
-                k_stop += 1
+        return step
 
 
 # vim: sw=4:et:ai
