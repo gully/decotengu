@@ -116,6 +116,7 @@ class Engine(object):
     :var surface_pressure: Surface pressure [bar].
     :var ascent_rate: Ascent rate during a dive [m/min].
     :var descent_rate: Descent rate during a dive [m/min].
+    :var last_stop_6m: If true, then last deco stop is at 6m (not default 3m).
     :var _gas_list: List of gas mixes.
     :var _deco_stop_search_time: Time limit for decompression stop linear
         search.
@@ -126,6 +127,7 @@ class Engine(object):
         self.surface_pressure = 1.01325
         self.ascent_rate = 10.0
         self.descent_rate = 20.0
+        self.last_stop_6m = False
 
         self._gas_list = []
         self._travel_gas_list = []
@@ -821,12 +823,12 @@ class Engine(object):
 
         abs_p = step.abs_p
         stop_at_6m = self.surface_pressure + 2 * self._p3m
-        last_stop_6m = False # FIXME: make 6m last stop configurable
+        ls_6m = self.last_stop_6m
         for depth, gas in stages:
             n = self._n_stops(abs_p, depth)
             for k in range(n):
                 gf += gf_step
-                if last_stop_6m and abs(abs_p - k * self._p3m - stop_at_6m) < EPSILON:
+                if ls_6m and abs(abs_p - k * self._p3m - stop_at_6m) < EPSILON:
                     yield depth, gas, 2 * ts_3m, gf + gf_step
                     assert abs(self.model.gf_high - gf - gf_step) < EPSILON
                     break

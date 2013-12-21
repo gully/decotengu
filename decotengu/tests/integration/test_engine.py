@@ -92,6 +92,53 @@ class EngineTestCase(unittest.TestCase):
         self.assertEquals(89, dt.total)
 
 
+    def test_last_stop_6m_air(self):
+        """
+        Test dive on air and with last stop at 6m
+
+        On air, comparing last stop at 6m to last stop at 3m, the
+        decompression stop at 6m is extended by much more than sum of deco
+        stops at 3m and 6m.
+        """
+        engine, dt = create()
+        engine.last_stop_6m = True
+        engine.add_gas(0, 21)
+
+        data = list(engine.calculate(45, 25))
+        self.assertEquals(6, dt.stops[-1].depth)
+        self.assertEquals(32, dt.stops[-1].time)
+
+        engine.last_stop_6m = False
+        data = list(engine.calculate(45, 25))
+        self.assertEquals(3, dt.stops[-1].depth)
+        t = dt.stops[-1].time + dt.stops[-2].time
+        self.assertEquals(25, t)
+
+
+    def test_last_stop_ean50(self):
+        """
+        Test dive on air and with last stop at 6m
+
+        On air adding EAN50 deco gas and comparing last stop at 6m to last
+        stop at 3m, the decompression stop at 6m is extended just a bit
+        comparing to sum of deco stops at 3m and 6m.
+        """
+        engine, dt = create()
+        engine.last_stop_6m = True
+        engine.add_gas(0, 21)
+        engine.add_gas(24, 50)
+
+        data = list(engine.calculate(45, 25))
+        self.assertEquals(6, dt.stops[-1].depth)
+        self.assertEquals(15, dt.stops[-1].time)
+
+        engine.last_stop_6m = False
+        data = list(engine.calculate(45, 25))
+        self.assertEquals(3, dt.stops[-1].depth)
+        t = dt.stops[-1].time + dt.stops[-2].time
+        self.assertEquals(13, t)
+
+
 
 class NDLTestCase(unittest.TestCase):
     """

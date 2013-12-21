@@ -885,6 +885,36 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         self.assertEquals([0.1] * 5, diff)
 
 
+    def test_deco_stops_6m(self):
+        """
+        Test converting deco ascent stages to deco stops (last stop 6m)
+        """
+        self.engine.model.gf_low = 0.30
+        self.engine.model.gf_high = 0.90
+        self.engine.last_stop_6m = True
+
+        gas_mix = EAN50._replace(depth=12)
+        stages = [
+            (2.2, AIR),
+            (1.0, gas_mix),
+        ]
+
+        data = _data(0.3, 2.5, 2.5, 2.5)
+        step = _step(Phase.ASCENT, 2.8, 1200, data=data)
+
+        stops = list(self.engine._deco_stops(step, stages))
+        self.assertEquals(5, len(stops))
+
+        stops = list(zip(*stops))
+        self.assertEquals((2.2,) * 2 + (1.0,) * 3, stops[0])
+        self.assertEquals((AIR,) * 2 + (gas_mix,) * 3, stops[1])
+        self.assertEquals((18,) * 4 + (36,), stops[2])
+
+        gfv = stops[3]
+        diff = [round(v2 - v1, 2) for v1, v2 in zip(gfv[:-1], gfv[1:])]
+        self.assertEquals([0.1] * 3 + [0.2], diff)
+
+
     @mock.patch('decotengu.engine.recurse_while')
     @mock.patch('decotengu.engine.bisect_find')
     def test_deco_stop(self, f_bf, f_r):
