@@ -50,28 +50,40 @@ class ValidateAlternative(argparse.Action):
 
 
 parser = argparse.ArgumentParser(description='DecoTengu 0.6.0.')
-parser.add_argument('-v', '--verbose',
-        action='store_true', dest='verbose', default=False,
-        help='explain what is being done')
-parser.add_argument('--gf_low', '-gl', dest='gf_low', default=30,
-        type=int, help='GF Low, i.e. 30 [percentage]')
-parser.add_argument('--gf_high', '-gh', dest='gf_high', default=85,
-        type=int, help='GF High, i.e. 85 [percentage]')
-parser.add_argument('--gas_list', '-l', dest='gas_list',
-    help='gas list, i.e. "28,0@0" or "28,0@0 50,0@22"')
+parser.add_argument(
+    '-v', '--verbose', action='store_true', dest='verbose', default=False,
+    help='explain what is being done'
+)
+parser.add_argument(
+    '--gf_low', '-gl', dest='gf_low', default=30, type=int,
+    help='GF Low, i.e. 30 [percentage]'
+)
+parser.add_argument(
+    '--gf_high', '-gh', dest='gf_high', default=85, type=int,
+    help='GF High, i.e. 85 [percentage]'
+)
+parser.add_argument(
+    '--gas_list', '-l', dest='gas_list',
+    help='gas list, i.e. "28,0@0" or "28,0@0 50,0@22"'
+)
 parser.add_argument(
     '-6', dest='last_stop_6m', default=False, action='store_true',
     help='last decompression stop at 6m'
 )
-parser.add_argument('--pressure', '-p', dest='pressure', default=None,
-        type=int, help='atmosphere pressure, i.e. 1013 [millibar]')
+parser.add_argument(
+    '--pressure', '-p', dest='pressure', default=None, type=int,
+    help='atmosphere pressure, i.e. 1013 [millibar]'
+)
 #parser.add_argument('--altitude', '-a', dest='altitude', default=None,
 #        type=int, help='set altitude, i.e. 700m')
-parser.add_argument('--model', '-m', dest='model',
-        default='zh-l16b-gf', choices=('zh-l16b-gf', 'zh-l16c-gf'),
-        help='decompression model')
-parser.add_argument('--descent-rate', dest='descent_rate', default=20.0,
-        type=float, help='descent rate, i.e. 20 [m/min]')
+parser.add_argument(
+    '--model', '-m', dest='model', default='zh-l16b-gf',
+    choices=('zh-l16b-gf', 'zh-l16c-gf'), help='decompression model'
+)
+parser.add_argument(
+    '--descent-rate', dest='descent_rate', default=20.0, type=float,
+    help='descent rate, i.e. 20 [m/min]'
+)
 parser.add_argument(
     '--time-delta', '-t', dest='time_delta', default=None, type=float,
     help='slice dive time into chunks to create dive steps every time delta' \
