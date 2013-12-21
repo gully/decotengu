@@ -913,7 +913,7 @@ class Engine(object):
         documentation for the list of gas mix list rules.
 
         :param depth: Maximum depth [m].
-        :param time: Bottom time [min].
+        :param time: Dive bottom time [min].
 
         .. seealso:: :func:`decotengu.Engine._validate_gas_list`
         .. seealso:: :func:`decotengu.Engine.add_gas`

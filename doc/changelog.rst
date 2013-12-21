@@ -2,10 +2,23 @@ Changelog
 =========
 DecoTengu 0.6.0
 ---------------
-- dive bottom time includes descent time
+- dive time changed to be dive bottom time (includes descent time)
 - allow to configure last decompression stop at 6m
-- added new dive phase to the DecoTengu API to identify gas mix switches
 - various bug fixes
+- API changes
+
+  - added new dive phase ``GAS_MIX`` to allow identify gas mix switch easily
+  - ``DECOSTEP`` dive phase renamed to ``DECO_STEP``
+  - ``ZH_L16_GF.pressure_limit`` renamed to ``ZH_L16_GF.ceiling_limit``
+
+- internal API changes
+
+  - ``Engine._inv_ascent`` renamed to ``Engine._inv_limit``
+  - ``Engine._inv_deco_stop`` accepts ``time`` parameter to enable
+    last decompression stop at 6m
+  - ``Engine._deco_ascent`` replaced with ``Engine._deco_stop``, the latter
+    method does not perform any ascent anymore, just calculates
+    decompression stop
 
 DecoTengu 0.5.0
 ---------------

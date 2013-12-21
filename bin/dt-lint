@@ -102,7 +102,7 @@ parser.add_argument(
         ' decostep, tab'
 )
 parser.add_argument('depth', type=int, help='dive maximum depth [meter]')
-parser.add_argument('time', type=int, help='dive time [minute]')
+parser.add_argument('time', type=int, help='dive bottom time [minute]')
 args = parser.parse_args()
 
 if args.verbose:
