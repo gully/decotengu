@@ -3,6 +3,7 @@ Changelog
 DecoTengu 0.6.0
 ---------------
 - dive bottom time includes descent time
+- allow to configure last decompression stop at 6m
 - added new dive phase to the DecoTengu API to identify gas mix switches
 - various bug fixes
 
