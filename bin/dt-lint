@@ -59,6 +59,10 @@ parser.add_argument('--gf_high', '-gh', dest='gf_high', default=85,
         type=int, help='GF High, i.e. 85 [percentage]')
 parser.add_argument('--gas_list', '-l', dest='gas_list',
     help='gas list, i.e. "28,0@0" or "28,0@0 50,0@22"')
+parser.add_argument(
+    '-6', dest='last_stop_6m', default=False, action='store_true',
+    help='last decompression stop at 6m'
+)
 parser.add_argument('--pressure', '-p', dest='pressure', default=None,
         type=int, help='atmosphere pressure, i.e. 1013 [millibar]')
 #parser.add_argument('--altitude', '-a', dest='altitude', default=None,
@@ -105,6 +109,7 @@ from decotengu.output import DiveStepInfoGenerator, csv_writer
 from decotengu.flow import sender
 
 engine, deco_table = decotengu.create(time_delta=args.time_delta)
+engine.last_stop_6m = args.last_stop_6m
 pipeline = []
 
 if args.tissue_file:
