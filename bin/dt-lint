@@ -55,15 +55,15 @@ parser.add_argument(
     help='explain what is being done'
 )
 parser.add_argument(
-    '--gf_low', '-gl', dest='gf_low', default=30, type=int,
+    '--gf-low', '-gl', dest='gf_low', default=30, type=int,
     help='GF Low, i.e. 30 [percentage]'
 )
 parser.add_argument(
-    '--gf_high', '-gh', dest='gf_high', default=85, type=int,
+    '--gf-high', '-gh', dest='gf_high', default=85, type=int,
     help='GF High, i.e. 85 [percentage]'
 )
 parser.add_argument(
-    '--gas_list', '-l', dest='gas_list',
+    '--gas-list', '-l', dest='gas_list',
     help='gas list, i.e. "28,0@0" or "28,0@0 50,0@22"'
 )
 parser.add_argument(
