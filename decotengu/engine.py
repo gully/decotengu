@@ -474,9 +474,9 @@ class Engine(object):
         assert t >= 0
         assert 0 <= dt < ts_3m, dt
 
-        # for each k ascent for k * t(3m) + dt seconds and check if ascent
-        # invariant is not violated; k * t(3m) + dt formula gives first
-        # stop candidates as multiples of 3m
+        # for each k ascent for k * t(3m) + dt seconds and check if ceiling
+        # limit invariant is not violated; k * t(3m) + dt formula gives
+        # first stop candidates as multiples of 3m
         f = lambda k, step: self._inv_limit(
             self._step_next_ascent(step, k * ts_3m + dt, gas)
         )
