@@ -302,6 +302,24 @@ class EngineTestCase(unittest.TestCase):
 
 
     @mock.patch('decotengu.engine.bisect_find')
+    def test_first_stop_finder_end(self, f_bf):
+        """
+        Test first deco stop finder when starting and ending depths are at deco stop depth
+
+        Above means that `n` passed to `bisect_find` is `0`. Should not be
+        possible, but let's be defensive here.
+        """
+        start = _step(Phase.ASCENT, 2.3, 1200)
+        self.engine._step_next_ascent = mock.MagicMock()
+
+        f_bf.return_value = 0
+        # (2.3 - 2.2) results in n == 0
+        stop = self.engine._find_first_stop(start, 2.2, AIR)
+        self.assertFalse(self.engine._step_next_ascent.called)
+        self.assertEquals(start.abs_p, stop)
+
+
+    @mock.patch('decotengu.engine.bisect_find')
     def test_first_stop_finder_steps(self, f_bf):
         """
         Test if first deco stop finder calculates proper amount of steps (depth=0m)

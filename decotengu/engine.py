@@ -483,12 +483,13 @@ class Engine(object):
         # find largest k for which ascent without decompression is possible
         k = bisect_find(n, f, start)
 
-        if k == n:
-            abs_p = None
-            logger.debug('find first stop: no deco zone found')
-        elif k == 0:
+        # check `k == 0` before `k == n` in case `n == 0`
+        if k == 0:
             abs_p = start.abs_p
             logger.debug('already at deco zone')
+        elif k == n:
+            abs_p = None
+            logger.debug('find first stop: no deco zone found')
         else:
             t = k * ts_3m + dt
             abs_p = start.abs_p - self._time_to_pressure(t, self.ascent_rate)
@@ -499,8 +500,10 @@ class Engine(object):
 
         if __debug__:
             depth = self._to_depth(abs_p) if abs_p else None
-            assert not depth or depth % 3 == 0, 'Invalid first stop depth' \
-                ' pressure {}bar ({}m)'.format(abs_p, depth)
+            assert abs_p == start.abs_p or not depth or depth % 3 == 0, \
+                'Invalid first stop depth pressure {}bar ({}m)'.format(
+                    abs_p, depth
+                )
 
         return abs_p
 
