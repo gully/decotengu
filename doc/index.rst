@@ -36,6 +36,7 @@ Table of Contents
    usage
    cmd
    model
+   algo
    design
    api
    changelog
