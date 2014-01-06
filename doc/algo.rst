@@ -30,12 +30,45 @@ Finding First Decompression Stop
 
 Finding Length of Decompression Stop
 ------------------------------------
-The algorithm calculates for how long a diver should remain at given
-decompression stop (time in minutes). The algorithm proposes various
-decompression time values and for each of them simulates stay at given
-decompression stop and checks if ascent to next decompression stop is
-possible. The check is performed using decompression model ascent ceiling
-method. The algorithm finds the smallest decompression time value after
-which ascent to next decompression stop is possible.
+The algorithm calculates time length of decompression stop, which is the
+time a diver should remain at depth of the stop before moving to the next
+stop to avoid decompression sickness. The time is measured in minutes.
+
+The algorithm tries multiple decompression time values and checks if
+ascent to next decompression stop is possible after proposed time. The
+smallest time value, after which the ascent is possible, is the solution of
+the algorithm.
+
+The initial range of time values is found using linear search and then
+narrowed to the exact value with binary search. We assume knowledge of
+these two search algorithms.
+
+The check if ascent to next decompression stop is possible is performed
+with the following steps
+
+- simulate stay at depth of decompression stop for proposed time value
+- ascend to the depth of next decompression stop
+- check if ascent ceiling is not violated
+
+The algorithm finding length of decompression stop is
+
+#. Let start of initial range :math:`t_s = 0`.
+#. Let width of initial range :math:`dt = 64`.
+#. Using linear search find initial range :math:`(t_s, t_s + dt)`, such
+   that ascent to next decompression stop
+
+   a) *Is not* possible after time :math:`t_s`.
+   b) And *is* possible after time :math:`t_s + dt`.
+
+#. Let decompression stop time length :math:`t = t_s`.
+#. Let binary search range be initial range :math:`(t_s, t_s + dt)`.
+#. Using binary search find smallest time value :math:`t`, such that
+   :math:`t_s < t <= t_s + dt` and ascent to next decompression stop is
+   possible.
+#. Return :math:`t`.
+
+The complexity of the algorithm is :math:`O(n / 64 + log(n))`, where
+:math:`n = t`. It depends on the complexity of linear search and binary
+search algorithms.
 
 .. vim: sw=4:et:ai
