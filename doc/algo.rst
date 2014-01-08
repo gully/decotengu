@@ -27,6 +27,25 @@ Ascent to Surface
 
 Finding First Decompression Stop
 --------------------------------
+The algorithm calculates absolute pressure of first decompression stop. The
+first decompression stop is at shallowest depth, which is outside dive
+decompression zone. The stop is at depth divisible by 3, it is measured in
+meters and its absolute pressure is measured in bars.
+
+The calculation is performed between current depth and target depth. The
+target depth is the surface or gas mix switch.
+
+The algorithm tries multiple ascent time values such that ascent by
+proposed time value is finished at depth divisible by 3 and checks if
+ascent does not violate ascent ceiling. The largest such time value defines
+the first decompression stop.
+
+The times values are proposed using binary search algorithm. The knowledge
+of this algorithm is assumed.
+
+The algorithm returns null if no decompression stop is found (ascent to
+target depth does not involve decompression). It returns current depth if
+a diver is already in decompression zone.
 
 Finding Length of Decompression Stop
 ------------------------------------
