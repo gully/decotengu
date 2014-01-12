@@ -55,7 +55,7 @@ The algorithm finding first decompression stop is
    depth.
 #. Let :math:`dt = t` mod :math:`t_{3m}`.
 #. Let :math:`n = t` div :math:`t_{3m}`.
-#. Using binary search find :math:`k` such that :math:`0 <= k <= n` and
+#. Using binary search find :math:`k` such that :math:`0 \le k \le n` and
    ascent by time :math:`k * t_{3m} + dt` is possible without violating
    ascent ceiling.
 #. If :math:`k = 0`, then return absolute pressure of current depth.
@@ -98,7 +98,7 @@ The algorithm finding length of decompression stop is
 #. Let decompression stop time length :math:`t = t_s`.
 #. Let binary search range be initial range :math:`(t_s, t_s + dt)`.
 #. Using binary search find smallest time value :math:`t`, such that
-   :math:`t_s < t <= t_s + dt` and ascent to next decompression stop is
+   :math:`t_s < t \le t_s + dt` and ascent to next decompression stop is
    possible.
 #. Return :math:`t`.
 
