@@ -32,20 +32,36 @@ first decompression stop is at shallowest depth, which is outside dive
 decompression zone. The stop is at depth divisible by 3, it is measured in
 meters and its absolute pressure is measured in bars.
 
-The calculation is performed between current depth and target depth. The
-target depth is the surface or gas mix switch.
+The calculation is performed between absolute pressure of current depth and
+absolute pressure of target depth. The target depth is the surface or any
+other depth divisible by 3 (i.e. gas mix switch depth).
 
 The algorithm tries multiple ascent time values such that ascent by
 proposed time value is finished at depth divisible by 3 and checks if
 ascent does not violate ascent ceiling. The largest such time value defines
 the first decompression stop.
 
-The times values are proposed using binary search algorithm. The knowledge
-of this algorithm is assumed.
+The time values are proposed using binary search algorithm. We assume
+knowledge of this algorithm.
 
 The algorithm returns null if no decompression stop is found (ascent to
 target depth does not involve decompression). It returns current depth if
 a diver is already in decompression zone.
+
+The algorithm finding first decompression stop is
+
+#. Let :math:`t_{3m}` be time required to ascend by 3 meters.
+#. Let :math:`t` be time required to ascend from current depth to target
+   depth.
+#. Let :math:`dt = t` mod :math:`t_{3m}`.
+#. Let :math:`n = t` div :math:`t_{3m}`.
+#. Using binary search find :math:`k` such that :math:`0 <= k <= n` and
+   ascent by time :math:`k * t_{3m} + dt` is possible without violating
+   ascent ceiling.
+#. If :math:`k = 0`, then return absolute pressure of current depth.
+#. If :math:`k = n`, then return null.
+#. Otherwise, return absolute pressure of depth after ascent by time
+   :math:`k * t_{3m} + dt`.
 
 Finding Length of Decompression Stop
 ------------------------------------
