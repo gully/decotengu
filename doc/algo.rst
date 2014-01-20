@@ -70,7 +70,7 @@ The ascent to surface algorithm is
 
    a) Let `step` be ascent dive step from bottom depth to the surface and
       `steps.append(step)`.
-   c) Return `steps`.
+   b) Return `steps`.
 
 #. Let `stages` be free ascent stages.
 #. For each `stage` in `stages`
