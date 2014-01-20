@@ -24,6 +24,88 @@ Obviously, the last two algorithms are used by the very first one.
 
 Ascent to Surface
 -----------------
+The algorithm calulcates dive steps required to ascent from current depth
+to the surface.
+
+The ascent involves
+
+- ascent without decompression stops
+- ascent performing decompression stops
+- gas mix switches
+
+Ascent is divided into ascent stages using gas mix switch depths. There are
+two types of ascent stages
+
+- free ascent stage, which involves no decompression stops
+- decompression ascent stage, which is ascent executing decompression stops
+
+Ascent is performed from current depth to target depth
+
+- current depth can be the bottom depth or depth of last gas mix switch
+  (`stage.depth` and `stage.gas` is current gas mix switch; therefore
+  `stage.gas` can be bottom gas mix or decompression gas mix)
+- target depth can be depth of next gas mix switch or the surface
+  (`stage.target`)
+
+Current depth of first free ascent stage is bottom depth. Current depth 
+of each of the rest free ascent stages is rounded down to depth divisible
+by 3. Target depth of free ascent stage is rounded up to depth divisible by
+3, i.e. 22m to 24m. If gas mix switch depth is at depth divisible by 3, the
+gas mix switch is performed in one dive step. Otherwise, it is done in
+three dive steps
+
+- ascent from `stage.depth` to gas mix switch depth, i.e. 24m to 22m
+- gas mix switch, i.e. at 22m
+- ascent to next depth divisible by 3, i.e. from 22m to 21m
+
+Target depth of decompression ascent stage is rounded down to depth
+divisible by 3, i.e. 10m to 9m. No gas mix switch is done at depths
+between decompression stops. Gas mix switch is performed at the very
+beginning of a decompression stop.
+
+The ascent to surface algorithm is
+
+#. Let :math:`steps = []`.
+#. If dive is NDL dive
+
+   a) Let `step` be ascent dive step from bottom depth to the surface and
+      `steps.append(step)`.
+   c) Return `steps`.
+
+#. Let `stages` be free ascent stages.
+#. For each `stage` in `stages`
+
+   a) If not first stage, let `gas_steps` be gas mix switch dive steps.
+   b) `steps.extend(gas_steps)`.
+   c) Find absolute pressure of depth of first decompression stop. Search
+      between `stage.depth` and `stage.target`.
+   d) If found
+
+      a) Let `step` be ascent dive step from `stage.depth` to depth of
+         first decompression stop and `steps.append(step)`.
+      b) Break loop.
+
+   e) If not found, let `step` be ascent dive step from `stage.depth` to
+      `stage.target` and `steps.append(step)`.
+
+   f) If in decompression zone already, break loop.
+
+#. Let `stages` be decompression ascent stages.
+#. For each `stage` in `stages`
+
+   a) If `stage.gas` not bottom gas mix, let `step` be gas mix switch dive
+      step and `steps.append(step)`.
+   b) Let `stops` be decompression stops between `stage.depth` (inclusive)
+      and `stage.target` (exclusive).
+   c) For each `stop` in `stops`
+
+      a) Find time length :math:`t` of decompression stop.
+      b) Let `step` be decompression dive step lasting for time :math:`t`
+         and `steps.append(step)`.
+      c) Let `step` be ascent dive step to next decompression stop or the
+         surface and `steps.append(step)`.
+
+#. Return `steps`.
 
 Finding First Decompression Stop
 --------------------------------
