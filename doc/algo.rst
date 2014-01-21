@@ -60,8 +60,17 @@ Otherwise, it is done in three dive steps
 
 Target depth of decompression ascent stage is rounded down to depth
 divisible by 3, i.e. 10m to 9m. No gas mix switch is done at depths
-between decompression stops. Gas mix switch is performed at the very
-beginning of a decompression stop.
+between decompression stops - it is not practical. Gas mix switch is
+performed at the very beginning of a decompression stop.
+
+The purpose of the above current and target depths restrictions for free
+ascent and decompression ascent stages is to
+
+- enable gas mix switch at any depth without violating ascent ceiling
+  (free ascent only), which can happen when gas mix switch is near first
+  decompression stop
+- not breach PPO2 limit of a gas mix (in implicit way, implied by depth of
+  gas mix switch)
 
 The ascent to surface algorithm is
 
@@ -75,8 +84,13 @@ The ascent to surface algorithm is
 #. Let `stages` be free ascent stages.
 #. For each `stage` in `stages`
 
-   a) If not first stage, let `gas_steps` be gas mix switch dive steps and
-      `steps.extend(gas_steps)`.
+   a) If not first stage
+
+      a) Let `gas_steps` be gas mix switch dive steps.
+      b) If any of dive steps in `gas_steps` results in violating ascent
+         ceiling, break the loop.
+      c) Otherwise `steps.extend(gas_steps)`.
+
    b) Find absolute pressure of depth of first decompression stop. Search
       between `stage.depth` and `stage.target`.
    c) If found
