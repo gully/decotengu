@@ -41,18 +41,18 @@ two types of ascent stages
 
 Ascent is performed from current depth to target depth
 
-- current depth can be the bottom depth or depth of last gas mix switch
-  (`stage.depth` and `stage.gas` is current gas mix switch; therefore
+- current depth is the bottom depth or depth of last gas mix switch
+  (`stage.depth` is current depth and `stage.gas` is last gas mix;
   `stage.gas` can be bottom gas mix or decompression gas mix)
-- target depth can be depth of next gas mix switch or the surface
-  (`stage.target`)
+- target depth (`stage.target`) can be depth of next gas mix switch or the
+  surface
 
 Current depth of first free ascent stage is bottom depth. Current depth 
 of each of the rest free ascent stages is rounded down to depth divisible
-by 3. Target depth of free ascent stage is rounded up to depth divisible by
-3, i.e. 22m to 24m. If gas mix switch depth is at depth divisible by 3, the
-gas mix switch is performed in one dive step. Otherwise, it is done in
-three dive steps
+by 3, i.e. 22m to 21m. Target depth of free ascent stage is rounded up to
+depth divisible by 3, i.e. 22m to 24m. If gas mix switch depth is at depth
+divisible by 3, the gas mix switch is performed in one dive step.
+Otherwise, it is done in three dive steps
 
 - ascent from `stage.depth` to gas mix switch depth, i.e. 24m to 22m
 - gas mix switch, i.e. at 22m
@@ -75,20 +75,20 @@ The ascent to surface algorithm is
 #. Let `stages` be free ascent stages.
 #. For each `stage` in `stages`
 
-   a) If not first stage, let `gas_steps` be gas mix switch dive steps.
-   b) `steps.extend(gas_steps)`.
-   c) Find absolute pressure of depth of first decompression stop. Search
+   a) If not first stage, let `gas_steps` be gas mix switch dive steps and
+      `steps.extend(gas_steps)`.
+   b) Find absolute pressure of depth of first decompression stop. Search
       between `stage.depth` and `stage.target`.
-   d) If found
+   c) If found
 
       a) Let `step` be ascent dive step from `stage.depth` to depth of
          first decompression stop and `steps.append(step)`.
       b) Break loop.
 
-   e) If not found, let `step` be ascent dive step from `stage.depth` to
+   d) If not found, let `step` be ascent dive step from `stage.depth` to
       `stage.target` and `steps.append(step)`.
 
-   f) If in decompression zone already, break loop.
+   e) If in decompression zone already, break loop.
 
 #. Let `stages` be decompression ascent stages.
 #. For each `stage` in `stages`
