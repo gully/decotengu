@@ -1,5 +1,10 @@
 Changelog
 =========
+DecoTengu 0.7.0
+---------------
+- added documentation section about algorithms related to dive ascent
+- various bug fixes
+
 DecoTengu 0.6.0
 ---------------
 - dive time changed to be dive bottom time (includes descent time)
