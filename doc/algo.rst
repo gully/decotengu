@@ -29,9 +29,13 @@ to the surface.
 
 The ascent involves
 
+- check if dive is NDL dive
 - ascent without decompression stops
 - ascent performing decompression stops
 - gas mix switches
+
+A dive is NDL dive if it is possible to ascend from the bottom depth to the
+surface using bottom gas mix and without executing decompression stops.
 
 Ascent is divided into ascent stages using gas mix switch depths. There are
 two types of ascent stages
