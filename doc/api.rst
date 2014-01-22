@@ -17,6 +17,7 @@ Core API
 
 .. autoclass:: decotengu.Engine
    :members:
+   :private-members:
 
 .. autoclass:: decotengu.DecoTable
    :members:

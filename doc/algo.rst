@@ -122,6 +122,9 @@ The ascent to surface algorithm is
 
 #. Return `steps`.
 
+The algorithm is implemented by :func:`decotengu.Engine._dive_ascent`
+method.
+
 Finding First Decompression Stop
 --------------------------------
 The algorithm calculates absolute pressure of first decompression stop. The
@@ -163,6 +166,9 @@ The algorithm finding first decompression stop is
 The complexity of the algorithm is :math:`O(log(n))`, where :math:`n` is
 ceiling of current depth divided by 3 number. It depends on complexity
 of binary search algorithm.
+
+The algorithm is implemented by :func:`decotengu.Engine._find_first_stop`
+method.
 
 Finding Length of Decompression Stop
 ------------------------------------
@@ -206,5 +212,8 @@ The algorithm finding length of decompression stop is
 The complexity of the algorithm is :math:`O(n / 64 + log(n))`, where
 :math:`n = t`. It depends on the complexity of linear search and binary
 search algorithms.
+
+The algorithm is implemented within :func:`decotengu.Engine._deco_stop`
+method.
 
 .. vim: sw=4:et:ai
