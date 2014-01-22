@@ -159,6 +159,10 @@ The algorithm finding first decompression stop is
 #. Otherwise, return absolute pressure of depth after ascent by time
    :math:`k * t_{3m} + dt`.
 
+The complexity of the algorithm is :math:`O(log(n))`, where :math:`n` is
+ceiling of current depth divided by 3 number. It depends on complexity
+of binary search algorithm.
+
 Finding Length of Decompression Stop
 ------------------------------------
 The algorithm calculates time length of decompression stop, which is the
