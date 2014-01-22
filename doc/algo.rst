@@ -1,3 +1,5 @@
+.. _algo:
+
 Algorithms
 ==========
 Most of the DecoTengu calculations, i.e. dive descent or tissue saturation

@@ -337,9 +337,8 @@ for the first tissue compartment, gives us ceiling limit  at about 8m. After
 ascent to 10m, the ceiling limit changes to about 7m - the first tissue
 compartment desaturates during ascent. This suggests, that a non-trivial
 algorithm will be required to find exact depth of first decompression stop,
-which has to be calculated for each tissue compartment.
-
-.. todo:: Add reference to algorithm section, when it is created.
+which has to be calculated for each tissue compartment (see :ref:`algo`
+section).
 
 Calculations
 ------------
