@@ -844,12 +844,12 @@ class Engine(object):
         """
         Calculate decompression stop.
 
-        The length of a decompression stop is guarded by gradient factor
-        start value and gradient factor step - the decompression stop lasts
-        until it is allowed to ascent to next stop
-        (see func:`Engine._inv_deco_stop` method).
+        The length of a decompression stop is guarded by gradient factor of
+        next decompression stop - the current decompression stop lasts
+        until it is allowed to ascent to next stop (see
+        func:`Engine._inv_deco_stop` method).
 
-        :param step: Start of decompression stop.
+        :param step: Start of current decompression stop.
         :param time: Time required to ascent to next deco stop [s].
         :param gas: Gas mix configuration.
         :param gf: Gradient factor value of next decompression stop.
