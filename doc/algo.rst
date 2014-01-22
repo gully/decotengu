@@ -93,15 +93,10 @@ The ascent to surface algorithm is
 
    b) Find absolute pressure of depth of first decompression stop. Search
       between `stage.depth` and `stage.target`.
-   c) If found
-
-      a) Let `step` be ascent dive step from `stage.depth` to depth of
-         first decompression stop and `steps.append(step)`.
-      b) Break loop.
-
+   c) If found, let `step` be ascent dive step from `stage.depth` to depth
+      of first decompression stop and `steps.append(step)` and break loop.
    d) If not found, let `step` be ascent dive step from `stage.depth` to
       `stage.target` and `steps.append(step)`.
-
    e) If in decompression zone already, break loop.
 
 #. Let `stages` be decompression ascent stages.
