@@ -808,8 +808,9 @@ class Engine(object):
 
         The method returns collection of tuples
 
-        - destination depth (see :func:`Engine._deco_ascent_stages` method)
-        - gas mix (see :func:`Engine._deco_ascent_stages` method)
+        - destination depth (see :func:`decotengu.Engine._deco_ascent_stages`
+          method)
+        - gas mix (see :func:`decotengu.Engine._deco_ascent_stages` method)
         - time required to ascent to next decompression stops (usually time
           required to ascent by 3m)
         - gradient factor value for next decompression stop or surface
@@ -847,7 +848,7 @@ class Engine(object):
         The length of a decompression stop is guarded by gradient factor of
         next decompression stop - the current decompression stop lasts
         until it is allowed to ascent to next stop (see
-        func:`Engine._inv_deco_stop` method).
+        :func:`decotengu.Engine._inv_deco_stop` method).
 
         :param step: Start of current decompression stop.
         :param time: Time required to ascent to next deco stop [s].
