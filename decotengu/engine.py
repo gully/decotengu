@@ -616,6 +616,7 @@ class Engine(object):
            switch depth is 0m.
         #. All travel gas mixes have different switch depth.
         #. All decompression gas mixes have different switch depth.
+        #. All decompression gas mixes have switch depth greater than zero.
         #. There is no gas mix with switch depth deeper than maximum dive
            depth.
 
@@ -635,12 +636,15 @@ class Engine(object):
             )
 
         k = len(self._gas_list[1:])
-        depths = (m.depth for m in self._gas_list[1:])
+        depths = [m.depth for m in self._gas_list[1:]]
         if len(set(depths)) != k:
             raise ConfigError(
                 'Two or more decompression gas mixes have the same'
                 ' switch depth'
             )
+
+        if any(d == 0 for d in depths):
+            raise ConfigError('Decompression gas mix switch depth is 0m')
 
         mixes = self._gas_list + self._travel_gas_list
         mixes = [m for m in mixes if m.depth > depth]

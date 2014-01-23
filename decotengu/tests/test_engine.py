@@ -1038,6 +1038,15 @@ class GasMixTestCase(unittest.TestCase):
         self.assertRaises(ConfigError, self.engine._validate_gas_list, 56)
 
 
+    def test_gas_list_validation_deco_depth_non_zero(self):
+        """
+        Test gas list validation rule about deco gas mixes depths > 0
+        """
+        self.engine.add_gas(0, 21)
+        self.engine.add_gas(0, 50)
+        self.assertRaises(ConfigError, self.engine._validate_gas_list, 56)
+
+
     def test_gas_list_validation_travel_depth(self):
         """
         Test gas list validation rule about travel gas mixes depths
