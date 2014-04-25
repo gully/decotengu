@@ -59,7 +59,7 @@ def eq_schreiner_t(abs_p, time, gas, rate, pressure, half_life, texp,
     :param wvp: Water vapour pressure.
     """
     palv = gas * (abs_p - wvp)
-    t = time / 60.0
+    t = time / 60
     k = LOG_2 / half_life
     r = gas * rate
     return palv + r * (t - 1 / k) - (palv - pressure - r / k) * texp
