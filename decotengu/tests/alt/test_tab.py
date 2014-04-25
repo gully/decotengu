@@ -63,12 +63,21 @@ class TabularTissueCalculatorTestCase(unittest.TestCase):
         """
         Test tabular tissue calculator tissue gas loading (>= 3m)
         """
-        f.return_value = 2
+        f.side_effect = [2, 0]
         m = ZH_L16B_GF()
         c = TabTissueCalculator(m.N2_HALF_LIFE, m.HE_HALF_LIFE)
-        v = c.load_tissue(4, 144, AIR, -1, 3, 1)
-        f.assert_called_once_with(4, 144, 0.79, -1, 3, 8.0, 0.8122523963562355)
-        self.assertEquals(2, v)
+        v = c.load_tissue(4, 144, AIR, -1, 3, 0, 1)
+
+        self.assertEquals(2, f.call_count)
+        self.assertEquals((2, 0), v)
+
+        args = f.call_args_list
+        self.assertEquals(
+            (4, 144, 0.79, -1, 3, 8.0, 0.8122523963562355), args[0][0]
+        )
+        self.assertEquals(
+            (4, 144, 0.0, -1, 0, 3.02, 0.5764622392002223), args[1][0]
+        )
 
 
     @mock.patch('decotengu.alt.tab.eq_schreiner_t')
@@ -76,12 +85,21 @@ class TabularTissueCalculatorTestCase(unittest.TestCase):
         """
         Test tabular tissue calculator tissue gas loading (1m)
         """
-        f.return_value = 2
+        f.side_effect = [2, 0]
         m = ZH_L16B_GF()
         c = TabTissueCalculator(m.N2_HALF_LIFE, m.HE_HALF_LIFE)
-        v = c.load_tissue(4, 6, AIR, -1, 3, 1)
-        f.assert_called_once_with(4, 6, 0.79, -1, 3, 8.0, 0.9913730874626621)
-        self.assertEquals(2, v)
+        v = c.load_tissue(4, 6, AIR, -1, 3, 1, 1)
+
+        self.assertEquals(2, f.call_count)
+        self.assertEquals((2, 0), v)
+
+        args = f.call_args_list
+        self.assertEquals(
+            (4, 6, 0.79, -1, 3, 8.0, 0.9913730874626621), args[0][0]
+        )
+        self.assertEquals(
+            (4, 6, 0.0, -1, 1, 3.02, 0.9773094976833946), args[1][0]
+        )
 
 
     @mock.patch('decotengu.alt.tab.eq_schreiner_t')
@@ -89,12 +107,21 @@ class TabularTissueCalculatorTestCase(unittest.TestCase):
         """
         Test tabular tissue calculator tissue gas loading (2m)
         """
-        f.return_value = 2
+        f.side_effect = [2, 0]
         m = ZH_L16B_GF()
         c = TabTissueCalculator(m.N2_HALF_LIFE, m.HE_HALF_LIFE)
-        v = c.load_tissue(4, 12, AIR, -1, 3, 1)
-        f.assert_called_once_with(4, 12, 0.79, -1, 3, 8.0, 0.9828205985452511)
-        self.assertEquals(2, v)
+        v = c.load_tissue(4, 12, AIR, -1, 3, 1, 1)
+
+        self.assertEquals(2, f.call_count)
+        self.assertEquals((2, 0), v)
+
+        args = f.call_args_list
+        self.assertEquals(
+            (4, 12, 0.79, -1, 3, 8.0, 0.9828205985452511), args[0][0]
+        )
+        self.assertEquals(
+            (4, 12, 0.0, -1, 1, 3.02, 0.9551338542621691), args[1][0]
+        )
 
 
     @mock.patch('decotengu.alt.tab.eq_schreiner_t')
@@ -102,12 +129,21 @@ class TabularTissueCalculatorTestCase(unittest.TestCase):
         """
         Test tabular tissue calculator tissue gas loading (10m)
         """
-        f.return_value = 2
+        f.side_effect = [2, 0]
         m = ZH_L16B_GF()
         c = TabTissueCalculator(m.N2_HALF_LIFE, m.HE_HALF_LIFE)
-        v = c.load_tissue(4, 60, AIR, -1, 3, 1)
-        f.assert_called_once_with(4, 60, 0.79, -1, 3, 8.0, 0.9170040432046712)
-        self.assertEquals(2, v)
+        v = c.load_tissue(4, 60, AIR, -1, 3, 1, 1)
+
+        self.assertEquals(2, f.call_count)
+        self.assertEquals((2, 0), v)
+
+        args = f.call_args_list
+        self.assertEquals(
+            (4, 60, 0.79, -1, 3, 8.0, 0.9170040432046712), args[0][0]
+        )
+        self.assertEquals(
+            (4, 60, 0.0, -1, 1, 3.02, 0.7949159175889702), args[1][0]
+        )
 
 
 

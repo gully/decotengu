@@ -78,15 +78,24 @@ class TabTissueCalculator(TissueCalculator):
     Calculate tissue gas loading using precomputed values for exp and ln
     functions.
 
-    :var _exp_time: Collection of precomputed values for exp function
-                    between 3m and max depth change (every 3m, 6s at
-                    10m/min) allowed by the calculator.
-    :var _exp_: Precomputed values for exp function for 1m (6s at 10m/min)
-                depth change.
-    :var _exp_: Precomputed values for exp function for 2m (12s at 10m/min)
-                depth change.
-    :var _exp_: Precomputed values for exp function for 10m (1min at
-                10m/min) depth change.
+    :var _n2_exp_time: Collection of precomputed values for exp function
+        between 3m and max depth change allowed by the calculator (every
+        3m, 6s at 10m/min). For nitrogen.
+    :var _n2_exp_1m: Precomputed Nitrogen values for exp function for 1m depth
+        change (6s at 10m/min). For nitrogen.
+    :var _n2_exp_2m: Precomputed values for exp function for 2m depth
+        change (12s at 10m/min). For nitrogen.
+    :var _n2_exp_10m: Precomputed values for exp function for 10m depth
+        change (1min at 10m/min). For nitrogen.
+    :var _he_exp_time: Collection of precomputed values for exp function
+        between 3m and max depth change allowed by the calculator (every
+        3m, 6s at 10m/min). For helium.
+    :var _he_exp_1m: Precomputed Nitrogen values for exp function for 1m depth
+        change (6s at 10m/min). For helium.
+    :var _he_exp_2m: Precomputed values for exp function for 2m depth
+        change (12s at 10m/min). For helium.
+    :var _he_exp_10m: Precomputed values for exp function for 10m depth
+        change (1min at 10m/min). For helium.
     :var max_depth: Maximum depth change allowed by the calculator.
     :var max_time: Maximum time change allowed by the calculator.
     """
@@ -106,6 +115,10 @@ class TabTissueCalculator(TissueCalculator):
         self._n2_exp_1m = exposure_t(6, self.n2_half_life)
         self._n2_exp_2m = exposure_t(12, self.n2_half_life)
         self._n2_exp_10m = exposure_t(60, self.n2_half_life)
+        self._he_exp_time = [exposure_t(t, self.he_half_life) for t in times]
+        self._he_exp_1m = exposure_t(6, self.he_half_life)
+        self._he_exp_2m = exposure_t(12, self.he_half_life)
+        self._he_exp_10m = exposure_t(60, self.he_half_life)
 
         self.max_depth = MAX_DEPTH
         self.max_time = self.max_depth * 6
@@ -114,29 +127,40 @@ class TabTissueCalculator(TissueCalculator):
         ))
 
 
-    def load_tissue(self, abs_p, time, gas, rate, pressure, tissue_no):
+    def load_tissue(self, abs_p, time, gas, rate, p_n2, p_he, tissue_no):
         """
         Calculate gas loading of a tissue.
 
-        :var abs_p: Absolute pressure [bar] (current depth).
-        :var time: Time of exposure [second] (i.e. time of ascent).
-        :var gas: Gas mix configuration.
-        :var rate: Pressure rate change [bar/min].
-        :var pressure: Current tissue pressure [bar].
-        :var tissue_no: Tissue number.
+        :param abs_p: Absolute pressure [bar] (current depth).
+        :param time: Time of exposure [second] (i.e. time of ascent).
+        :param gas: Gas mix configuration.
+        :param rate: Pressure rate change [bar/min].
+        :param p_n2: N2 pressure in current tissue compartment [bar].
+        :param p_he: He pressure in Current tissue compartment [bar].
+        :param tissue_no: Tissue number.
         """
-        hl = self.n2_half_life[tissue_no]
+        n2_hl = self.n2_half_life[tissue_no]
+        he_hl = self.he_half_life[tissue_no]
         if time == 60:
-            texp = self._n2_exp_10m[tissue_no]
+            n2_exp = self._n2_exp_10m[tissue_no]
+            he_exp = self._he_exp_10m[tissue_no]
         elif time == 6:
-            texp = self._n2_exp_1m[tissue_no]
+            n2_exp = self._n2_exp_1m[tissue_no]
+            he_exp = self._he_exp_1m[tissue_no]
         elif time == 12:
-            texp = self._n2_exp_2m[tissue_no]
+            n2_exp = self._n2_exp_2m[tissue_no]
+            he_exp = self._he_exp_2m[tissue_no]
         else:
             idx = int(time / 18) - 1
-            texp = self._n2_exp_time[idx][tissue_no]
-        p = eq_schreiner_t(abs_p, time, gas.n2 / 100, rate, pressure, hl, texp)
-        return p
+            n2_exp = self._n2_exp_time[idx][tissue_no]
+            he_exp = self._he_exp_time[idx][tissue_no]
+        p_n2 = eq_schreiner_t(
+            abs_p, time, gas.n2 / 100, rate, p_n2, n2_hl, n2_exp
+        )
+        p_he = eq_schreiner_t(
+            abs_p, time, gas.he / 100, rate, p_he, he_hl, he_exp
+        )
+        return p_n2, p_he
 
 
 
