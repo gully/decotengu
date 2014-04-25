@@ -117,8 +117,6 @@ attributes::
 
 """
 
-from functools import wraps
-
 from .engine import Engine, DecoTable
 from .model import ZH_L16B_GF, ZH_L16C_GF, DecoModelValidator
 from .flow import sender
