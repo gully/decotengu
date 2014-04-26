@@ -372,7 +372,7 @@ import math
 import logging
 
 from .error import EngineError
-from .const import WATER_VAPOUR_PRESSURE_DEFAULT
+from . import const
 from .flow import coroutine
 
 logger = logging.getLogger(__name__)
@@ -388,7 +388,7 @@ Data for ZH-L16-GF decompression model.
 
 
 def eq_schreiner(abs_p, time, gas, rate, pressure, half_life,
-        wvp=WATER_VAPOUR_PRESSURE_DEFAULT):
+        wvp=const.WATER_VAPOUR_PRESSURE_DEFAULT):
     """
     Calculate pressure in a tissue compartment using Schreiner equation.
 
@@ -619,7 +619,7 @@ class TissueCalculator(object):
         Create tissue calcuator.
         """
         super().__init__()
-        self.water_vapour_pressure = WATER_VAPOUR_PRESSURE_DEFAULT
+        self.water_vapour_pressure = const.WATER_VAPOUR_PRESSURE_DEFAULT
         self.n2_half_life = n2_half_life
         self.he_half_life = he_half_life
 

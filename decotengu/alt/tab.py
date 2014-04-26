@@ -34,17 +34,16 @@ import logging
 
 from ..engine import Phase
 from ..model import TissueCalculator
-from ..const import WATER_VAPOUR_PRESSURE_DEFAULT
+from .. import const
 from ..ft import recurse_while, bisect_find
 
 logger = logging.getLogger(__name__)
 
-LOG_2 = 0.6931471805599453
 MAX_DEPTH = 24
 
 
 def eq_schreiner_t(abs_p, time, gas, rate, pressure, half_life, texp,
-        wvp=WATER_VAPOUR_PRESSURE_DEFAULT):
+        wvp=const.WATER_VAPOUR_PRESSURE_DEFAULT):
     """
     Calculate gas loading using Schreiner equation and precomputed values
     of exp and ln functions.
@@ -60,7 +59,7 @@ def eq_schreiner_t(abs_p, time, gas, rate, pressure, half_life, texp,
     """
     palv = gas * (abs_p - wvp)
     t = time / 60
-    k = LOG_2 / half_life
+    k = const.LOG_2 / half_life
     r = gas * rate
     return palv + r * (t - 1 / k) - (palv - pressure - r / k) * texp
 
@@ -74,7 +73,7 @@ def exposure_t(time, half_life):
     :param half_life: Collection of half-life values for each tissue
         compartment.
     """
-    p = (math.exp(-time * LOG_2 / hl / 60) for hl in half_life)
+    p = (math.exp(-time * const.LOG_2 / hl / 60) for hl in half_life)
     return tuple(p)
 
 
