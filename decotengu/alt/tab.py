@@ -55,7 +55,7 @@ def eq_schreiner_t(abs_p, time, gas, rate, pressure, half_life, texp,
     :param rate: Pressure rate change [bar/min].
     :param pressure: Current tissue pressure [bar].
     :param half_life: Current tissue compartment half-life constant value.
-    :param texp: Value of exp function for current tissue and time of exposure.
+    :param texp: Value of `exp` function for current tissue and time of exposure.
     :param wvp: Water vapour pressure.
     """
     palv = gas * (abs_p - wvp)
@@ -65,8 +65,15 @@ def eq_schreiner_t(abs_p, time, gas, rate, pressure, half_life, texp,
     return palv + r * (t - 1 / k) - (palv - pressure - r / k) * texp
 
 
-
 def exposure_t(time, half_life):
+    """
+    Precalculate value of `exp` function for given time and tissue
+    compartment half-life values.
+
+    :param time: Time of exposure [s].
+    :param half_life: Collection of half-life values for each tissue
+        compartment.
+    """
     p = (math.exp(-time / 60 * math.log(2) / hl) for hl in half_life)
     return tuple(p)
 
