@@ -74,7 +74,7 @@ def exposure_t(time, half_life):
     :param half_life: Collection of half-life values for each tissue
         compartment.
     """
-    p = (math.exp(-time / 60 * math.log(2) / hl) for hl in half_life)
+    p = (math.exp(-time * LOG_2 / hl / 60) for hl in half_life)
     return tuple(p)
 
 

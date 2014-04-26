@@ -21,7 +21,10 @@
 Tabular tissue calculator tests.
 """
 
-from decotengu.alt.tab import eq_schreiner_t, TabTissueCalculator, FirstStopTabFinder
+from decimal import Decimal
+
+from decotengu.alt.tab import eq_schreiner_t, exposure_t, \
+    TabTissueCalculator, FirstStopTabFinder
 from decotengu.model import ZH_L16B_GF, ZH_L16C_GF, Data
 from decotengu.engine import Phase
 
@@ -51,6 +54,36 @@ class SchreinerTabularEquationTestCase(unittest.TestCase):
         # rate == 1 bar/min
         v = eq_schreiner_t(4, 60, 0.79, 1, 3, 5.0, 0.8705505632961241)
         self.assertAlmostEqual(3.06661, v, 4)
+
+
+
+class ExposureTestCase(unittest.TestCase):
+    """
+    Tests for `exp` function calculator.
+    """
+    def setUp(self):
+        """
+        Override of LOG_2 constant in decotengu.alt.tab module.
+        """
+        import decotengu.alt.tab as tab
+        self.tab = tab
+        self.log_2 = self.tab.LOG_2
+        self.tab.LOG_2 = Decimal(self.tab.LOG_2)
+
+
+    def tearDown(self):
+        """
+        Revert override of LOG_2 constant in decotengu.alt.tab module.
+        """
+        self.tab.LOG_2 = self.log_2
+
+
+    def test_dec_friendly(self):
+        """
+        Test if exposure_t function is decimal friendly
+        """
+        v = exposure_t(1, [Decimal('8.0')])
+        self.assertEquals((0.9985569855219026,), v)
 
 
 
