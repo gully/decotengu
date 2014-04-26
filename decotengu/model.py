@@ -441,8 +441,6 @@ class ZH_L16_GF(object):
 
     :var gf_low: Gradient factor low parameter.
     :var gf_high: Gradient factor high parameter.
-    :var _start_p_n2: Starting pressure of N2 in tissues.
-    :var _start_p_he: Starting pressure of He in tissues.
     """
     NUM_COMPARTMENTS = 16
     N2_A = None
@@ -451,6 +449,8 @@ class ZH_L16_GF(object):
     HE_B = None
     N2_HALF_LIFE = None
     HE_HALF_LIFE = None
+    START_P_N2 = 0.7902 # starting pressure of N2 in tissues
+    START_P_HE = 0.0    # starting pressure of He in tissues
 
     def __init__(self):
         """
@@ -460,9 +460,6 @@ class ZH_L16_GF(object):
         self.calc = TissueCalculator(self.N2_HALF_LIFE, self.HE_HALF_LIFE)
         self.gf_low = 0.3
         self.gf_high = 0.85
-
-        self._start_p_n2 = 0.7902
-        self._start_p_he = 0.0
 
 
     def init(self, surface_pressure):
@@ -474,8 +471,8 @@ class ZH_L16_GF(object):
 
         :param surface_pressure: Surface pressure [bar].
         """
-        p_n2 = self._start_p_n2 * (surface_pressure - self.calc.water_vapour_pressure)
-        p_he = self._start_p_he
+        p_n2 = self.START_P_N2 * (surface_pressure - self.calc.water_vapour_pressure)
+        p_he = self.START_P_HE
         data = Data(tuple([(p_n2, p_he)] * self.NUM_COMPARTMENTS), self.gf_low)
         return data
 
