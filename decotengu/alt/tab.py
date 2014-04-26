@@ -155,10 +155,12 @@ class TabTissueCalculator(TissueCalculator):
             n2_exp = self._n2_exp_time[idx][tissue_no]
             he_exp = self._he_exp_time[idx][tissue_no]
         p_n2 = eq_schreiner_t(
-            abs_p, time, gas.n2 / 100, rate, p_n2, n2_hl, n2_exp
+            abs_p, time, gas.n2 / 100, rate, p_n2, n2_hl, n2_exp,
+            wvp=self.water_vapour_pressure
         )
         p_he = eq_schreiner_t(
-            abs_p, time, gas.he / 100, rate, p_he, he_hl, he_exp
+            abs_p, time, gas.he / 100, rate, p_he, he_hl, he_exp,
+            wvp=self.water_vapour_pressure
         )
         return p_n2, p_he
 
