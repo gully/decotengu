@@ -431,7 +431,7 @@ def eq_gf_limit(gf, p_n2, p_he, a_n2, b_n2, a_he, b_he):
     p = p_n2 + p_he
     a = (a_n2 * p_n2 + a_he * p_he) / p
     b = (b_n2 * p_n2 + b_he * p_he) / p
-    return (p - a * gf) / (gf / b + 1.0 - gf)
+    return (p - a * gf) / (gf / b + 1 - gf)
 
 
 class ZH_L16_GF(object):
