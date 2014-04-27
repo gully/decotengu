@@ -137,6 +137,9 @@ class TabTissueCalculator(TissueCalculator):
         """
         Calculate gas loading of a tissue.
 
+        If time value is not 6, 12, 60 or within (0, `max_time`) and
+        divisible by 18, then value exception is raised.
+
         :param abs_p: Absolute pressure [bar] (current depth).
         :param time: Time of exposure [second] (i.e. time of ascent).
         :param gas: Gas mix configuration.
@@ -145,8 +148,6 @@ class TabTissueCalculator(TissueCalculator):
         :param p_he: He pressure in Current tissue compartment [bar].
         :param tissue_no: Tissue number.
         """
-        n2_hl = self.n2_half_life[tissue_no]
-        he_hl = self.he_half_life[tissue_no]
         if time == 60:
             n2_exp = self._n2_exp_10m[tissue_no]
             he_exp = self._he_exp_10m[tissue_no]
@@ -156,10 +157,16 @@ class TabTissueCalculator(TissueCalculator):
         elif time == 12:
             n2_exp = self._n2_exp_2m[tissue_no]
             he_exp = self._he_exp_2m[tissue_no]
-        else:
-            idx = int(time / 18) - 1
+        elif 0 < time <= self.max_time and time % 18 == 0:
+            idx = int(time // 18) - 1
             n2_exp = self._n2_exp_time[idx][tissue_no]
             he_exp = self._he_exp_time[idx][tissue_no]
+        else:
+            raise ValueError('Invalid time value {}'.format(time))
+
+        n2_hl = self.n2_half_life[tissue_no]
+        he_hl = self.he_half_life[tissue_no]
+
         p_n2 = eq_schreiner_t(
             abs_p, time, gas.n2 / 100, rate, p_n2, n2_hl, n2_exp,
             wvp=self.water_vapour_pressure

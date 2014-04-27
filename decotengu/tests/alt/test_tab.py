@@ -179,6 +179,23 @@ class TabularTissueCalculatorTestCase(unittest.TestCase):
         )
 
 
+    def test_tissue_load_invalid(self):
+        """
+        Test tabular tissue calculator tissue gas loading invalid time
+        """
+        m = ZH_L16B_GF()
+        c = TabTissueCalculator(m.N2_HALF_LIFE, m.HE_HALF_LIFE)
+
+        # non-divisible by 18
+        self.assertRaises(ValueError, c.load_tissue, 4, 31, AIR, -1, 3, 1, 1)
+
+        # being 0
+        self.assertRaises(ValueError, c.load_tissue, 4, 0, AIR, -1, 3, 1, 1)
+
+        # outside max time range
+        t = c.max_time
+        self.assertRaises(ValueError, c.load_tissue, t, 0, AIR, -1, 3, 1, 1)
+
 
 @unittest.skip
 class FirstStopTabFinderTestCase(unittest.TestCase):
