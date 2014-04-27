@@ -37,9 +37,9 @@ class DecimalContext(object):
     :var const: The `decotengu.const` module.
     :var model: The `decotengu.model` module.
     :var tab: The `decotengu.alt.tab` module.
-    :var const_data: Original values for `decotengu.const` values.
-    :var model_data: Original values for `decotengu.model` values.
-    :var tab_data: Original values for `decotengu.alt.tab` values.
+    :var const_data: Original values for `decotengu.const` module.
+    :var model_data: Original values for `decotengu.model` module.
+    :var tab_data: Original values for `decotengu.alt.tab` module.
     :var type: Overriding decimal type.
     :var prec: Precision of decimal type.
     :var ctx: Decimal type context (from decimal module).
