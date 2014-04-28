@@ -27,10 +27,9 @@ import logging
 import math
 
 from .engine import Phase
+from .const EPSILON
 
 logger = logging.getLogger(__name__)
-
-EPSILON = 10 ** -10
 
 class Conveyor(object):
     """

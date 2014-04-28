@@ -33,9 +33,7 @@ from .model import ZH_L16B_GF
 from .error import ConfigError, EngineError
 from .ft import recurse_while, bisect_find
 from .flow import coroutine
-from .const import METER_TO_BAR
-
-EPSILON = 10 ** -10
+from .const import METER_TO_BAR, EPSILON
 
 logger = logging.getLogger('decotengu.engine')
 
@@ -191,7 +189,6 @@ class Engine(object):
             end_abs_p = self.surface_pressure
         k = (start_abs_p - end_abs_p) / self._p3m
         return round(k)
-
 
 
     def _inv_limit(self, step):
