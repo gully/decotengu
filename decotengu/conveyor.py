@@ -27,7 +27,7 @@ import logging
 import math
 
 from .engine import Phase
-from .const EPSILON
+from .const import EPSILON
 
 logger = logging.getLogger(__name__)
 
