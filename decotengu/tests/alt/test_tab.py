@@ -63,19 +63,19 @@ class ExposureTestCase(unittest.TestCase):
     """
     def setUp(self):
         """
-        Override of LOG_2 constant in decotengu.alt.tab module.
+        Override of LOG_2 constant in decotengu.const module.
         """
-        import decotengu.alt.tab as tab
-        self.tab = tab
-        self.log_2 = self.tab.LOG_2
-        self.tab.LOG_2 = Decimal(self.tab.LOG_2)
+        import decotengu.const as const
+        self.const = const
+        self.log_2 = self.const.LOG_2
+        self.const.LOG_2 = Decimal(self.const.LOG_2)
 
 
     def tearDown(self):
         """
-        Revert override of LOG_2 constant in decotengu.alt.tab module.
+        Revert override of LOG_2 constant in decotengu.const module.
         """
-        self.tab.LOG_2 = self.log_2
+        self.const.LOG_2 = self.log_2
 
 
     def test_dec_friendly(self):
