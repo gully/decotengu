@@ -148,6 +148,7 @@ class TabTissueCalculator(TissueCalculator):
         :param p_he: He pressure in Current tissue compartment [bar].
         :param tissue_no: Tissue number.
         """
+        time = round(time, 10)
         if time == 60:
             n2_exp = self._n2_exp_10m[tissue_no]
             he_exp = self._he_exp_10m[tissue_no]

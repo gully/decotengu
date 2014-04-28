@@ -197,6 +197,17 @@ class TabularTissueCalculatorTestCase(unittest.TestCase):
         self.assertRaises(ValueError, c.load_tissue, 4, t, AIR, -1, 3, 1, 1)
 
 
+    def test_tissue_load_float(self):
+        """
+        Test tabular tissue calculator tissue gas loading with float time
+        """
+        m = ZH_L16B_GF()
+        c = TabTissueCalculator(m.N2_HALF_LIFE, m.HE_HALF_LIFE)
+
+        v = c.load_tissue(4, 60 + 10e-12, AIR, -1, 3, 1, 1)
+        self.assertEqual((2.975911559744427, 0.7949159175889702), v)
+
+
 
 @unittest.skip
 class FirstStopTabFinderTestCase(unittest.TestCase):
