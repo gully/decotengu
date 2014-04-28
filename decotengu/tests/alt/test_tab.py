@@ -193,8 +193,9 @@ class TabularTissueCalculatorTestCase(unittest.TestCase):
         self.assertRaises(ValueError, c.load_tissue, 4, 0, AIR, -1, 3, 1, 1)
 
         # outside max time range
-        t = c.max_time
-        self.assertRaises(ValueError, c.load_tissue, t, 0, AIR, -1, 3, 1, 1)
+        t = c.max_time + 1
+        self.assertRaises(ValueError, c.load_tissue, 4, t, AIR, -1, 3, 1, 1)
+
 
 
 @unittest.skip
