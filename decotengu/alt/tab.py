@@ -39,14 +39,18 @@ from ..ft import recurse_while, bisect_find
 
 logger = logging.getLogger(__name__)
 
-MAX_DEPTH = 24
+# Maximum depth change for Schreiner equation when using precomputed values
+# of `exp` function. We want this constant to be multiply of full minute
+# to make it useful for calculation of decompression stop length.
+MAX_DEPTH = 30 # time: MAX_DEPTH * 6s
+assert MAX_DEPTH * 6 % 60 == 0, 'Invalid max depth value'
 
 
 def eq_schreiner_t(abs_p, time, gas, rate, pressure, half_life, texp,
         wvp=const.WATER_VAPOUR_PRESSURE_DEFAULT):
     """
     Calculate gas loading using Schreiner equation and precomputed values
-    of exp and ln functions.
+    of `exp` and `log` functions.
 
     :param abs_p: Absolute pressure [bar] (current depth).
     :param time: Time of exposure [s] (i.e. time of ascent).
