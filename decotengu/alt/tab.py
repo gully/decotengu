@@ -81,6 +81,19 @@ def exposure_t(time, half_life):
     return tuple(p)
 
 
+def ceil_pressure(pressure, meter_to_bar):
+    """
+    Calculate ceiling of pressure, so it would be integer value when
+    converted to meters.
+
+    The function returns pressure [bar].
+
+    :param pressure: Input pressure value [bar].
+    :param meter_to_bar: Meter to bar conversion constant.
+    """
+    return (round(pressure / meter_to_bar + 0.499999)) * meter_to_bar
+
+
 class TabTissueCalculator(TissueCalculator):
     """
     Tabular tissue calculator.
