@@ -94,6 +94,35 @@ def ceil_pressure(pressure, meter_to_bar):
     return (round(pressure / meter_to_bar + 0.499999)) * meter_to_bar
 
 
+def split_time(time, max_time):
+    """
+    Calculate time value divisor and other values required by tabular
+    tissue calculator.
+
+    The function calculates
+
+    k
+        Time value divided by maximum time.
+    t1
+        Remaining time divisble by 18s to complement time value.
+    t2
+        Remaining time < 18s to complement time value.
+
+    Therefore::
+
+        time = k * max_time + t1 + t2
+
+
+    :param time: Time value to split.
+    :param max_time: Maximum time value used by tabular tissue calculator.
+    """
+    k = int(time // max_time)
+    r = time % max_time
+    t1 = r // const.TIME_3M * const.TIME_3M
+    t2 = r % const.TIME_3M
+    return k, t1, t2
+
+
 class TabTissueCalculator(TissueCalculator):
     """
     Tabular tissue calculator.

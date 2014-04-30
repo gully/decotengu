@@ -24,7 +24,7 @@ Tabular tissue calculator tests.
 from decimal import Decimal
 
 from decotengu.alt.tab import eq_schreiner_t, exposure_t, \
-    ceil_pressure, TabTissueCalculator, FirstStopTabFinder
+    ceil_pressure, split_time, TabTissueCalculator, FirstStopTabFinder
 from decotengu.model import ZH_L16B_GF, ZH_L16C_GF, Data
 from decotengu.engine import Phase
 
@@ -214,6 +214,26 @@ class TabularTissueCalculatorTestCase(unittest.TestCase):
         """
         p = ceil_pressure(3.51, 0.3)
         self.assertAlmostEqual(3.6, p)
+
+
+    def test_split_time_k0(self):
+        """
+        Test splitting time (k == 0)
+        """
+        k, t1, t2 = split_time(119, 120)
+        self.assertEquals(0, k)
+        self.assertEquals(108, t1)
+        self.assertEquals(11, t2)
+
+
+    def test_split_time_144s(self):
+        """
+        Test splitting time (144s)
+        """
+        k, t1, t2 = split_time(256, 144)
+        self.assertEquals(1, k)
+        self.assertEquals(108, t1)
+        self.assertEquals(4, t2)
 
 
 
