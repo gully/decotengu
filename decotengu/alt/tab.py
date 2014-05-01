@@ -29,6 +29,7 @@ Implemented
   is used
 """
 
+from functools import partial
 import math
 import logging
 
@@ -252,69 +253,65 @@ class FirstStopTabFinder(object):
 
         engine = self.engine
         model = engine.model
-        ts_3m = engine._depth_to_time(3, engine.ascent_rate)
+        max_time = model.calc.max_time
+        ts_3m = const.TIME_3M
 
         logger.debug(
             'tabular search: start at {}bar, {}s'
             .format(start.abs_p, start.time)
         )
 
-        data = start.data
-        depth = int(start.depth / 3) * 3
-        t = int(start.depth - depth) * 6
-        time_start = start.time + t
+        p = ceil_pressure(start.abs_p - abs_p, engine._meter_to_bar)
+        t = engine._pressure_to_time(p, engine.ascent_rate)
+        step = start._replace(abs_p=abs_p + p) # math ceiling of current depth
+        n, t1, t2 = split_time(t, max_time)
 
-        if t > 0:
-            data = engine._tissue_pressure_ascent(start.abs_p, t, gas, data)
+        # level at depth divisible by 3m
+        if t2 > 0:
+            step = engine._step_next_ascent(step, t2, step.gas)
 
-        logger.debug('tabular search: restart at {}m, {}s ({}s)'.format(depth,
-            time_start, t))
+        if not engine._inv_limit(step): # already at deco zone
+            return start.abs_p
 
-        step = engine._step(Phase.ASCENT, start, depth, time_start, gas, data)
+        if t1 > 0:
+            l_step = engine._step_next_ascent(step, t1, step.gas)
+            if engine._inv_limit(l_step):
+                step = l_step
+                stop_time = max_time * n
+                # execute ascent invariant until calculated time
+                f_inv = lambda step: step.time <= stop_time and engine._inv_limit(step)
 
-        # ascent using max depth allowed by tabular calculator; use None to
-        # indicate that surface is hit
-        f_step = lambda step: None if step.depth == 0 else \
-                engine._step_next_ascent(
-                    step, min(model.calc.max_time, step.depth * 6), gas
+                # ascent using max depth allowed by tabular calculator
+                f_step = partial(
+                    engine._step_next_ascent, time=max_time, gas=step.gas
                 )
 
-        # execute ascent invariant until surface is hit
-        f_inv = lambda step: step is not None and engine._inv_limit(step)
+                # ascent until deco zone or surface is hit (but stay deeper than
+                # first deco stop)
+                step = recurse_while(f_inv, f_step, step)
+            else:
+                max_time = t1
 
-        # ascent until deco zone or surface is hit (but stay deeper than
-        # first deco stop)
-        step = recurse_while(f_inv, f_step, step)
-        if step.depth == 0:
-            return step
+        assert max_time % 18 == 0
+        n = max_time // 18
 
-        time_start = step.time
-        depth_start = step.depth
+        f = lambda k, step: engine._inv_limit(
+            engine._step_next_ascent(step, k * ts_3m, gas)
+        )
+        # find largest k for which ascent without decompression is possible
+        k = bisect_find(n, f, step)
 
-        logger.debug('tabular search: at {}m, {}s'.format(depth_start, time_start))
-
-        # FIXME: copy of code from engine.py _find_first_stop
-        def f(k, step):
-            assert k <= len(model.calc._n2_exp_time)
-            return True if k == 0 else \
-                engine._inv_limit(
-                    engine._step_next_ascent(step, k * ts_3m, gas)
-                )
-
-        # FIXME: len(model.calc._n2_exp_time) == model.calc.max_time / 6 so
-        #        make it nicer
-        n = len(model.calc._n2_exp_time)
-        k = bisect_find(n, f, step) # narrow first deco stop
-        assert k != n # k == n is not used as guarded by recurse_while above
-
-        if k > 0:
+        # check `k == 0` before `k == n` as `n == 0` is possible
+        if k == 0:
+            abs_p = step.abs_p
+        elif k == n:
+            abs_p = None
+            logger.debug('find first stop: no deco zone found')
+        else:
             t = k * ts_3m
-            step = engine._step_next_ascent(step, t, gas)
+            abs_p = step.abs_p - engine._time_to_pressure(t, engine.ascent_rate)
 
-        logger.debug('tabular search: free from {} to {}, ascent time={}' \
-                .format(depth_start, step.depth, step.time - time_start))
-
-        return step
+        return abs_p
 
 
 # vim: sw=4:et:ai
