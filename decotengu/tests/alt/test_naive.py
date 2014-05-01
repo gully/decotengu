@@ -65,11 +65,14 @@ class DecoStopStepperTestCase(unittest.TestCase):
         _deco_stop = DecoStopStepper(engine)
 
         data = _data(0.3, 2.8, 2.8)
-        step = _step(Phase.ASCENT, 1.9, 1200, data=data)
-        step = _deco_stop(step, 18, AIR, 0.4)
+        start = _step(Phase.ASCENT, 1.9, 1200, data=data)
+        step = _deco_stop(start, 18, AIR, 0.4)
 
         # 5min of deco
         self.assertEquals(1500, step.time)
+        # ensure previous step of deco stop is the starting step; this is
+        # important, i.e. for decompression stop length calculation
+        self.assertEquals(start, step.prev)
 
 
 # vim: sw=4:et:ai

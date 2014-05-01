@@ -117,31 +117,32 @@ class DecoStopStepper(object):
         self.engine = engine
 
 
-    def __call__(self, step, time, gas, gf):
+    def __call__(self, start, time, gas, gf):
         """
         Execute dive decompression stop using 1min intervals.
 
         .. seealso:: `decotengu.Engine._deco_ascent`
         """
-        logger.debug('executing deco stepper')
-
+        step = start
         engine = self.engine
 
         if __debug__:
             assert engine._to_depth(step.abs_p) % 3 == 0
+            logger.debug('executing deco stepper')
 
-        k_stop = 0
-        while True:
-            # stay 1 min
-            step = engine._step_next(step, 60, gas, phase=Phase.DECO_STOP)
-            logger.debug(
-                'stepper: {}bar {}s, gas={.o2}, gf={:.4f}'
-                .format(step.abs_p, step.time, gas, gf)
-            )
-            if not engine._inv_deco_stop(step, time, gas, gf):
-                break
+        step_f = partial(
+            engine._step_next, time=60, gas=gas, phase=Phase.DECO_STOP
+        )
+        inv_f = partial(engine._inv_deco_stop, time=time, gas=gas, gf=gf)
+        step = step_f(step)
+        while inv_f(step): # execute while diver shall stay at deco stop
+            step = step_f(step)
+            if __debug__:
+                depth = engine._to_depth(step.abs_p)
+                logger.debug('plus 1min at {}m'.format(depth))
 
-        return step
+        assert not inv_f(step)
+        return step._replace(prev=start)
 
 
 # vim: sw=4:et:ai

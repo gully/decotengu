@@ -34,8 +34,16 @@ class DecoStepperTestCase(unittest.TestCase):
         """
         Test deco stop stepper with DecoTengu deco engine
         """
+        # override class to record if the stepper is called at all
+        class Stepper(DecoStopStepper):
+            called = False
+            def __call__(self, step, time, gas, gf):
+                self.called = True
+                return super().__call__(step, time, gas, gf)
+
         engine, dt = create()
-        engine._deco_ascent = DecoStopStepper(engine)
+        stepper = Stepper(engine)
+        engine._deco_stop =  stepper
         engine.model.gf_low = 0.2
         engine.model.gf_high = 0.9
         engine.add_gas(0, 27)
@@ -44,6 +52,7 @@ class DecoStepperTestCase(unittest.TestCase):
 
         data = list(engine.calculate(40, 35))
 
+        self.assertTrue(stepper.called)
         self.assertEquals(6, len(dt.stops))
         self.assertEquals(14, dt.total)
 
