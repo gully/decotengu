@@ -28,7 +28,7 @@ from decotengu.alt.tab import eq_schreiner_t, exposure_t, \
 from decotengu.model import ZH_L16B_GF, ZH_L16C_GF, Data
 from decotengu.engine import Phase
 
-from ..tools import _step, AIR
+from ..tools import _engine, _step, AIR
 
 import unittest
 from unittest import mock
@@ -237,7 +237,6 @@ class TabularTissueCalculatorTestCase(unittest.TestCase):
 
 
 
-@unittest.skip
 class FirstStopTabFinderTestCase(unittest.TestCase):
     """
     First stop tabular finder tests.
@@ -380,8 +379,7 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         start = _step(Phase.ASCENT, 30, 1200)
 
         stop = self.engine._find_first_stop(start, 0, AIR)
-        self.assertEquals(0, stop.depth)
-        self.assertEquals(1380, stop.time)
+        self.assertTrue(stop is None)
 
 
 # vim: sw=4:et:ai
