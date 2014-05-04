@@ -18,6 +18,35 @@
 #
 
 """
+Tabular Calculations
+--------------------
+To calculate inert gas saturation of tissues, the decompression model uses
+Schreiner equation, which calls exponential function. Such call can be too
+costly or even impossible on some of the hardware architectures, i.e.
+microcontrollers lacking FPU. To make decompression software available on
+such hardware architectures, the exponential function values can be
+precomputed and stored in a table. DecoTengu library allows to experiment
+with dive decompression calculations using such technique.
+
+The precalculated values of exponential function imply algorithms and
+configuration constraints
+
+- ascent and descent rate is 10m/min - depth change is correlated with
+  time, i.e. we ascent 10 meters or for 1 minute and such constraint
+  simplifies algorithms
+- there is maximum depth and time change, which can be used for
+  decompression calculations, i.e. 24m (2.4min) - the table with
+  precomputed values of exponential function is limited by amount of
+  available memory; this forces us to use combination of linear and binary
+  searches as opposed to perforrming binary search only, i.e. when
+  looking for first decompression stop
+- the smallest depth change is limited to 1m (6s) - again, available
+  memory drives this constraint and forces us to round up current depth
+  value, i.e. from 31.2m to 32m
+
+
+Implementation
+~~~~~~~~~~~~~~
 Tabular decompression calculations using precalculated values of `exp` and
 `log` functions.
 
