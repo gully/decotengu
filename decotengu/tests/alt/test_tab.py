@@ -246,128 +246,124 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         m = engine.model
         m.calc = TabTissueCalculator(m.N2_HALF_LIFE, m.HE_HALF_LIFE)
         engine._find_first_stop = FirstStopTabFinder(engine)
+        assert m.calc.max_depth > 27
 
 
-    @mock.patch('decotengu.alt.tab.recurse_while')
+    #@mock.patch('decotengu.alt.tab.split_time')
+    def test_in_deco_zone(self):
+        """
+        Test first stop tabular search when in deco zone already
+
+        When at 27.9m and being in deco zone already, we expect first deco
+        stop finder to return 27.9m value. Also, the finder tried to ascent
+        from 28m (round up of 27.9m) to 27m.
+        """
+        engine = self.engine
+        engine._inv_limit = mock.MagicMock()
+        engine._step_next_ascent = mock.MagicMock()
+
+        engine._inv_limit.return_value = False # trigger being in deco zone
+
+        start = _step(Phase.CONST, 3.79, 1200)
+        stop = engine._find_first_stop(start, 1, AIR)
+        assert engine._inv_limit.call_count == 1
+
+        self.assertEqual(3.79, stop)
+        args = engine._step_next_ascent.call_args_list[0][0]
+        _, t2, _ = args
+        self.assertEqual(1, engine._step_next_ascent.call_count)
+        self.assertAlmostEqual(6, t2)
+
+
     @mock.patch('decotengu.alt.tab.bisect_find')
-    def test_level_from_30m(self, f_bf, f_rw):
+    def test_level_from_28_5m(self, f_bf):
         """
-        Test first stop tabular finder leveling at multiply of 3m (from 30m)
+        Test first stop tabular search rounding up depth to value divisible by 3m
+
+        When at 28.5m, we expect the depth to be round up to 29m, then
+        initial ascent is 2m or 12s. And, if we are not in deco zone yet,
+        start searching for first deco stop from 27m.
         """
-        data = Data([3.1, 4.0], 0.3)
-        self.engine._tissue_pressure_ascent = mock.MagicMock(return_value=data)
-        self.engine._step_next_ascent = mock.MagicMock()
+        engine = self.engine
+        engine._inv_limit = mock.MagicMock()
+        engine._inv_limit.side_effect = [True, False]
 
-        data = Data([3.2, 3.1], 0.3)
-        start = _step(Phase.CONST, 30, 1200, 4, AIR, data=data)
-        data = Data([2.2, 2.1], 0.3)
-        step = _step(Phase.ASCENT, 21, 1200, data=data, prev=start)
-        data = Data([2.2, 2.1], 0.3)
-        first_stop = _step(Phase.ASCENT, 16, 1200, data=data, prev=step)
+        f_bf.return_value = 0 # enforce deco stop at 27m
+        start = _step(Phase.CONST, 3.85, 1200)
 
-        f_rw.return_value = step
-        f_bf.return_value = 2
-        self.engine._step_next_ascent.return_value = first_stop
+        stop = engine._find_first_stop(start, 1, AIR)
 
-        stop = self.engine._find_first_stop(start, 0, AIR)
-        self.assertIs(stop, first_stop)
+        # test invariants:
+        # binary search mocked to return 0, so first stop is at 27m
+        assert stop == 3.7
+        assert engine._inv_limit.call_count == 2
+        assert f_bf.call_count == 1
 
-        self.assertTrue(f_rw.called)
-        self.assertTrue(f_bf.called)
-        self.assertFalse(self.engine._tissue_pressure_ascent.called,
-                '{}'.format(self.engine._tissue_pressure_ascent.call_args_list))
-
-        # from `step` to `first_stop` -> 6m, 36s
-        self.engine._step_next_ascent.assert_called_once_with(step, 36, AIR)
+        # extract binary search function call arguments...
+        args = f_bf.call_args_list[0][0]
+        n, _, step = args
+        # ... and verify them
+        self.assertEqual(1212, step.time) # initial ascent 29m -> 27m for 12s
+        self.assertEqual(9, n, args)      # binary search started at 27m
+        self.assertAlmostEqual(3.7, step.abs_p)
 
 
-    @mock.patch('decotengu.alt.tab.recurse_while')
     @mock.patch('decotengu.alt.tab.bisect_find')
-    def test_level_from_29m(self, f_bf, f_rw):
+    def test_linear_search_hit_deco_zone(self, f_bf):
         """
-        Test first stop tabular finder levelling at multiply of 3m (from 29m)
+        Test first stop tabular search when linear search required (with deco zone)
+
+        When at 90m and first deco stop at 57m, we expect to ascent 
+        with linear search once and then search for first deco stop
+        between 60m and 30m.
         """
-        self.engine._tissue_pressure_ascent = mock.MagicMock(return_value=[3.1, 4.0])
-        self.engine._step_next_ascent = mock.MagicMock()
+        engine = self.engine
+        engine._inv_limit = mock.MagicMock()
+        engine._inv_limit.side_effect = [True, True, False]
 
-        data = Data([3.2, 3.1], 0.3)
-        start = _step(Phase.CONST, 29, 1200, data=data)
-        data = Data([2.2, 2.1], 0.3)
-        step = _step(Phase.ASCENT, 21, 1200, data=data, prev=start)
-        data = Data([2.2, 2.1], 0.3)
-        first_stop = _step(Phase.ASCENT, 16, 1200, data=data, prev=step)
+        f_bf.return_value = 1 # enforce deco stop at 57m
+        start = _step(Phase.CONST, 10.0, 1200)
 
-        f_rw.return_value = step
-        f_bf.return_value = 2
-        self.engine._step_next_ascent.return_value = first_stop
+        # test invariants:
+        stop = engine._find_first_stop(start, 1, AIR)
+        assert f_bf.call_count == 1
+        # recurse_while calls: initial, ok to 60m, not ok to 30m
+        assert engine._inv_limit.call_count == 3
+        # one linear search ascent by 30m done and binary search mocked to
+        # return 1 , so first stop is at 57m
+        assert stop == 6.7
 
-        stop = self.engine._find_first_stop(start, 0, AIR)
-        self.assertIs(stop, first_stop)
-
-        self.assertTrue(f_rw.called)
-        self.assertTrue(f_bf.called)
-        data = Data([3.2, 3.1], 0.3)
-        self.engine._tissue_pressure_ascent.assert_called_once_with(
-            3.9089, 12, AIR, data
-        )
-
-        # from `step` to `first_stop` -> 6m, 36s
-        self.engine._step_next_ascent.assert_called_once_with(step, 36, AIR)
+        # extract binary search function call arguments...
+        args = f_bf.call_args_list[0][0]
+        n, _, step = args
+        # ... and verify them
+        self.assertEqual(1380, step.time) # ascent 90m -> 60m
+        self.assertEqual(10, n, args)     # binary search 60m <-> 30m
+        self.assertAlmostEqual(7.0, step.abs_p) # starting at 60m
 
 
-    @mock.patch('decotengu.alt.tab.recurse_while')
     @mock.patch('decotengu.alt.tab.bisect_find')
-    def test_in_deco(self, f_bf, f_rw):
+    def test_linear_search_hit_surface(self, f_bf):
         """
-        Test first stop tabular finder when in deco already
+        Test first stop tabular search when linear search required (without deco zone)
+
+        When at 90m and no deco stop, we expect to ascent with linear
+        search until surface
         """
-        data = Data([3.1, 4.0], 0.3)
-        self.engine._tissue_pressure_ascent = mock.MagicMock(
-            return_value=data
-        )
-        self.engine._step_next_ascent = mock.MagicMock()
+        engine = self.engine
+        engine._inv_limit = mock.MagicMock()
+        engine._inv_limit.side_effect = [True, True, True, True]
 
-        start = _step(Phase.CONST, 21, 1200)
-        step = _step(Phase.ASCENT, 21, 1200)
+        f_bf.return_value = 1 # enforce deco stop at 57m
+        start = _step(Phase.CONST, 10.0, 1200)
 
-        f_rw.return_value = step
-        f_bf.return_value = 0 # in deco already
+        # test invariants:
+        stop = engine._find_first_stop(start, 1, AIR)
+        # recurse_while calls: initial one plus 3 calls every 30m
+        assert engine._inv_limit.call_count == 4
 
-        stop = self.engine._find_first_stop(start, 0, AIR)
-        self.assertIs(stop, step)
-
-        self.assertFalse(self.engine._step_next_ascent.called)
-        self.assertTrue(f_rw.called)
-        self.assertTrue(f_bf.called)
-
-
-    @mock.patch('decotengu.alt.tab.recurse_while')
-    def test_bisect_proper(self, f_rw):
-        """
-        Test first stop tabular finder proper usage of binary search
-        """
-        self.engine._step_next_ascent = mock.MagicMock()
-
-        # trigger bisect_find to use 2nd maximum time allowed by tabular
-        # tissue calculator...
-        self.engine._inv_limit = mock.MagicMock(
-            side_effect=[True, True, False]
-        )
-
-        start = _step(Phase.CONST, 30, 1200)
-        step = _step(Phase.ASCENT, 27, 1200, prev=start)
-
-        f_rw.return_value = step
-
-        self.engine._find_first_stop(start, 0, AIR)
-
-        # 3 bisect calls, final call
-        self.assertEquals(4, self.engine._step_next_ascent.call_count,
-                '{}'.format(self.engine._step_next_ascent.call_args_list))
-        max_time = max(a[0][1] for a in self.engine._step_next_ascent.call_args_list)
-        # ... as max time should not be used by bisect_find (it is used by
-        # recurse_while)
-        self.assertEquals(self.engine.model.calc.max_time - 18, max_time)
+        self.assertTrue(stop is None)
+        self.assertFalse(f_bf.called)
 
 
     def test_surface(self):

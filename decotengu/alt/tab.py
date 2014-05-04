@@ -149,7 +149,7 @@ def split_time(time, max_time):
     k = int(time // max_time)
     r = time % max_time
     t1 = r // const.TIME_3M * const.TIME_3M
-    t2 = r % const.TIME_3M
+    t2 = round(r % const.TIME_3M, 10)
     return k, t1, t2
 
 
@@ -292,34 +292,52 @@ class FirstStopTabFinder(object):
 
         p = ceil_pressure(start.abs_p - abs_p, engine._meter_to_bar)
         t = engine._pressure_to_time(p, engine.ascent_rate)
-        step = start._replace(abs_p=abs_p + p) # math ceiling of current depth
-        n, t1, t2 = split_time(t, max_time)
+        # round up current depth, i.e. 31.2m -> 32m
+        step = start._replace(abs_p=abs_p + p)
+        n_mt, t1, t2 = split_time(t, max_time)
+        if __debug__:
+            logger.debug(
+                'time split into: n_mt={}, t1={}, t2={}'.format(n_mt, t1, t2)
+            )
 
-        # level at depth divisible by 3m
+        # ascent to depth divisible by 3m
         if t2 > 0:
             step = engine._step_next_ascent(step, t2, step.gas)
+            if not engine._inv_limit(step): # already at deco zone
+                return start.abs_p
 
-        if not engine._inv_limit(step): # already at deco zone
-            return start.abs_p
-
+        recurse = True
         if t1 > 0:
             l_step = engine._step_next_ascent(step, t1, step.gas)
             if engine._inv_limit(l_step):
-                step = l_step
-                stop_time = max_time * n
-                # execute ascent invariant until calculated time
-                f_inv = lambda step: step.time <= stop_time and engine._inv_limit(step)
-
-                # ascent using max depth allowed by tabular calculator
-                f_step = partial(
-                    engine._step_next_ascent, time=max_time, gas=step.gas
-                )
-
-                # ascent until deco zone or surface is hit (but stay deeper than
-                # first deco stop)
-                step = recurse_while(f_inv, f_step, step)
+                step = l_step # no deco stop after t1 seconds, so advance
+                              # the ascent
             else:
+                recurse = False # deco stop within t1 seconds, skip any
+                                # further descent
                 max_time = t1
+
+        if __debug__:
+            logger.debug('linear search required: {}'.format(recurse))
+
+        if recurse and n_mt > 0:
+            stop_time = step.time + max_time * n_mt
+            if __debug__:
+                logger.debug('linear search stop time: {}'.format(stop_time))
+
+            # execute ascent invariant until calculated time
+            f_inv = lambda step: step.time <= stop_time and engine._inv_limit(step)
+
+            # ascent using max depth allowed by tabular calculator
+            f_step = partial(
+                engine._step_next_ascent, time=max_time, gas=step.gas
+            )
+
+            # ascent until deco zone or surface is hit (but stay deeper than
+            # first deco stop)
+            step = recurse_while(f_inv, f_step, step)
+            if step.time >= stop_time:
+                return None
 
         assert max_time % 18 == 0
         n = max_time // 18
