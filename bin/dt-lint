@@ -36,12 +36,6 @@ class ValidateAlternative(argparse.Action):
     def __call__(self, parser, args, values, option_string=None):
         alt = set(values.split(','))
 
-        if 'tab' in alt:
-            raise argparse.ArgumentError(
-                self, 'Tabular tissue calculator not supported yet'
-            )
-
-
         if alt - self.ALT:
             s = ', '.join(alt - self.ALT)
             raise argparse.ArgumentError(self,
@@ -115,8 +109,8 @@ else:
 #
 
 import decotengu
-from decotengu.alt.tab import TabTissueCalculator, FirstStopTabFinder
 from decotengu.alt.naive import AscentJumper, DecoStopStepper
+from decotengu.alt.tab import tab_engine
 from decotengu.output import DiveStepInfoGenerator, csv_writer
 from decotengu.flow import sender
 
@@ -155,17 +149,9 @@ else:
 if 'ascentjump' in args.alt:
     engine._free_ascent = AscentJumper(engine)
 if 'decostep' in args.alt:
-    engine._deco_ascent = DecoStopStepper(engine)
+    engine._deco_stop = DecoStopStepper(engine)
 if 'tab' in args.alt:
-    engine._find_first_stop = FirstStopTabFinder(engine)
-    engine._deco_ascent = DecoStopStepper(engine)
-
-    calc = TabTissueCalculator(
-        engine.model.N2_HALF_LIFE,
-        engine.model.HE_HALF_LIFE
-    )
-    engine.model.calc = calc
-    engine.conveyor.time_delta = 60
+    tab_engine(engine)
 
 #
 # Execute calculations and provide summary

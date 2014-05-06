@@ -24,7 +24,7 @@ Tabular tissue calculator tests.
 from decimal import Decimal
 
 from decotengu.alt.tab import eq_schreiner_t, exposure_t, \
-    ceil_pressure, split_time, TabTissueCalculator, FirstStopTabFinder
+    ceil_pressure, split_time, TabTissueCalculator, tab_engine
 from decotengu.model import ZH_L16B_GF, ZH_L16C_GF, Data
 from decotengu.engine import Phase
 
@@ -242,11 +242,9 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
     First stop tabular finder tests.
     """
     def setUp(self):
-        self.engine = engine = _engine()
-        m = engine.model
-        m.calc = TabTissueCalculator(m.N2_HALF_LIFE, m.HE_HALF_LIFE)
-        engine._find_first_stop = FirstStopTabFinder(engine)
-        assert m.calc.max_depth > 27
+        engine = self.engine = _engine()
+        tab_engine(engine)
+        assert engine.model.calc.max_depth > 27
 
 
     #@mock.patch('decotengu.alt.tab.split_time')

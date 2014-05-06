@@ -62,7 +62,6 @@ from functools import partial
 import math
 import logging
 
-from ..engine import Phase
 from ..model import TissueCalculator
 from .. import const
 from ..ft import recurse_while, bisect_find
@@ -274,6 +273,7 @@ class FirstStopTabFinder(object):
 
         :param engine: DecoTengu decompression engine.
         """
+        super().__init__()
         self.engine = engine
 
 
@@ -359,6 +359,82 @@ class FirstStopTabFinder(object):
             abs_p = step.abs_p - engine._time_to_pressure(t, engine.ascent_rate)
 
         return abs_p
+
+
+
+def tab_engine(engine):
+    """
+    Override DecoTengu engine object attributes and methods, so it is
+    possible to use tabular tissue calculator.
+
+    :param engine: DecoTengu engine object.
+    """
+    model = engine.model
+    calc = TabTissueCalculator(model.N2_HALF_LIFE, model.HE_HALF_LIFE)
+    model.calc = calc
+
+    engine._deco_stop_search_time = calc.max_time // 60
+
+    logger.warning('overriding descent rate and ascent rate to 10m/min')
+    engine.descent_rate = 10
+    engine.ascent_rate = 10
+
+    engine._free_descent = linearize(
+        engine, engine._free_descent, engine._step_next_descent
+    )
+    engine._dive_const = linearize(
+        engine, engine._dive_const, engine._step_next, arg_is_time=True
+    )
+    engine._free_ascent = linearize(
+        engine, engine._free_ascent, engine._step_next_ascent
+    )
+    engine._find_first_stop = FirstStopTabFinder(engine)
+    # FIXME: precompute 1, 2, 3, ..., 8 minutes for exp function
+    from .naive import DecoStopStepper
+    engine._deco_stop = DecoStopStepper(engine)
+
+
+def linearize(engine, method, step_next, arg_is_time=False):
+    """
+    Override a method of DecoTengu engine object to divide tissue
+    saturation calculations into steps, so it is possible to use tabular
+    tissue calculation.
+
+    :param engine: DecoTengu engine object.
+    :param method: Method to override.
+    :param step_next: Function to calculate next dive step (ascent, descent
+        or const).
+    :param arg_is_time: Is 2nd argument of overriden method time or
+        absolute pressure?
+    """
+    calc = engine.model.calc
+    def wrapper(step, arg, gas, **kw):
+        if arg_is_time:
+            time = arg
+            logger.debug('linear ascent for {}s'.format(time))
+            k, t1, t2 = split_time(time, calc.max_time)
+        else:
+            abs_p = arg
+            p = ceil_pressure(abs(step.abs_p - abs_p), engine._meter_to_bar)
+            t = engine._pressure_to_time(p, 10)
+            logger.debug('linear ascent for {}s'.format(t))
+            k, t1, t2 = split_time(t, calc.max_time)
+
+        # arrange calls, so `method` is always called with
+        # abs(step.abs_p - abs_p) > 0
+        if t2 and (t1 > 0 or k > 0):
+            step = step_next(step, t2, gas, **kw)
+        if t1 and k > 0:
+            step = step_next(step, t1, gas, **kw)
+        for i in range(1, k):
+            step = step_next(step, calc.max_time, gas, **kw)
+        if arg_is_time:
+            return method(step, calc.max_time, gas)
+        else:
+            logger.debug('{} -> {}'.format(step, abs_p))
+            return method(step, abs_p, gas)
+
+    return wrapper
 
 
 # vim: sw=4:et:ai
