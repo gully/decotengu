@@ -337,9 +337,13 @@ class Engine(object):
         return step
 
 
+    _dive_const = _step_next
+
+
     def _dive_descent(self, abs_p, gas_list):
         """
-        Dive descent from surface to specified depth.
+        Dive descent from surface to absolute pressure of destination
+        depth.
 
         The last gas on the gas mix list is bottom gas, others are travel
         gas mixes.
@@ -357,10 +361,7 @@ class Engine(object):
             if i > 0: # perform gas switch
                 step = self._switch_gas(step, gas)
                 yield step
-            p = depth - step.abs_p
-            time = self._pressure_to_time(p, self.descent_rate)
-            logger.debug('descent for {}s using gas {}'.format(time, gas))
-            step = self._step_next_descent(step, time, gas)
+            step = self._free_descent(step, depth, gas)
             yield step
 
         last = gas_list[-1]
@@ -480,7 +481,7 @@ class Engine(object):
         # find largest k for which ascent without decompression is possible
         k = bisect_find(n, f, start)
 
-        # check `k == 0` before `k == n` in case `n == 0`
+        # check `k == 0` before `k == n` as `n == 0` is possible
         if k == 0:
             abs_p = start.abs_p
             logger.debug('already at deco zone')
@@ -786,6 +787,23 @@ class Engine(object):
         logger.debug('deco engine: gf at surface={:.4f}'.format(step.data.gf))
 
 
+    def _free_descent(self, start, abs_p, gas):
+        """
+        Descent, starting with current dive step, to absolute pressure of
+        destination depth.
+
+        :param start: Dive step indicating current depth.
+        :param abs_p: Absolute pressure of destination depth.
+        :param gas: Gas mix configuration.
+        """
+        p = abs_p - start.abs_p
+        time = self._pressure_to_time(p, self.descent_rate)
+        if __debug__:
+            logger.debug('descent for {}s using gas {}'.format(time, gas))
+        step = self._step_next_descent(start, time, gas)
+        return step
+
+
     def _free_ascent(self, start, abs_p, gas, gf=None):
         """
         Ascent to absolute pressure of destination depth using gas mix.
@@ -860,10 +878,10 @@ class Engine(object):
             depth = self._to_depth(step.abs_p)
             assert depth % 3 == 0 and depth > 0, depth
 
-        max_time = self._deco_stop_search_time * 60
+        max_time = self._deco_stop_search_time
 
         inv_f = partial(self._inv_deco_stop, time=time, gas=gas, gf=gf)
-        l_step_next_f = partial(self._step_next, time=max_time, gas=gas)
+        l_step_next_f = partial(self._step_next, time=max_time * 60, gas=gas)
         l_step = recurse_while(inv_f, l_step_next_f, step)
         logger.debug('deco stop: linear find finished at {}'.format(l_step))
 
@@ -945,7 +963,7 @@ class Engine(object):
             raise EngineError('Bottom time shorter than descent time')
         logger.debug('bottom time {}s (descent is {}s)'.format(t, step.time))
         assert t > 0
-        step = self._step_next(step, t, bottom_gas)
+        step = self._dive_const(step, t, bottom_gas)
         yield step
 
         yield from self._dive_ascent(step, gas_list)
@@ -1009,12 +1027,17 @@ class DecoTable(object):
         stops = self._stops = OrderedDict()
         while True:
             step = yield
+            if __debug__:
+                logger.debug('received {}'.format(step))
             if step.phase == Phase.DECO_STOP:
                 depth = self.engine._to_depth(step.abs_p)
                 if depth in stops:
                     stops[depth][1] = step.time
                 else:
                     stops[depth] = [step.prev.time, step.time]
+                if __debug__:
+                    t = stops[depth][1] - stops[depth][0]
+                    logger.debug('deco stop length at {}m: {}s'.format(depth, t))
 
 
 # vim: sw=4:et:ai
