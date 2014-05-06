@@ -1,5 +1,13 @@
 Changelog
 =========
+DecoTengu 0.8.0
+---------------
+- implemented tabular tissue saturation calculator to allow decompression
+  calculations without exponential function
+- implemented initial support for calculations with decimal data type
+- fixed a bug, which caused performance degradation of the algorithm
+  searching for decompression stop length
+
 DecoTengu 0.7.0
 ---------------
 - added documentation section about algorithms related to dive ascent
