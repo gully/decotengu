@@ -159,6 +159,11 @@ class NDLTestCase(EngineTest):
     """
     NDL dive tests
     """
+    def setUp(self):
+        super().setUp()
+        self.engine.descent_rate = 10
+
+
     def test_ndl_dive_30m_100(self):
         """
         Test NDL dive to 30m (gf high 100)
@@ -181,7 +186,7 @@ class NDLTestCase(EngineTest):
         engine.model.gf_high = 0.9
         engine.add_gas(0, 21)
 
-        list(engine.calculate(30, 17))
+        list(engine.calculate(30, 18))
         self.assertEquals(0, dt.total)
 
 
@@ -194,7 +199,7 @@ class NDLTestCase(EngineTest):
         engine.model.gf_high = 0.9
         engine.add_gas(0, 21)
 
-        list(engine.calculate(30, 18))
+        list(engine.calculate(30, 19))
         self.assertTrue(dt.total > 0)
 
 
