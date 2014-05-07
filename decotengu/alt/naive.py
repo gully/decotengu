@@ -121,7 +121,7 @@ class DecoStopStepper(object):
         """
         Execute dive decompression stop using 1min intervals.
 
-        .. seealso:: `decotengu.Engine._deco_ascent`
+        .. seealso:: `decotengu.Engine._deco_stop`
         """
         step = start
         engine = self.engine
