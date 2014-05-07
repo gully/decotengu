@@ -165,6 +165,22 @@ class EngineTestCase(unittest.TestCase):
         self.assertTrue(v)
 
 
+    def test_step_start(self):
+        """
+        Test creation of initial dive step record
+        """
+        self.engine.model.init = mock.MagicMock()
+
+        step = self.engine._step_start(1.2, AIR)
+        self.assertEqual('start', step.phase)
+        self.assertEqual(1.2, step.abs_p)
+        self.assertEqual(0, step.time)
+        self.assertEqual(AIR, step.gas)
+        self.assertIs(None, step.prev)
+
+        self.engine.model.init.assert_called_once_with(1)
+
+
     def test_step_next(self):
         """
         Test creation of next dive step record
@@ -379,6 +395,20 @@ class EngineTestCase(unittest.TestCase):
         p = self.engine.calculate(100, 5) # 5min to descent at 20m/min
         with self.assertRaises(EngineError):
             list(p)
+
+
+    def test_no_descent(self):
+        """
+        Test deco engine no descent flag
+        """
+        self.engine._dive_descent = mock.MagicMock()
+        steps = list(self.engine.calculate(40, 20, descent=False))
+
+        self.assertFalse(self.engine._dive_descent.called)
+        step = steps[0]
+        self.assertEquals(Phase.START, step.phase, step)
+        self.assertEquals(0, step.time, step)
+        self.assertEquals(5, step.abs_p, step)
 
 
 

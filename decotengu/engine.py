@@ -231,6 +231,24 @@ class Engine(object):
         return abs_p < ceiling
 
 
+    def _step_start(self, abs_p, gas):
+        """
+        Create the very first dive step.
+
+        The first step is initialized with decompression data calculated
+        for surface.
+
+        The dive starting depth is usually surface, but any depth can be
+        specified, i.e. when descent part of the dive is to be skipped.
+
+        :param abs_p: Absolute pressure of dive starting depth.
+        :param gas: Gas mix configuration.
+        """
+        data = self.model.init(self.surface_pressure)
+        step = Step(Phase.START, abs_p, 0, gas, data, None)
+        return step
+
+
     def _step_next(self, step, time, gas, phase='const'):
         """
         Calculate next dive step at constant depth and advanced by
@@ -352,8 +370,7 @@ class Engine(object):
         :param gas_list: List of gas mixes - travel and bottom gas mixes.
         """
         gas = gas_list[0]
-        data = self.model.init(self.surface_pressure)
-        step = Step(Phase.START, self.surface_pressure, 0, gas, data, None)
+        step = self._step_start(self.surface_pressure, gas)
         yield step
 
         stages = self._descent_stages(abs_p, gas_list)
@@ -924,7 +941,7 @@ class Engine(object):
             self._gas_list.append(GasMix(depth, o2, 100 - o2 - he, he))
 
 
-    def calculate(self, depth, time):
+    def calculate(self, depth, time, descent=True):
         """
         Start dive profile calculation for specified dive depth and bottom
         time.
@@ -937,6 +954,7 @@ class Engine(object):
 
         :param depth: Maximum depth [m].
         :param time: Dive bottom time [min].
+        :param descent: Skip descent part of a dive if set to false.
 
         .. seealso:: :func:`decotengu.Engine._validate_gas_list`
         .. seealso:: :func:`decotengu.Engine.add_gas`
@@ -950,7 +968,11 @@ class Engine(object):
         gas_list.append(bottom_gas)
 
         abs_p = self._to_pressure(depth)
-        for step in self._dive_descent(abs_p, gas_list):
+        if descent:
+            for step in self._dive_descent(abs_p, gas_list):
+                yield step
+        else:
+            step = self._step_start(abs_p, bottom_gas)
             yield step
 
         # prepare decompression gases, first gas mix is assumed to be

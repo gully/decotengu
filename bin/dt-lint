@@ -83,8 +83,10 @@ parser.add_argument(
     help='slice dive time into chunks to create dive steps every time delta' \
         ' value, i.e. 60, 0.5 [s]; no slicing by default'
 )
-#parser.add_argument('--no-descent', '-nd', dest='descent',
-#        default=True, type=bool, help='decompression model')
+parser.add_argument(
+    '--no-descent', '-nd', dest='descent', action='store_false',
+    default=True, help='skip dive descent'
+)
 parser.add_argument(
     '--tissue-file', '-f', dest='tissue_file',
     default=None, type=str, help='tissue saturation data output file'
@@ -158,7 +160,7 @@ if 'tab' in args.alt:
 #
 
 f = sender(engine.calculate, *pipeline)
-data = f(args.depth, args.time)
+data = f(args.depth, args.time, descent=args.descent)
 for s in data: pass
 
 print('Dive profile: {:3}m for {}min'.format(args.depth, args.time))

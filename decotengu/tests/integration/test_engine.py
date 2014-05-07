@@ -27,7 +27,18 @@ from decotengu import create
 
 import unittest
 
-class EngineTestCase(unittest.TestCase):
+
+class EngineTest(unittest.TestCase):
+    """
+    Abstract class for all DecoTengu engine test cases.
+    """
+    def _engine(self, *args, **kw):
+        engine, dt = create(*args, **kw)
+        return engine, dt
+
+
+
+class EngineTestCase(EngineTest):
     """
     DecoTengu engine integration tests.
     """
@@ -37,7 +48,7 @@ class EngineTestCase(unittest.TestCase):
         """
         time_delta = [None, 60, 0.1]
         for t in time_delta:
-            engine, dt = create(time_delta=t)
+            engine, dt = self._engine(time_delta=t)
             engine.model.gf_low = 0.2
             engine.model.gf_high = 0.9
             engine.add_gas(0, 27)
@@ -62,7 +73,7 @@ class EngineTestCase(unittest.TestCase):
         times = {21: 20, 22: 19, 24: 19}
         stops = {21: 8, 22: 7, 24: 7}
         for delta, depth in itertools.product(time_delta, mix_depth):
-            engine, dt = create(time_delta=delta)
+            engine, dt = self._engine(time_delta=delta)
             engine.model.gf_low = 0.2
             engine.model.gf_high = 0.9
             engine.add_gas(0, 21)
@@ -79,7 +90,7 @@ class EngineTestCase(unittest.TestCase):
         """
         Test a dive with travel gas mix
         """
-        engine, dt = create()
+        engine, dt = self._engine()
         engine.model.gf_low = 0.2
         engine.model.gf_high = 0.75
         engine.add_gas(0, 36, travel=True)
@@ -100,7 +111,7 @@ class EngineTestCase(unittest.TestCase):
         decompression stop at 6m is extended by much more than sum of deco
         stops at 3m and 6m.
         """
-        engine, dt = create()
+        engine, dt = self._engine()
         engine.last_stop_6m = True
         engine.add_gas(0, 21)
 
@@ -123,7 +134,7 @@ class EngineTestCase(unittest.TestCase):
         stop at 3m, the decompression stop at 6m is extended just a bit
         comparing to sum of deco stops at 3m and 6m.
         """
-        engine, dt = create()
+        engine, dt = self._engine()
         engine.last_stop_6m = True
         engine.add_gas(0, 21)
         engine.add_gas(24, 50)
@@ -140,7 +151,7 @@ class EngineTestCase(unittest.TestCase):
 
 
 
-class NDLTestCase(unittest.TestCase):
+class NDLTestCase(EngineTest):
     """
     NDL dive tests
     """
@@ -148,7 +159,7 @@ class NDLTestCase(unittest.TestCase):
         """
         Test NDL dive to 30m (gf high 100)
         """
-        engine, dt = create()
+        engine, dt = self._engine()
         engine.model.gf_high = 1.0
         engine.add_gas(0, 21)
 
@@ -160,7 +171,7 @@ class NDLTestCase(unittest.TestCase):
         """
         Test NDL dive to 30m (gf high 90)
         """
-        engine, dt = create()
+        engine, dt = self._engine()
         engine.model.gf_high = 0.9
         engine.add_gas(0, 21)
 
@@ -172,7 +183,7 @@ class NDLTestCase(unittest.TestCase):
         """
         Test non-NDL dive to 30m (gf high 90)
         """
-        engine, dt = create()
+        engine, dt = self._engine()
         engine.model.gf_high = 0.9
         engine.add_gas(0, 21)
 
@@ -181,7 +192,7 @@ class NDLTestCase(unittest.TestCase):
 
 
 
-class ProfileTestCase(unittest.TestCase):
+class ProfileTestCase(EngineTest):
     """
     Integration tests for various dive profiles
     """
@@ -192,10 +203,7 @@ class ProfileTestCase(unittest.TestCase):
         See figure 3, page 7 of the paper for the dive profile and
         decompression stops information.
         """
-        engine, dt = create()
-        # it seems the dive profile in Baker paper does not take into
-        # account descent, so set descent rate to high value
-        engine.descent_rate = 10000
+        engine, dt = self._engine()
         engine.model.gf_low = 0.2
         engine.model.gf_high = 0.75
         engine.add_gas(0, 13, 50)
@@ -203,7 +211,9 @@ class ProfileTestCase(unittest.TestCase):
         engine.add_gas(21, 50)
         engine.add_gas(9, 80)
 
-        data = list(engine.calculate(90, 20))
+        # it seems the dive profile in Baker paper does not take into
+        # account descent
+        data = list(engine.calculate(90, 20, descent=False))
         self.assertEquals((57, 1), dt.stops[0])
         self.assertEquals((54, 1), dt.stops[1])
         self.assertEquals((51, 1), dt.stops[2])
