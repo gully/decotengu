@@ -37,6 +37,10 @@ class EngineTest(unittest.TestCase):
         return engine, dt
 
 
+    def setUp(self):
+        self.engine, self.dt = self._engine()
+
+
 
 class EngineTestCase(EngineTest):
     """
@@ -159,7 +163,8 @@ class NDLTestCase(EngineTest):
         """
         Test NDL dive to 30m (gf high 100)
         """
-        engine, dt = self._engine()
+        engine = self.engine
+        dt = self.dt
         engine.model.gf_high = 1.0
         engine.add_gas(0, 21)
 
@@ -171,7 +176,8 @@ class NDLTestCase(EngineTest):
         """
         Test NDL dive to 30m (gf high 90)
         """
-        engine, dt = self._engine()
+        engine = self.engine
+        dt = self.dt
         engine.model.gf_high = 0.9
         engine.add_gas(0, 21)
 
@@ -183,7 +189,8 @@ class NDLTestCase(EngineTest):
         """
         Test non-NDL dive to 30m (gf high 90)
         """
-        engine, dt = self._engine()
+        engine = self.engine
+        dt = self.dt
         engine.model.gf_high = 0.9
         engine.add_gas(0, 21)
 
@@ -203,7 +210,8 @@ class ProfileTestCase(EngineTest):
         See figure 3, page 7 of the paper for the dive profile and
         decompression stops information.
         """
-        engine, dt = self._engine()
+        engine = self.engine
+        dt = self.dt
         engine.model.gf_low = 0.2
         engine.model.gf_high = 0.75
         engine.add_gas(0, 13, 50)
