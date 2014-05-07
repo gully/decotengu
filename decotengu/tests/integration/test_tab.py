@@ -39,6 +39,7 @@ class EngineTest(unittest.TestCase):
 
 
     def setUp(self):
+        self.engine, self.dt = self._engine()
 
 
 
