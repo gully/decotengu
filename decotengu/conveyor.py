@@ -105,14 +105,14 @@ class Conveyor(object):
         return k, r
 
 
-    def __call__(self, *args):
+    def __call__(self, *args, **kw):
         """
         Execute original `Engine.calculate` method and expand dive steps.
         """
         if __debug__:
             logger.debug('conveyor time delta {}'.format(self.time_delta))
 
-        data = self.f_calc(*args)
+        data = self.f_calc(*args, **kw)
         yield next(data)
 
         for end in data:
