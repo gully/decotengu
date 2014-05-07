@@ -429,10 +429,10 @@ def linearize(engine, method, step_next, arg_is_time=False):
         for i in range(1, k):
             step = step_next(step, calc.max_time, gas, **kw)
         if arg_is_time:
-            return method(step, calc.max_time, gas)
+            return method(step, calc.max_time, gas, **kw)
         else:
             logger.debug('{} -> {}'.format(step, abs_p))
-            return method(step, abs_p, gas)
+            return method(step, abs_p, gas, **kw)
 
     return wrapper
 
