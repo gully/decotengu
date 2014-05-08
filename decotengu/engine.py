@@ -353,9 +353,6 @@ class Engine(object):
         return step
 
 
-    _dive_const = _step_next
-
-
     def _dive_descent(self, abs_p, gas_list):
         """
         Dive descent from surface to absolute pressure of destination
@@ -376,7 +373,8 @@ class Engine(object):
             if i > 0: # perform gas switch
                 step = self._switch_gas(step, gas)
                 yield step
-            step = self._free_descent(step, depth, gas)
+            time = self._pressure_to_time(depth - step.abs_p, self.descent_rate)
+            step = self._step_next_descent(step, time, gas)
             yield step
 
         last = gas_list[-1]
@@ -814,20 +812,6 @@ class Engine(object):
         logger.debug('deco engine: gf at surface={:.4f}'.format(step.data.gf))
 
 
-    def _free_descent(self, start, abs_p, gas):
-        """
-        Descent, starting with current dive step, to absolute pressure of
-        destination depth.
-
-        :param start: Dive step indicating current depth.
-        :param abs_p: Absolute pressure of destination depth.
-        :param gas: Gas mix configuration.
-        """
-        time = self._pressure_to_time(abs_p - start.abs_p, self.descent_rate)
-        step = self._step_next_descent(start, time, gas)
-        return step
-
-
     def _deco_stops(self, step, stages):
         """
         Calculate collection of decompression stops.
@@ -975,7 +959,7 @@ class Engine(object):
             raise EngineError('Bottom time shorter than descent time')
         logger.debug('bottom time {}s (descent is {}s)'.format(t, step.time))
         assert t > 0
-        step = self._dive_const(step, t, bottom_gas)
+        step = self._step_next(step, t, bottom_gas)
         yield step
 
         yield from self._dive_ascent(step, gas_list)

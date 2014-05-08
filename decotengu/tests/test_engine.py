@@ -381,10 +381,10 @@ class EngineTestCase(unittest.TestCase):
         step = _step(Phase.ASCENT, 11, 60 * 5)
         self.engine._dive_descent = mock.MagicMock(side_effect=[[step]])
         self.engine._dive_ascent = mock.MagicMock()
-        self.engine._dive_const = mock.MagicMock()
+        self.engine._step_next = mock.MagicMock()
         p = self.engine.calculate(100, 30) # 5min to descent at 20m/min
         list(p)
-        self.engine._dive_const.assert_called_once_with(step, 25 * 60, AIR)
+        self.engine._step_next.assert_called_once_with(step, 25 * 60, AIR)
 
 
     def test_bottom_time_error(self):
