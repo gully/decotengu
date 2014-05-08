@@ -575,11 +575,17 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         """
         start = _step(Phase.ASCENT, 4.0, 1000)
         step = _step(Phase.ASCENT, 1.0, 1200)
-        self.engine._free_ascent = mock.MagicMock(return_value=step)
+        self.engine._step_next_ascent = mock.MagicMock(return_value=step)
         self.engine.model.ceiling_limit = mock.MagicMock(return_value=1.0)
 
         result = self.engine._ndl_ascent(start, AIR)
-        self.assertEquals(step, result)
+        self.assertEqual(step, result)
+        args, kwargs = self.engine._step_next_ascent.call_args_list[0]
+        self.assertEqual(1, self.engine._step_next_ascent.call_count)
+        self.assertEqual(start, args[0])
+        self.assertAlmostEqual(180, args[1])
+        self.assertEqual(AIR, args[2])
+        self.assertEqual({'gf': 0.85}, kwargs)
 
 
     def test_ndl_ascent_not_ndl(self):
@@ -588,7 +594,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         """
         start = _step(Phase.ASCENT, 4.0, 1000)
         step = _step(Phase.ASCENT, 1.0, 1200)
-        self.engine._free_ascent = mock.MagicMock(return_value=step)
+        self.engine._step_next_ascent = mock.MagicMock(return_value=step)
         self.engine.model.ceiling_limit = mock.MagicMock(return_value=1.5)
 
         result = self.engine._ndl_ascent(start, AIR)

@@ -444,9 +444,12 @@ class Engine(object):
         :param start: Starting dive step.
         :param gas: Gas mix used during NDL ascent.
         """
-        gf = self.model.gf_high
-        step = self._free_ascent(start, self.surface_pressure, gas, gf=gf)
         # FIXME: method is decompression model dependant
+
+        gf = self.model.gf_high
+        p = start.abs_p - self.surface_pressure
+        time = self._pressure_to_time(p, self.ascent_rate)
+        step = self._step_next_ascent(start, time, gas, gf=gf)
         limit = self.model.ceiling_limit(step.data, gf)
         if step.abs_p < limit:
             step = None
