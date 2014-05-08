@@ -709,11 +709,16 @@ class Engine(object):
             steps = (self._switch_gas(step, gas),)
         else:
             assert step.abs_p > gp
-            s1 = self._free_ascent(step, gp, gas)
+
+            time = self._pressure_to_time(step.abs_p - gp, self.ascent_rate)
+            s1 = self._step_next_ascent(step, time, step.gas)
+
             s2 = self._switch_gas(s1, gas)
-            s3 = self._free_ascent(
-                s2, self._to_pressure(gas.depth // 3 * 3), gas
-            )
+
+            p = self._to_pressure(gas.depth // 3 * 3)
+            time = self._pressure_to_time(s2.abs_p - p, self.ascent_rate)
+            s3 = self._step_next_ascent(s2, time, gas)
+
             steps = (s1, s2, s3)
         return steps
 
@@ -821,22 +826,6 @@ class Engine(object):
         time = self._pressure_to_time(abs_p - start.abs_p, self.descent_rate)
         step = self._step_next_descent(start, time, gas)
         return step
-
-
-    def _free_ascent(self, start, abs_p, gas, gf=None):
-        """
-        Ascent to absolute pressure of destination depth using gas mix.
-
-        The ascent is performed without any decompression stops.  It is
-        caller resposibility to provide the destination depth outside of
-        decompression zone.
-
-        :param start: Dive step indicating current depth.
-        :param abs_p: Absolute pressure of destination depth.
-        :param gas: Gas mix configuration.
-        """
-        time = self._pressure_to_time(start.abs_p - abs_p, self.ascent_rate)
-        return self._step_next_ascent(start, time, gas, gf=gf)
 
 
     def _deco_stops(self, step, stages):

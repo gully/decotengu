@@ -671,18 +671,6 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         self.assertEquals(100, stages[2][1].o2)
 
 
-    def test_free_ascent(self):
-        """
-        Test deco free ascent
-        """
-        data = _data(0.3, 1.0, 1.0)
-        start = _step(Phase.ASCENT, 4.1, 1200, AIR, data=data)
-
-        stop = self.engine._free_ascent(start, 2.0, AIR)
-        self.assertEquals(2.0, stop.abs_p)
-        self.assertEquals(1326, stop.time)
-
-
     def test_ascent_switch_gas_same_depth(self):
         """
         Test gas mix switch at current depth
