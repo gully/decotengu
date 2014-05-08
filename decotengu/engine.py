@@ -455,12 +455,13 @@ class Engine(object):
 
     def _find_first_stop(self, start, abs_p, gas):
         """
-        Find first decompression stop depth using Schreiner equation and
-        bisect algorithm.
+        Find time needed to ascent to first decompression stop depth using
+        Schreiner equation and bisect algorithm.
 
-        The depth is searched between depth indicated by starting dive step
-        and depth parameter (the latter can be 0 (surface) or any other
-        depth (divisible by 3, depth stop candidate).
+        The first decompression stop depth is searched between depth
+        indicated by starting dive step and depth parameter (the latter can
+        be 0 (surface) or any other depth (divisible by 3, depth stop
+        candidate).
 
         The depth of first decompression stop is the shallowest depth,
         which does not breach the ascent limit imposed by maximum tissue
@@ -480,10 +481,11 @@ class Engine(object):
         dt = t % ts_3m
 
         n = t // ts_3m
-        logger.debug(
-            'find first stop: {}bar -> {}bar, {}s, n={}, dt={}s'
+        if __debug__:
+            logger.debug(
+                'find first stop: {}bar -> {}bar, {}s, n={}, dt={}s'
                 .format(start.abs_p, abs_p, start.time, n, dt)
-        )
+            )
         assert t >= 0
         assert 0 <= dt < ts_3m, dt
 
@@ -496,29 +498,33 @@ class Engine(object):
         # find largest k for which ascent without decompression is possible
         k = bisect_find(n, f, start)
 
-        # check `k == 0` before `k == n` as `n == 0` is possible
         if k == 0:
-            abs_p = start.abs_p
-            logger.debug('already at deco zone')
-        elif k == n:
-            abs_p = None
-            logger.debug('find first stop: no deco zone found')
+            time = 0
+            if __debug__:
+                logger.debug('first stop find: already at deco zone')
         else:
-            t = k * ts_3m + dt
-            abs_p = start.abs_p - self._time_to_pressure(t, self.ascent_rate)
-            logger.debug(
-                'find first stop: found, free from {} to {}, ascent time={}' \
-                    .format(start.abs_p, abs_p, t)
-            )
+            time = k * ts_3m + dt
+            if __debug__:
+                p = start.abs_p - self._time_to_pressure(t, self.ascent_rate)
+                if abs(p - abs_p) < EPSILON:
+                    logger.debug(
+                        'find first stop: free from {} to {}, ascent time={}' \
+                        .format(start.abs_p, abs_p, t)
+                    )
+                else:
+                    logger.debug(
+                        'find first stop: found at {}, ascent time={}' \
+                        .format(p, t)
+                    )
 
         if __debug__:
-            depth = self._to_depth(abs_p) if abs_p else None
-            assert abs_p == start.abs_p or not depth or depth % 3 == 0, \
-                'Invalid first stop depth pressure {}bar ({}m)'.format(
-                    abs_p, depth
-                )
+            p = start.abs_p - self._time_to_pressure(t, self.ascent_rate)
+            depth = self._to_depth(p)
+            assert p == start.abs_p or depth % 3 == 0, \
+                'Invalid first stop depth pressure {}bar ({}m)' \
+                .format(abs_p, depth)
 
-        return abs_p
+        return time
 
 
     def _descent_stages(self, end_abs_p, gas_list):
@@ -752,16 +758,14 @@ class Engine(object):
 
             # check if there is first decompression stop at this ascent
             # stage
-            stop = self._find_first_stop(step, depth, gas)
-            if stop and abs(stop - step.abs_p) < EPSILON:
-                break
-            elif stop:
-                step = self._free_ascent(step, stop, gas)
+            t = self._find_first_stop(step, depth, gas)
+            if t > 0:
+                step = self._step_next_ascent(step, t, gas)
                 yield step
-                break
+                if abs(step.abs_p - depth) > 0: # decompression stop found
+                    break
             else:
-                step = self._free_ascent(step, depth, gas)
-                yield step
+                break
 
 
     def _deco_staged_ascent(self, start, stages):
