@@ -834,7 +834,6 @@ class Engine(object):
         :param gas: Gas mix configuration.
         """
         dt = self._pressure_to_time(start.abs_p - abs_p, self.ascent_rate)
-        time = start.time + dt
         return self._step_next_ascent(start, dt, gas, gf=gf)
 
 
