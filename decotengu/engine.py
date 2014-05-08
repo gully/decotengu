@@ -303,11 +303,11 @@ class Engine(object):
 
     def _tissue_pressure_const(self, abs_p, time, gas, data):
         """
-        Calculate tissues gas loading after exposure for specified time at
-        constant pressure.
+        Calculate tissues gas loading after exposure for specified amount
+        of time at depth.
 
-        :param abs_p: The pressure indicating the depth [bar].
-        :param time: Time at pressure in seconds.
+        :param abs_p: Absolute pressure indicating the depth [bar].
+        :param time: Time at depth in seconds.
         :param gas: Gas mix configuration.
         :param data: Decompression model data.
         """
@@ -316,8 +316,7 @@ class Engine(object):
 
     def _tissue_pressure_descent(self, abs_p, time, gas, data):
         """
-        Calculate tissues gas loading after descent from pressure for
-        specified amount of time.
+        Calculate tissues gas loading after descent.
 
         :param abs_p: Starting pressure indicating the depth [bar].
         :param time: Time of descent in seconds.
@@ -329,18 +328,17 @@ class Engine(object):
         return data
 
 
-    def _tissue_pressure_ascent(self, abs_p, time, gas, tp_start):
+    def _tissue_pressure_ascent(self, abs_p, time, gas, data):
         """
-        Calculate tissues gas loading after ascent from pressure for
-        specified amount of time.
+        Calculate tissues gas loading after ascent.
 
         :param abs_p: Starting pressure indicating the depth [bar].
         :param time: Time of ascent in seconds.
         :param gas: Gas mix configuration.
-        :param tp_start: Initial tissues pressure.
+        :param data: Decompression model data.
         """
         rate = -self.ascent_rate * self._meter_to_bar
-        tp = self.model.load(abs_p, time, gas, rate, tp_start)
+        tp = self.model.load(abs_p, time, gas, rate, data)
         return tp
 
 
