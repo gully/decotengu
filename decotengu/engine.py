@@ -813,10 +813,7 @@ class Engine(object):
         :param abs_p: Absolute pressure of destination depth.
         :param gas: Gas mix configuration.
         """
-        p = abs_p - start.abs_p
-        time = self._pressure_to_time(p, self.descent_rate)
-        if __debug__:
-            logger.debug('descent for {}s using gas {}'.format(time, gas))
+        time = self._pressure_to_time(abs_p - start.abs_p, self.descent_rate)
         step = self._step_next_descent(start, time, gas)
         return step
 
@@ -833,8 +830,8 @@ class Engine(object):
         :param abs_p: Absolute pressure of destination depth.
         :param gas: Gas mix configuration.
         """
-        dt = self._pressure_to_time(start.abs_p - abs_p, self.ascent_rate)
-        return self._step_next_ascent(start, dt, gas, gf=gf)
+        time = self._pressure_to_time(start.abs_p - abs_p, self.ascent_rate)
+        return self._step_next_ascent(start, time, gas, gf=gf)
 
 
     def _deco_stops(self, step, stages):
