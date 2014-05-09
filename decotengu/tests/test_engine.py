@@ -287,6 +287,28 @@ class EngineTestCase(unittest.TestCase):
         self.assertEquals([1.2, 1.3], v)
 
 
+    def test_ascent_check(self):
+        """
+        Test function checking ascent possibility
+        """
+        data = [1.1, 2.1]
+        self.engine._tissue_pressure_ascent = mock.MagicMock()
+        self.engine.model.ceiling_limit = mock.MagicMock(return_value=3.0)
+        v = self.engine._can_ascend(3.2, 12, AIR, data)
+        self.assertTrue(v)
+
+
+    def test_ascent_check_edge(self):
+        """
+        Test function checking ascent possibility (at limit)
+        """
+        data = [1.1, 2.1]
+        self.engine._tissue_pressure_ascent = mock.MagicMock()
+        self.engine.model.ceiling_limit = mock.MagicMock(return_value=3.101)
+        v = self.engine._can_ascend(3.4, 18, AIR, data)
+        self.assertFalse(v)
+
+
     @mock.patch('decotengu.engine.bisect_find')
     def test_first_stop_finder(self, f_bf):
         """
@@ -296,8 +318,6 @@ class EngineTestCase(unittest.TestCase):
         ascent time is calculated.
         """
         start = _step(Phase.ASCENT, 4.1, 1200)
-        self.engine._step_next_ascent = mock.MagicMock()
-
         f_bf.return_value = 6 # 31m -> 30m - k * 3m == 12m,
                               # so ascent for 19m or 114s
         time = self.engine._find_first_stop(start, 1.0, AIR)
@@ -310,11 +330,8 @@ class EngineTestCase(unittest.TestCase):
         Test first deco stop finder when starting depth is deco stop
         """
         start = _step(Phase.ASCENT, 2.2, 1200)
-        self.engine._step_next_ascent = mock.MagicMock()
-
         f_bf.return_value = 0 # the 12m is depth of deco stop
         time = self.engine._find_first_stop(start, 1.0, AIR)
-        self.assertFalse(self.engine._step_next_ascent.called)
         self.assertEqual(0, time)
 
 
@@ -327,12 +344,10 @@ class EngineTestCase(unittest.TestCase):
         possible, but let's be defensive here.
         """
         start = _step(Phase.ASCENT, 2.3, 1200)
-        self.engine._step_next_ascent = mock.MagicMock()
 
         f_bf.return_value = 0
         # (2.3 - 2.2) results in n == 0
         time = self.engine._find_first_stop(start, 2.2, AIR)
-        self.assertFalse(self.engine._step_next_ascent.called)
         self.assertEqual(0, time)
 
 
@@ -341,7 +356,6 @@ class EngineTestCase(unittest.TestCase):
         """
         Test if first deco stop finder calculates proper amount of steps (depth=0m)
         """
-        self.engine._step_next_ascent = mock.MagicMock()
         start = _step(Phase.ASCENT, 4.1, 1200)
 
         f_bf.return_value = 6
@@ -357,7 +371,6 @@ class EngineTestCase(unittest.TestCase):
         Test first deco stop finder when no deco required
         """
         start = _step(Phase.ASCENT, 4.1, 1200)
-        self.engine._step_next_ascent = mock.MagicMock()
 
         f_bf.return_value = 10 # 31m -> 30m - k * 3m == 0m,
                                # so 31m ascent or 186s

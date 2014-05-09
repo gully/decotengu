@@ -342,6 +342,21 @@ class Engine(object):
         return tp
 
 
+    def _can_ascend(self, abs_p, time, gas, data):
+        """
+        Check if a diver can ascent from depth for specified amount of
+        time.
+
+        :param abs_p: Starting pressure indicating the depth [bar].
+        :param time: Time of ascent in seconds.
+        :param gas: Gas mix configuration.
+        :param data: Decompression model data.
+        """
+        data = self._tissue_pressure_ascent(abs_p, time, gas, data)
+        p = abs_p - self._time_to_pressure(time, self.ascent_rate)
+        return p >= self.model.ceiling_limit(data)
+
+
     def _switch_gas(self, step, gas):
         """
         Switch gas mix.
@@ -468,6 +483,11 @@ class Engine(object):
         which does not breach the ascent limit imposed by maximum tissue
         pressure limit. The depth is divisble by 3.
 
+        The implementation of the algorithm does not use
+        :func:`decotengu.DecoTengu._step_next_ascent` method, so it can be
+        safely overriden, i.e. by code using tabular based tissue
+        calculations.
+
         :param start: Starting dive step indicating current depth.
         :param abs_p: Absolute pressure of depth limit - surface or gas
             switch depth.
@@ -493,11 +513,11 @@ class Engine(object):
         # for each k ascent for k * t(3m) + dt seconds and check if ceiling
         # limit invariant is not violated; k * t(3m) + dt formula gives
         # first stop candidates as multiples of 3m
-        f = lambda k, step: self._inv_limit(
-            self._step_next_ascent(step, k * ts_3m + dt, gas)
-        )
+        f = lambda k, data: \
+            self._can_ascend(start.abs_p, k * ts_3m + dt, gas, start.data)
+
         # find largest k for which ascent without decompression is possible
-        k = bisect_find(n, f, start)
+        k = bisect_find(n, f, start.data)
 
         if k == 0:
             time = 0
@@ -505,25 +525,25 @@ class Engine(object):
                 logger.debug('first stop find: already at deco zone')
         else:
             time = k * ts_3m + dt
+
             if __debug__:
-                p = start.abs_p - self._time_to_pressure(t, self.ascent_rate)
+                p = start.abs_p - self._time_to_pressure(time, self.ascent_rate)
+                depth = self._to_depth(p)
+
+                assert depth % 3 == 0, \
+                    'Invalid first stop depth pressure {}bar ({}m)' \
+                    .format(p, depth)
+
                 if abs(p - abs_p) < EPSILON:
                     logger.debug(
                         'find first stop: free from {} to {}, ascent time={}' \
-                        .format(start.abs_p, abs_p, t)
+                        .format(start.abs_p, abs_p, time)
                     )
                 else:
                     logger.debug(
                         'find first stop: found at {}, ascent time={}' \
-                        .format(p, t)
+                        .format(p, time)
                     )
-
-        if __debug__:
-            p = start.abs_p - self._time_to_pressure(t, self.ascent_rate)
-            depth = self._to_depth(p)
-            assert p == start.abs_p or depth % 3 == 0, \
-                'Invalid first stop depth pressure {}bar ({}m)' \
-                .format(abs_p, depth)
 
         return time
 
