@@ -988,7 +988,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         data = _data(0.3, 2.5, 2.5, 2.5)
         step = _step(Phase.ASCENT, 2.5, 1200, data=data)
 
-        f_r.return_value = step
+        f_r.return_value = (0, data)
         f_bf.return_value = 0 # expect 1min deco stop
 
         step = self.engine._deco_stop(step, 18, AIR, 0.42)

@@ -342,7 +342,7 @@ class Engine(object):
         return tp
 
 
-    def _can_ascend(self, abs_p, time, gas, data):
+    def _can_ascend(self, abs_p, time, gas, data, gf=None):
         """
         Check if a diver can ascent from depth for specified amount of
         time.
@@ -351,10 +351,11 @@ class Engine(object):
         :param time: Time of ascent in seconds.
         :param gas: Gas mix configuration.
         :param data: Decompression model data.
+        ;param gf: Gradient factor to be used for ceiling check.
         """
         data = self._tissue_pressure_ascent(abs_p, time, gas, data)
         p = abs_p - self._time_to_pressure(time, self.ascent_rate)
-        return p >= self.model.ceiling_limit(data)
+        return p >= self.model.ceiling_limit(data, gf=gf)
 
 
     def _switch_gas(self, step, gas):
@@ -871,7 +872,7 @@ class Engine(object):
             abs_p = depth
 
 
-    def _deco_stop(self, step, time, gas, gf):
+    def _deco_stop(self, step, next_time, gas, gf):
         """
         Calculate decompression stop.
 
@@ -881,34 +882,59 @@ class Engine(object):
         :func:`decotengu.Engine._inv_deco_stop` method).
 
         :param step: Start of current decompression stop.
-        :param time: Time required to ascent to next deco stop [s].
+        :param next_time: Time required to ascent to next deco stop [s].
         :param gas: Gas mix configuration.
         :param gf: Gradient factor value of next decompression stop.
         """
         if __debug__:
             depth = self._to_depth(step.abs_p)
+            logger.debug('deco stop: calculate at {}m'.format(depth))
             assert depth % 3 == 0 and depth > 0, depth
 
-        max_time = self._deco_stop_search_time
-
-        inv_f = partial(self._inv_deco_stop, time=time, gas=gas, gf=gf)
-        l_step_next_f = partial(self._step_next, time=max_time * 60, gas=gas)
-        l_step = recurse_while(inv_f, l_step_next_f, step)
-        logger.debug('deco stop: linear find finished at {}'.format(l_step))
-
-        b_step_next_f = lambda k, step: \
-                inv_f(self._step_next(step, k * 60, gas))
-        k = bisect_find(max_time, b_step_next_f, l_step)
-        k += 1 # at k * 60 deco stop invariant true, so ascent minute later
-
-        t = round(l_step.time - step.time + k * 60)
-        logger.debug(
-            'deco stop: search completed {}bar, {}s, n2={.n2}%, gf={:.4}'
-            .format(step.abs_p, t, gas, step.data.gf)
+        max_time = self._deco_stop_search_time * 60
+        # next_f(arg=(time, data)): (time, data) <- track both time and deco
+        # data
+        next_f = lambda arg: (
+            arg[0] + max_time,
+            self._tissue_pressure_const(step.abs_p, max_time, gas, arg[1])
         )
-        assert t % 60 == 0 and t > 0, t
+        inv_f = lambda arg: \
+            not self._can_ascend(step.abs_p, next_time, gas, arg[1], gf)
 
-        step = self._step_next(step, t, gas, phase=Phase.DECO_STOP)
+        time, data = recurse_while(inv_f, next_f, (0, step.data))
+
+        if __debug__:
+            logger.debug(
+                'deco stop: linear find finished after {}s'.format(time)
+            )
+            logger.debug('deco stop: deco data {}'.format(data))
+
+        # start with `data` returned by `recurse_while`, so no need to add
+        # `time`
+        next_f = lambda k: self._tissue_pressure_const(
+            step.abs_p, k * 60, gas, data
+        )
+        # should we stay at deco stop?
+        exec_deco_stop = lambda k: \
+            not self._can_ascend(step.abs_p, next_time, gas, next_f(k), gf)
+
+        n = self._deco_stop_search_time
+        k = bisect_find(n, exec_deco_stop)
+        k += 1 # at k * 60 diver should still stay at deco stop as
+               # exec_deco_stop is true - ascent minute later
+
+        # final time of a deco stop
+        time = time + k * 60
+
+        if __debug__:
+            logger.debug(
+                'deco stop: search completed {}bar, {}s, n2={.n2}%, gf={:.4}' \
+                ', next gf={:.4}'
+                .format(step.abs_p, time, gas, step.data.gf, gf)
+            )
+            assert time % 60 == 0 and time > 0, time
+
+        step = self._step_next(step, time, gas, phase=Phase.DECO_STOP)
         return step
 
 

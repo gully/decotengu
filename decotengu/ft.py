@@ -37,6 +37,8 @@ def recurse_while(predicate, f, start):
     while predicate(start):
         x = start
         start = f(x)
+        if __debug__:
+            logger.debug('next result: {}'.format(start))
     if x is None:
         return start
     return x
