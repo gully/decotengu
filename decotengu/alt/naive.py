@@ -123,26 +123,29 @@ class DecoStopStepper(object):
 
         .. seealso:: `decotengu.Engine._deco_stop`
         """
-        step = start
         engine = self.engine
+        abs_p = start.abs_p
 
         if __debug__:
-            assert engine._to_depth(step.abs_p) % 3 == 0
-            logger.debug('executing deco stepper')
+            depth = engine._to_depth(abs_p)
+            assert depth % 3 == 0
+            logger.debug('deco stepper: deco stop at {}m'.format(depth))
 
-        step_f = partial(
-            engine._step_next, time=60, gas=gas, phase=Phase.DECO_STOP
-        )
-        inv_f = partial(engine._inv_deco_stop, time=time, gas=gas, gf=gf)
-        step = step_f(step)
-        while inv_f(step): # execute while diver shall stay at deco stop
-            step = step_f(step)
+        data = engine._tissue_pressure_const(abs_p, 60, gas, start.data)
+        deco_time = 60
+        while not engine._can_ascend(abs_p, time, gas, data, gf):
+            data = engine._tissue_pressure_const(abs_p, 60, gas, data)
+            deco_time += 60
             if __debug__:
-                depth = engine._to_depth(step.abs_p)
-                logger.debug('plus 1min at {}m'.format(depth))
+                logger.debug('deco stepper: time {}s'.format(deco_time))
 
-        assert not inv_f(step)
-        return step._replace(prev=start)
+        step = start._replace(
+            phase=Phase.DECO_STOP,
+            time=start.time + deco_time,
+            data=data,
+            prev=start
+        )
+        return step
 
 
 # vim: sw=4:et:ai
