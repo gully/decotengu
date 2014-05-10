@@ -191,17 +191,20 @@ class Engine(object):
         return round(k)
 
 
-    def _inv_limit(self, step):
+    def _inv_limit(self, abs_p, data):
         """
-        Return true if current dive step does not violate decompression
-        model ceiling limit.
+        Return true if decompression model data does not violate
+        decompression model ceiling limit invariant.
 
-        Absolute pressure (depth) of current dive step has to be deeper or
-        at the same depth as absolute pressure of ceiling limit.
+        The invariant is
 
-        :param step: Current dive step.
+            Absolute pressure (depth) has to be deeper or at the same depth
+            as absolute pressure of ceiling limit.
+
+        :param abs_p: Absolute pressure of current depth.
+        :param data: Decompression model data.
         """
-        return step.abs_p >= self.model.ceiling_limit(step.data)
+        return abs_p >= self.model.ceiling_limit(data)
 
 
     def _inv_deco_stop(self, step, time, gas, gf):
@@ -472,17 +475,21 @@ class Engine(object):
 
     def _find_first_stop(self, start, abs_p, gas):
         """
-        Find time needed to ascent to first decompression stop depth using
-        Schreiner equation and bisect algorithm.
+        Find first first decompression stop using Schreiner equation and
+        bisect algorithm.
 
-        The first decompression stop depth is searched between depth
-        indicated by starting dive step and depth parameter (the latter can
-        be 0 (surface) or any other depth (divisible by 3, depth stop
-        candidate).
+        Method returns dive step - start of first decompression stop.
+
+        Below, by depth we mean absolute pressure of depth expressed in
+        bars.
+
+        The first decompression stop depth is searched between depth of
+        starting dive step and target depth parameter. The latter can be
+        surface or any other depth divisible by 3.
 
         The depth of first decompression stop is the shallowest depth,
-        which does not breach the ascent limit imposed by maximum tissue
-        pressure limit. The depth is divisble by 3.
+        which does not breach the ascent limit imposed by ascent ceiling.
+        The depth is divisble by 3.
 
         The implementation of the algorithm does not use
         :func:`decotengu.DecoTengu._step_next_ascent` method, so it can be
@@ -490,7 +497,7 @@ class Engine(object):
         calculations.
 
         :param start: Starting dive step indicating current depth.
-        :param abs_p: Absolute pressure of depth limit - surface or gas
+        :param abs_p: Absolute pressure of target depth - surface or gas
             switch depth.
         :param gas: Gas mix configuration.
         """
@@ -521,11 +528,12 @@ class Engine(object):
         k = bisect_find(n, f, start.data)
 
         if k == 0:
-            time = 0
+            stop = start
             if __debug__:
                 logger.debug('first stop find: already at deco zone')
         else:
             time = k * ts_3m + dt
+            stop = self._step_next_ascent(start, k * ts_3m + dt, gas)
 
             if __debug__:
                 p = start.abs_p - self._time_to_pressure(time, self.ascent_rate)
@@ -546,7 +554,7 @@ class Engine(object):
                         .format(p, time)
                     )
 
-        return time
+        return stop
 
 
     def _descent_stages(self, end_abs_p, gas_list):
@@ -756,7 +764,8 @@ class Engine(object):
         .. seealso:: :func:`decotengu.Engine._ascent_switch_gas`
         """
         gs_steps = self._ascent_switch_gas(start, gas)
-        return gs_steps if self._inv_limit(gs_steps[-1]) else None
+        last = gs_steps[-1]
+        return gs_steps if self._inv_limit(last.abs_p, last.data) else None
 
 
     def _free_staged_ascent(self, start, stages):
@@ -785,14 +794,15 @@ class Engine(object):
 
             # check if there is first decompression stop at this ascent
             # stage
-            t = self._find_first_stop(step, depth, gas)
-            if t > 0:
-                step = self._step_next_ascent(step, t, gas)
+            s = self._find_first_stop(step, depth, gas)
+            if s.time > step.time:
+                step = s
                 yield step
-                if abs(step.abs_p - depth) > 0: # decompression stop found
+                if abs(step.abs_p - depth) > 0: # deco stop found
                     break
+                # otherwise at target depth without deco stop
             else:
-                break
+                break # already at deco zone
 
 
     def _deco_staged_ascent(self, start, stages):
@@ -827,7 +837,7 @@ class Engine(object):
             yield step
 
             # ascend to next deco stop
-            step = self._step_next_ascent(step, time, gas, gf)
+            step = self._step_next_ascent(step, time, gas, gf=gf)
             yield step
 
         logger.debug('deco engine: gf at surface={:.4f}'.format(step.data.gf))

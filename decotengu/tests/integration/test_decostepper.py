@@ -53,8 +53,8 @@ class DecoStepperTestCase(unittest.TestCase):
         data = list(engine.calculate(40, 35))
 
         self.assertTrue(stepper.called)
-        self.assertEquals(6, len(dt.stops))
-        self.assertEquals(14, dt.total)
+        self.assertEquals(7, len(dt.stops))
+        self.assertEquals(15, dt.total)
 
 
 # vim: sw=4:et:ai

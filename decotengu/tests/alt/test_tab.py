@@ -28,7 +28,7 @@ from decotengu.alt.tab import eq_schreiner_t, exposure_t, \
 from decotengu.model import ZH_L16B_GF, ZH_L16C_GF, Data
 from decotengu.engine import Phase
 
-from ..tools import _engine, _step, AIR
+from ..tools import _engine, _step, _data, AIR
 
 import unittest
 from unittest import mock
@@ -247,34 +247,35 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         assert engine.model.calc.max_depth > 27
 
 
-    #@mock.patch('decotengu.alt.tab.split_time')
     def test_in_deco_zone(self):
         """
         Test first stop tabular search when in deco zone already
 
         When at 27.9m and being in deco zone already, we expect first deco
-        stop finder to return 27.9m value. Also, the finder tried to ascent
-        from 28m (round up of 27.9m) to 27m.
+        stop finder to return 27.9m value. Also, the algorithm tries to
+        ascent from 28m (round up of 27.9m) to 27m (for 6s).
         """
         engine = self.engine
-        engine._inv_limit = mock.MagicMock()
-        engine._step_next_ascent = mock.MagicMock()
+        f = engine._find_first_stop
+        f._can_ascend = mock.MagicMock()
+        f.wrapped = mock.MagicMock(return_value='A')
 
-        engine._inv_limit.return_value = False # trigger being in deco zone
+        f._can_ascend.side_effect = [None]
 
         start = _step(Phase.CONST, 3.79, 1200)
         stop = engine._find_first_stop(start, 1, AIR)
-        assert engine._inv_limit.call_count == 1
+        assert f._can_ascend.call_count == 1
 
-        self.assertEqual(3.79, stop)
-        args = engine._step_next_ascent.call_args_list[0][0]
-        _, t2, _ = args
-        self.assertEqual(1, engine._step_next_ascent.call_count)
-        self.assertAlmostEqual(6, t2)
+        self.assertAlmostEqual(3.79, stop.abs_p)
+        args = f._can_ascend.call_args_list[0][0]
+        print(args)
+        time, depth, t2, _, _ = args
+        self.assertAlmostEqual(3.8, depth)
+        self.assertEqual(0, time)
+        self.assertEqual(6, t2)
 
 
-    @mock.patch('decotengu.alt.tab.bisect_find')
-    def test_level_from_28_5m(self, f_bf):
+    def test_level_from_28_5m(self):
         """
         Test first stop tabular search rounding up depth to value divisible by 3m
 
@@ -283,65 +284,65 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         start searching for first deco stop from 27m.
         """
         engine = self.engine
-        engine._inv_limit = mock.MagicMock()
-        engine._inv_limit.side_effect = [True, False]
+        f = engine._find_first_stop
+        f._can_ascend = mock.MagicMock()
+        f.wrapped = mock.MagicMock(return_value='A')
 
-        f_bf.return_value = 0 # enforce deco stop at 27m
+        r = (12, 3.7, mock.MagicMock())
+        f._can_ascend.side_effect = [r, None]
+
         start = _step(Phase.CONST, 3.85, 1200)
-
         stop = engine._find_first_stop(start, 1, AIR)
 
-        # test invariants:
-        # binary search mocked to return 0, so first stop is at 27m
-        assert stop == 3.7
-        assert engine._inv_limit.call_count == 2
-        assert f_bf.call_count == 1
+        # test post-conditions:
+        assert stop == 'A'
+        assert f._can_ascend.call_count == 2
+        assert f.wrapped.call_count == 1
 
         # extract binary search function call arguments...
-        args = f_bf.call_args_list[0][0]
-        n, _, step = args
+        args = f.wrapped.call_args_list[0][0]
+        step, abs_p, _ = args
         # ... and verify them
-        self.assertEqual(1212, step.time) # initial ascent 29m -> 27m for 12s
-        self.assertEqual(9, n, args)      # binary search started at 27m
-        self.assertAlmostEqual(3.7, step.abs_p)
+        self.assertAlmostEqual(3.7, step.abs_p) # start from 27m
+        self.assertEqual(1212, step.time)       # initial ascent 29m -> 27m for 12s
+        self.assertAlmostEqual(1.0, abs_p)      # end search at surface
 
 
-    @mock.patch('decotengu.alt.tab.bisect_find')
-    def test_linear_search_hit_deco_zone(self, f_bf):
+    def test_linear_search_hit_deco_zone(self):
         """
         Test first stop tabular search when linear search required (with deco zone)
 
-        When at 90m and first deco stop at 57m, we expect to ascent 
-        with linear search once and then search for first deco stop
-        between 60m and 30m.
+        When at 90m and first deco stop at between 30m and 60m, we expect
+        to ascent with linear search once and then search for first deco
+        stop between 60m and 30m.
         """
         engine = self.engine
-        engine._inv_limit = mock.MagicMock()
-        engine._inv_limit.side_effect = [True, True, False]
+        f = engine._find_first_stop
+        f._can_ascend = mock.MagicMock()
+        f.wrapped = mock.MagicMock(return_value='A')
 
-        f_bf.return_value = 1 # enforce deco stop at 57m
+        r1 = (180, 7.0, mock.MagicMock())
+        f._can_ascend.side_effect = [r1, None]
+
         start = _step(Phase.CONST, 10.0, 1200)
-
-        # test invariants:
         stop = engine._find_first_stop(start, 1, AIR)
-        assert f_bf.call_count == 1
-        # recurse_while calls: initial, ok to 60m, not ok to 30m
-        assert engine._inv_limit.call_count == 3
-        # one linear search ascent by 30m done and binary search mocked to
-        # return 1 , so first stop is at 57m
-        assert stop == 6.7
+
+        # test post-condition:
+        assert f.wrapped.call_count == 1
+        # two calls: ok to 60m, not ok to 30m
+        assert f._can_ascend.call_count == 2
+        assert stop == 'A'
 
         # extract binary search function call arguments...
-        args = f_bf.call_args_list[0][0]
-        n, _, step = args
+        args = f.wrapped.call_args_list[0][0]
+        step, abs_p, _ = args
         # ... and verify them
-        self.assertEqual(1380, step.time) # ascent 90m -> 60m
-        self.assertEqual(10, n, args)     # binary search 60m <-> 30m
+        self.assertEqual(1380, step.time)       # ascent 90m -> 60m
         self.assertAlmostEqual(7.0, step.abs_p) # starting at 60m
+        self.assertAlmostEqual(4.0, abs_p)      # search 60m <-> 30m
 
 
-    @mock.patch('decotengu.alt.tab.bisect_find')
-    def test_linear_search_hit_surface(self, f_bf):
+    def test_linear_search_hit_surface(self):
         """
         Test first stop tabular search when linear search required (without deco zone)
 
@@ -349,31 +350,42 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
         search until surface
         """
         engine = self.engine
-        engine._inv_limit = mock.MagicMock()
-        engine._inv_limit.side_effect = [True, True, True, True]
+        f = engine._find_first_stop
+        f._can_ascend = mock.MagicMock()
+        f.wrapped = mock.MagicMock()
 
-        f_bf.return_value = 1 # enforce deco stop at 57m
+        r1 = (180, 7.0, mock.MagicMock())
+        r2 = (360, 4.0, mock.MagicMock())
+        r3 = (540, 1.0, mock.MagicMock())
+        f._can_ascend.side_effect = [r1, r2, r3]
+
+        # 10bar -> split_time: 0 == t1 == t2 and n == 3
         start = _step(Phase.CONST, 10.0, 1200)
-
-        # test invariants:
         stop = engine._find_first_stop(start, 1, AIR)
-        # recurse_while calls: initial one plus 3 calls every 30m
-        assert engine._inv_limit.call_count == 4
 
-        self.assertTrue(stop is None)
-        self.assertFalse(f_bf.called)
+        # test post-condition: # call every 30m from 90m
+        assert f._can_ascend.call_count == 3
+
+        self.assertFalse(f.wrapped.called)
+        self.assertAlmostEqual(1.0, stop.abs_p)
+        self.assertEqual(1740, stop.time)
 
 
     def test_surface(self):
         """
         Test first stop tabular finder when no deco required
         """
-        self.engine._inv_limit = mock.MagicMock()
-        self.engine.surface_pressure = 1
-        start = _step(Phase.ASCENT, 30, 1200)
+        f = self.engine._find_first_stop
+        result = (186, 1.0, mock.MagicMock())
+        f._can_ascend = mock.MagicMock(return_value=result)
+        f.wrapped = mock.MagicMock()
+        start = _step(Phase.ASCENT, 4.1, 1200)
 
-        stop = self.engine._find_first_stop(start, 0, AIR)
-        self.assertTrue(stop is None)
+        stop = f(start, 1.0, AIR)
+        self.assertTrue(f._can_ascend.called)
+        self.assertFalse(f.wrapped.called)
+        self.assertAlmostEqual(1.0, stop.abs_p)
+        self.assertEqual(1386, stop.time)
 
 
 # vim: sw=4:et:ai

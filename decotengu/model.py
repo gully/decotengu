@@ -701,7 +701,7 @@ class DecoModelValidator(object):
                 self.engine._p3m, self.engine.ascent_rate
             )
             stop = self.engine._step_next_ascent(
-                first_stop, ts_3m, first_stop.gas, first_stop.data.gf
+                first_stop, ts_3m, first_stop.gas, gf=first_stop.data.gf
             )
             limit = self.engine.model.ceiling_limit(
                 first_stop.data, first_stop.data.gf

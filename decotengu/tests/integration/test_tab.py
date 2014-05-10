@@ -113,7 +113,7 @@ class EngineTestCase(EngineTest):
 
     def test_last_stop_ean50(self):
         """
-        Test dive on air and with last stop at 6m
+        Test dive with EAN50 deco gas and with last stop at 6m
 
         On air adding EAN50 deco gas and comparing last stop at 6m to last
         stop at 3m, the decompression stop at 6m is extended just a bit
@@ -140,15 +140,15 @@ class EngineTestCase(EngineTest):
 class NDLTestCase(EngineTest, te.NDLTestCase):
     def setUp(self):
         super().setUp()
-        assert self.engine._free_ascent.__name__ == 'wrapper', \
-            self.engine._free_ascent.__name__
+        assert self.engine._step_next_ascent.__name__ == 'wrapper', \
+            self.engine._step_next_ascent.__name__
 
 
 class ProfileTestCase(EngineTest, te.ProfileTestCase):
     def setUp(self):
         super().setUp()
-        assert self.engine._free_ascent.__name__ == 'wrapper', \
-            self.engine._free_ascent.__name__
+        assert self.engine._step_next_ascent.__name__ == 'wrapper', \
+            self.engine._step_next_ascent.__name__
 
 
 # vim: sw=4:et:ai

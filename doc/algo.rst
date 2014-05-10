@@ -127,8 +127,8 @@ method.
 
 Finding First Decompression Stop
 --------------------------------
-The algorithm calculates time needed to ascent to first decompression stop.
-The first decompression stop is at shallowest depth, which is outside dive
+The algorithm calculates absolute pressure of first decompression stop. The
+first decompression stop is at shallowest depth, which is outside dive
 decompression zone. The stop is at depth divisible by 3, it is measured in
 meters and its absolute pressure is measured in bars.
 
@@ -144,9 +144,9 @@ the first decompression stop.
 The time values are proposed using binary search algorithm. We assume
 knowledge of this algorithm.
 
-The algorithm returns time required to ascent to first decompression stop
-or to target depth. It returns zero if a diver is already in decompression
-zone.
+The algorithm returns absolute pressure of detph of first decompression
+stop or the target depth. It returns the starting depth if a diver is
+already in decompression zone.
 
 The algorithm finding first decompression stop is
 
@@ -158,9 +158,9 @@ The algorithm finding first decompression stop is
 #. Using binary search find :math:`k` such that :math:`0 \le k \le n` and
    ascent by time :math:`k * t_{3m} + dt` is possible without violating
    ascent ceiling.
-#. If :math:`k = 0`, then return `0`.
-#. Otherwise, return time needed to ascent to first decompression or to
-   target depth :math:`k * t_{3m} + dt`.
+#. If :math:`k = 0`, then return absolute pressure of starting depth.
+#. Otherwise, return absolute pressure of depth after ascent by time
+   :math:`k * t_{3m} + dt`.
 
 The complexity of the algorithm is :math:`O(log(n))`, where :math:`n` is
 ceiling of current depth divided by 3 number. It depends on complexity

@@ -112,7 +112,7 @@ class EngineTestCase(unittest.TestCase):
         """
         step = _step(Phase.CONST, 3.0, 120)
         self.engine.model.ceiling_limit = mock.MagicMock(return_value=3.0)
-        v = self.engine._inv_limit(step)
+        v = self.engine._inv_limit(step.abs_p, step.data)
         self.assertTrue(v)
 
 
@@ -122,7 +122,7 @@ class EngineTestCase(unittest.TestCase):
         """
         step = _step(Phase.CONST, 3.1, 120)
         self.engine.model.ceiling_limit = mock.MagicMock(return_value=3.101)
-        v = self.engine._inv_limit(step)
+        v = self.engine._inv_limit(step.abs_p, step.data)
         self.assertFalse(v)
 
 
@@ -320,8 +320,9 @@ class EngineTestCase(unittest.TestCase):
         start = _step(Phase.ASCENT, 4.1, 1200)
         f_bf.return_value = 6 # 31m -> 30m - k * 3m == 12m,
                               # so ascent for 19m or 114s
-        time = self.engine._find_first_stop(start, 1.0, AIR)
-        self.assertAlmostEqual(114, time)
+        step = self.engine._find_first_stop(start, 1.0, AIR)
+        self.assertAlmostEqual(1314, step.time)
+        self.assertAlmostEqual(2.2, step.abs_p)
 
 
     @mock.patch('decotengu.engine.bisect_find')
@@ -331,8 +332,8 @@ class EngineTestCase(unittest.TestCase):
         """
         start = _step(Phase.ASCENT, 2.2, 1200)
         f_bf.return_value = 0 # the 12m is depth of deco stop
-        time = self.engine._find_first_stop(start, 1.0, AIR)
-        self.assertEqual(0, time)
+        step = self.engine._find_first_stop(start, 1.0, AIR)
+        self.assertEqual(step, start)
 
 
     @mock.patch('decotengu.engine.bisect_find')
@@ -347,8 +348,8 @@ class EngineTestCase(unittest.TestCase):
 
         f_bf.return_value = 0
         # (2.3 - 2.2) results in n == 0
-        time = self.engine._find_first_stop(start, 2.2, AIR)
-        self.assertEqual(0, time)
+        step = self.engine._find_first_stop(start, 2.2, AIR)
+        self.assertEqual(step, start)
 
 
     @mock.patch('decotengu.engine.bisect_find')
@@ -374,8 +375,9 @@ class EngineTestCase(unittest.TestCase):
 
         f_bf.return_value = 10 # 31m -> 30m - k * 3m == 0m,
                                # so 31m ascent or 186s
-        time = self.engine._find_first_stop(start, 1.0, AIR)
-        self.assertAlmostEqual(186, time)
+        step = self.engine._find_first_stop(start, 1.0, AIR)
+        self.assertAlmostEqual(1386, step.time)
+        self.assertAlmostEqual(1.0, step.abs_p)
 
 
     def test_calculation_no_gas_error(self):
@@ -764,17 +766,15 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         s3 = _step(Phase.CONST, 3.5, 1050, prev=s2)
         s4 = _step(Phase.ASCENT, 1.0, 1200, prev=s3)
 
-        # s3 -> s4 is 25m or 150s
-        self.engine._find_first_stop = mock.MagicMock(return_value=150)
-        self.engine._step_next_ascent = mock.MagicMock(return_value=s4)
+        # s3 -> s4
+        self.engine._find_first_stop = mock.MagicMock(return_value=s4)
 
         stages = [(1.0, AIR)]
         steps = list(self.engine._free_staged_ascent(s3, stages))
-        self.assertEquals([s4], steps)
+        self.assertEqual([s4], steps)
 
         # check if ascent is performed to surface
         self.engine._find_first_stop.assert_called_once_with(s3, 1.0, AIR)
-        self.engine._step_next_ascent.assert_called_once_with(s3, 150, AIR)
 
 
     def test_free_staged_ascent_gas_switch(self):
@@ -797,17 +797,14 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         s8 = _step(Phase.ASCENT, 1.0, 1200, prev=s7) # ascent to surface
 
         self.engine._can_switch_gas = mock.MagicMock(return_value=[s5, s6, s7])
-        # s3 -> s4 is 11m or 66s
-        # s7 -> s8 is 21m or 126s
-        self.engine._find_first_stop = mock.MagicMock(side_effect=[66, 126])
-        self.engine._step_next_ascent = mock.MagicMock(side_effect=[s4, s8])
+        # s3 -> s4 and s7 -> s8
+        self.engine._find_first_stop = mock.MagicMock(side_effect=[s4, s8])
 
         steps = list(self.engine._free_staged_ascent(s3, stages))
         self.assertEquals([s4, s5, s6, s7, s8], steps)
 
-        self.assertEquals(1, self.engine._can_switch_gas.call_count)
-        self.assertEquals(2, self.engine._find_first_stop.call_count)
-        self.assertEquals(2, self.engine._step_next_ascent.call_count)
+        self.assertEqual(1, self.engine._can_switch_gas.call_count)
+        self.assertEqual(2, self.engine._find_first_stop.call_count)
 
 
     def test_free_staged_ascent_with_stop_at_gas_switch(self):
@@ -829,15 +826,13 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         # _can_switch_gas is None -> should result in deco stop at 24m
         # (note, gas switch planned at 22m)
         self.engine._can_switch_gas = mock.MagicMock(return_value=None)
-        self.engine._find_first_stop = mock.MagicMock(return_value=66)
-        self.engine._step_next_ascent = mock.MagicMock(return_value=s4)
+        self.engine._find_first_stop = mock.MagicMock(return_value=s4)
 
         steps = list(self.engine._free_staged_ascent(s3, stages))
         self.assertEquals([s4], steps)
 
-        self.assertEquals(1, self.engine._can_switch_gas.call_count)
-        self.assertEquals(1, self.engine._find_first_stop.call_count)
-        self.assertEquals(1, self.engine._step_next_ascent.call_count)
+        self.assertEqual(1, self.engine._can_switch_gas.call_count)
+        self.assertEqual(1, self.engine._find_first_stop.call_count)
 
 
     def test_deco_staged_ascent(self):

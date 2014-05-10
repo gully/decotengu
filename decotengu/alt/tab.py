@@ -260,105 +260,113 @@ class FirstStopTabFinder(object):
     Find first decompression stop using tabular tissue calculator.
 
     Using tabular tissue calculator allows to avoid usage of costly `exp`
-    function. Other mathematical functions like `log` or `round` are not
-    used as well.
+    and `log` functions.
 
     Ascent rate is assumed to be 10m/min and non-configurable.
 
+    Original, wrapped DecoTengu method is the method implementing algorithm
+    finding first decompression stop.
+
     :var engine: DecoTengu decompression engine.
+    :var wrapped: DecoTengu wrapped original method.
+
+    .. seealso:: :func:`decotengu.Engine._find_first_stop`
     """
-    def __init__(self, engine):
+    def __init__(self, engine, f):
         """
         Create tabular first deco stop finder.
 
         :param engine: DecoTengu decompression engine.
+        :parram f: Wrapped, original method.
         """
         super().__init__()
         self.engine = engine
+        self.wrapped = f
+
+
+    def _can_ascend(self, start_time, depth, time, gas, data):
+        engine = self.engine
+        data = engine._tissue_pressure_ascent(depth, time, gas, data)
+        depth = depth - engine._time_to_pressure(time, engine.ascent_rate)
+        if engine._inv_limit(depth, data):
+            return start_time + time, depth, data
+        else:
+            return None
 
 
     def __call__(self, start, abs_p, gas):
-        logger.debug('executing tabular first deco stop finder')
+        """
+        Find first decompression stop using tabular tissue calculator.
 
-        engine = self.engine
-        model = engine.model
-        max_time = model.calc.max_time
-        ts_3m = const.TIME_3M
-
-        logger.debug(
-            'tabular search: start at {}bar, {}s'
-            .format(start.abs_p, start.time)
-        )
-
-        p = ceil_pressure(start.abs_p - abs_p, engine._meter_to_bar)
-        t = engine._pressure_to_time(p, engine.ascent_rate)
-        # round up current depth, i.e. 31.2m -> 32m
-        step = start._replace(abs_p=abs_p + p)
-        n_mt, t1, t2 = split_time(t, max_time)
+        .. seealso:: :func:`decotengu.Engine._find_first_stop`
+        """
         if __debug__:
             logger.debug(
-                'time split into: n_mt={}, t1={}, t2={}'.format(n_mt, t1, t2)
+                'tabular fist stop search: start at {}bar, {}s'
+                .format(start.abs_p, start.time)
             )
 
+        engine = self.engine
+        max_time = engine.model.calc.max_time
+
+        # round up current depth, i.e. 31.2m -> 32m
+        depth = ceil_pressure(start.abs_p - abs_p, engine._meter_to_bar)
+        depth += abs_p
+
+        total_time = engine._pressure_to_time(depth - abs_p, engine.ascent_rate)
+        n_mt, t1, t2 = split_time(total_time, max_time)
+
+        data = start.data
+        time = 0
+
+        if __debug__:
+            logger.debug(
+                'tabular first stop search: time split into n_mt={}, t1={}' \
+                ', t2={}'.format(n_mt, t1, t2)
+            )
+
+        can_ascend = self._can_ascend
         # ascent to depth divisible by 3m
         if t2 > 0:
-            step = engine._step_next_ascent(step, t2, step.gas)
-            if not engine._inv_limit(step): # already at deco zone
-                return start.abs_p
-
-        recurse = True
-        if t1 > 0:
-            l_step = engine._step_next_ascent(step, t1, step.gas)
-            if engine._inv_limit(l_step):
-                step = l_step # no deco stop after t1 seconds, so advance
-                              # the ascent
+            result = can_ascend(time, depth, t2, gas, data)
+            if result:
+                time, depth, data = result
             else:
-                recurse = False # deco stop within t1 seconds, skip any
-                                # further descent
+                return start
+
+        if t1 > 0:
+            result = can_ascend(time, depth, t1, gas, data)
+            if result:
+                time, depth, data = result
+            else:
+                n_mt = 0 # deco stop within t1 seconds, skip any further ascent
                 max_time = t1
 
         if __debug__:
-            logger.debug('linear search required: {}'.format(recurse))
-
-        if recurse and n_mt > 0:
-            stop_time = step.time + max_time * n_mt
-            if __debug__:
-                logger.debug('linear search stop time: {}'.format(stop_time))
-
-            # execute ascent invariant until calculated time
-            f_inv = lambda step: step.time <= stop_time and engine._inv_limit(step)
-
-            # ascent using max depth allowed by tabular calculator
-            f_step = partial(
-                engine._step_next_ascent, time=max_time, gas=step.gas
+            logger.debug(
+                'tabular fist stop search: max time advance {}'.format(n_mt > 0)
             )
 
-            # ascent until deco zone or surface is hit (but stay deeper than
-            # first deco stop)
-            step = recurse_while(f_inv, f_step, step)
-            if step.time >= stop_time:
-                return None
+        for k in range(n_mt):
+            result = can_ascend(time, depth, max_time, gas, data)
+            if result:
+                time, depth, data = result
+            else:
+                break
 
-        assert max_time % 18 == 0
-        n = max_time // 18
+        if __debug__:
+            logger.debug(
+                'tabular first stop search: linear stopped at' \
+                ' {}bar'.format(depth)
+            )
+            assert round(depth, 10) >= abs_p, depth
+        step = start._replace(abs_p=depth, time=start.time + time, data=data)
 
-        f = lambda k, step: engine._inv_limit(
-            engine._step_next_ascent(step, k * ts_3m, gas)
-        )
-        # find largest k for which ascent without decompression is possible
-        k = bisect_find(n, f, step)
-
-        # check `k == 0` before `k == n` as `n == 0` is possible
-        if k == 0:
-            abs_p = step.abs_p
-        elif k == n:
-            abs_p = None
-            logger.debug('find first stop: no deco zone found')
+        if depth > abs_p > const.EPSILON:
+            p = engine._time_to_pressure(max_time, engine.ascent_rate)
+            return self.wrapped(step, step.abs_p - p, gas)
         else:
-            t = k * ts_3m
-            abs_p = step.abs_p - engine._time_to_pressure(t, engine.ascent_rate)
-
-        return abs_p
+            return step
 
 
 
@@ -379,60 +387,44 @@ def tab_engine(engine):
     engine.descent_rate = 10
     engine.ascent_rate = 10
 
-    engine._free_descent = linearize(
-        engine, engine._free_descent, engine._step_next_descent
-    )
-    engine._dive_const = linearize(
-        engine, engine._dive_const, engine._step_next, arg_is_time=True
-    )
-    engine._free_ascent = linearize(
-        engine, engine._free_ascent, engine._step_next_ascent
-    )
-    engine._find_first_stop = FirstStopTabFinder(engine)
+    max_time = engine.model.calc.max_time
+    engine._step_next_descent = linearize(engine._step_next_descent, max_time)
+    engine._step_next = linearize(engine._step_next, max_time)
+    engine._step_next_ascent = linearize(engine._step_next_ascent, max_time)
+    engine._find_first_stop = FirstStopTabFinder(engine, engine._find_first_stop)
     # FIXME: precompute 1, 2, 3, ..., 8 minutes for exp function
     from .naive import DecoStopStepper
     engine._deco_stop = DecoStopStepper(engine)
 
 
-def linearize(engine, method, step_next, arg_is_time=False):
+def linearize(method, max_time):
     """
     Override a method of DecoTengu engine object to divide tissue
     saturation calculations into steps, so it is possible to use tabular
     tissue calculation.
 
-    :param engine: DecoTengu engine object.
     :param method: Method to override.
-    :param step_next: Function to calculate next dive step (ascent, descent
-        or const).
-    :param arg_is_time: Is 2nd argument of overriden method time or
-        absolute pressure?
+    :param max_time: Maximum time handled by tissue calculator.
     """
-    calc = engine.model.calc
-    def wrapper(step, arg, gas, **kw):
-        if arg_is_time:
-            time = arg
-            logger.debug('linear ascent for {}s'.format(time))
-            k, t1, t2 = split_time(time, calc.max_time)
-        else:
-            abs_p = arg
-            p = ceil_pressure(abs(step.abs_p - abs_p), engine._meter_to_bar)
-            t = engine._pressure_to_time(p, 10)
-            logger.debug('linear ascent for {}s'.format(t))
-            k, t1, t2 = split_time(t, calc.max_time)
+    def wrapper(step, time, gas, **kw):
+        if __debug__:
+            logger.debug('tabular calculations: split time {}s'.format(time))
 
-        # arrange calls, so `method` is always called with
-        # abs(step.abs_p - abs_p) > 0
+        k, t1, t2 = split_time(time, max_time)
+
+        # arrange calls, so `method` is always called with time > 0 at the
+        # very end
         if t2 and (t1 > 0 or k > 0):
-            step = step_next(step, t2, gas, **kw)
+            step = method(step, t2, gas, **kw)
+            time -= t2
         if t1 and k > 0:
-            step = step_next(step, t1, gas, **kw)
+            step = method(step, t1, gas, **kw)
+            time -= t1
         for i in range(1, k):
-            step = step_next(step, calc.max_time, gas, **kw)
-        if arg_is_time:
-            return method(step, calc.max_time, gas, **kw)
-        else:
-            logger.debug('{} -> {}'.format(step, abs_p))
-            return method(step, abs_p, gas, **kw)
+            step = method(step, max_time, gas, **kw)
+            time -= max_time
+        assert time > 0, time
+        return method(step, time, gas, **kw)
 
     return wrapper
 
