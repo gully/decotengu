@@ -214,33 +214,6 @@ class Engine(object):
         return abs_p >= self.model.ceiling_limit(data)
 
 
-    def _inv_deco_stop(self, step, time, gas, gf):
-        """
-        Return true if one should stay at a decompression stop.
-
-        Ceiling limit is calculated for next decompression stop (using
-        gradient factor value) and it is checked that ascent to next stop
-        is not possible (depth of ceiling limit is deeper than depth of
-        next decompression stop).
-
-        The time to ascent to next stop is usually constant (time required
-        to ascent by 3m), but it can differ when last decompression stop is
-        at 6m.
-
-        :param step: Dive step - current decompression stop.
-        :param time: Time required to ascent to next stop [s].
-        :param gas: Gas mix configuration.
-        :param gf: Gradient factor value for next decompression stop.
-        """
-        data = self._tissue_pressure_ascent(step.abs_p, time, gas, step.data)
-        ceiling = self.model.ceiling_limit(data, gf=gf)
-
-        # ascent should not be possible when depth of next stop shallower
-        # than depth of ceiling
-        abs_p = step.abs_p - self._time_to_pressure(time, self.ascent_rate)
-        return abs_p < ceiling
-
-
     def _step_start(self, abs_p, gas):
         """
         Create the very first dive step.
@@ -895,8 +868,7 @@ class Engine(object):
 
         The length of a decompression stop is guarded by gradient factor of
         next decompression stop - the current decompression stop lasts
-        until it is allowed to ascent to next stop (see
-        :func:`decotengu.Engine._inv_deco_stop` method).
+        until it is allowed to ascent to next stop.
 
         :param step: Start of current decompression stop.
         :param next_time: Time required to ascent to next deco stop [s].

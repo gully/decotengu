@@ -126,45 +126,6 @@ class EngineTestCase(unittest.TestCase):
         self.assertFalse(v)
 
 
-    def test_deco_stop_invariant(self):
-        """
-        Test decompression stop invariant
-        """
-        data = _data(0.3, 1.8, 1.8)
-        step = _step(Phase.ASCENT, 2.5, 120, data=data)
-        self.engine._tissue_pressure_ascent = mock.MagicMock(
-            return_value=[2.6, 2.6]
-        )
-        # ascent ceiling still at current deco stop
-        self.engine.model.ceiling_limit = mock.MagicMock(return_value=2.201)
-
-        v = self.engine._inv_deco_stop(step, 18, AIR, gf=0.4)
-        self.engine.model.ceiling_limit.assert_called_once_with(
-            [2.6, 2.6], gf=0.4
-        )
-        self.assertTrue(v)
-
-
-    def test_deco_stop_invariant_6m(self):
-        """
-        Test decompression stop invariant (6m)
-        """
-        data = _data(0.3, 1.8, 1.8)
-        step = _step(Phase.ASCENT, 2.5, 120, data=data)
-        self.engine._tissue_pressure_ascent = mock.MagicMock(
-            return_value=[2.6, 2.6]
-        )
-        # ascent ceiling still at current deco stop
-        self.engine.model.ceiling_limit = mock.MagicMock(return_value=1.901)
-
-        # 36s is 6m
-        v = self.engine._inv_deco_stop(step, 36, AIR, gf=0.4)
-        self.engine.model.ceiling_limit.assert_called_once_with(
-            [2.6, 2.6], gf=0.4
-        )
-        self.assertTrue(v)
-
-
     def test_step_start(self):
         """
         Test creation of initial dive step record
