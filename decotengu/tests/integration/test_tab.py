@@ -126,13 +126,13 @@ class EngineTestCase(EngineTest):
 
         data = list(engine.calculate(45, 25))
         self.assertEquals(6, dt.stops[-1].depth)
-        self.assertEquals(14, dt.stops[-1].time)
+        self.assertEquals(14, dt.stops[-1].time) # or 15 for descent_rate=10
 
         engine.last_stop_6m = False
         data = list(engine.calculate(45, 25))
         self.assertEquals(3, dt.stops[-1].depth)
         t = dt.stops[-1].time + dt.stops[-2].time
-        self.assertEquals(13, t)
+        self.assertEquals(12, t) # or 13 for descent_rate=10
 
 
 
