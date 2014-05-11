@@ -14,6 +14,8 @@ import decotengu
 from decotengu.alt.naive import DecoStopStepper
 from decotengu.alt.tab import tab_engine
 
+COUNT = 10 ** 3
+
 
 def create_engine():
     engine, deco_table = decotengu.create(validate=False)
@@ -42,11 +44,11 @@ def dive_deepstop():
 
 def run(name, engine, depth, t):
     t1 = time.clock()
-    for i in range(100):
+    for i in range(COUNT):
         data = engine.calculate(depth, t, descent=False)
         tuple(data)
     t2 = time.clock()
-    print('{}: {:.2}'.format(name, t2 - t1))
+    print('{}: {:.2f}'.format(name, t2 - t1))
 
 
 engine, depth, t = dive_deepstop()
@@ -54,3 +56,5 @@ run('std 90m 20min', engine, depth, t)
 
 tab_engine(engine)
 run('tab 90m 20min', engine, depth, t)
+
+# vim: sw=4:et:ai
