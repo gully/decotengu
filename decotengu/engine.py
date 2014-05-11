@@ -157,7 +157,7 @@ class Engine(object):
         :param abs_p: Absolute pressure of depth [bar].
         """
         depth = (abs_p - self.surface_pressure) / self._meter_to_bar
-        return round(depth, 10)
+        return round(depth, const.SCALE)
 
 
     def _time_to_pressure(self, time, rate):
