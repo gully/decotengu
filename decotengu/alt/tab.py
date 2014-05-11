@@ -64,7 +64,6 @@ import logging
 
 from ..model import TissueCalculator
 from .. import const
-from ..ft import recurse_while, bisect_find
 
 logger = logging.getLogger(__name__)
 
