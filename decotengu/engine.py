@@ -449,6 +449,11 @@ class Engine(object):
         limit = self.model.ceiling_limit(step.data, gf)
         if step.abs_p < limit:
             step = None
+            if __debug__:
+                logger.debug('deco dive')
+        else:
+            if __debug__:
+                logger.debug('ndl dive')
         return step
 
 
