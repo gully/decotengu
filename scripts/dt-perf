@@ -1,0 +1,56 @@
+#!/usr/bin/env python
+
+"""
+Script to measure DecoTengu overall performance for different
+configurations and few diving scenarios.
+"""
+
+import logging
+import time
+
+logging.basicConfig(level=logging.ERROR)
+
+import decotengu
+from decotengu.alt.naive import DecoStopStepper
+from decotengu.alt.tab import tab_engine
+
+
+def create_engine():
+    engine, deco_table = decotengu.create(validate=False)
+    engine.descent_rate = 10
+    return engine
+
+
+def dive_deepstop():
+    """
+    Dive profile presented in Baker "Deep Stops" paper.
+
+    See figure 3, page 7 of the paper for the dive profile and
+    decompression stops information.
+    """
+    engine = create_engine()
+
+    engine.model.gf_low = 0.2
+    engine.model.gf_high = 0.75
+    engine.add_gas(0, 13, 50)
+    engine.add_gas(33, 36)
+    engine.add_gas(21, 50)
+    engine.add_gas(9, 80)
+
+    return engine, 90, 20
+
+
+def run(name, engine, depth, t):
+    t1 = time.clock()
+    for i in range(100):
+        data = engine.calculate(depth, t, descent=False)
+        tuple(data)
+    t2 = time.clock()
+    print('{}: {:.2}'.format(name, t2 - t1))
+
+
+engine, depth, t = dive_deepstop()
+run('std 90m 20min', engine, depth, t)
+
+tab_engine(engine)
+run('tab 90m 20min', engine, depth, t)
