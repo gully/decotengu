@@ -5,6 +5,7 @@ Script to measure DecoTengu overall performance for different
 configurations and few diving scenarios.
 """
 
+from decimal import Decimal
 import logging
 import time
 
@@ -13,50 +14,52 @@ logging.basicConfig(level=logging.ERROR)
 import decotengu
 from decotengu.alt.naive import DecoStopStepper
 from decotengu.alt.tab import tab_engine
+from decotengu.alt.decimal import DecimalContext
 
 COUNT = 10 ** 3
 
 
-def create_engine():
+def create_engine(type=float):
     engine, deco_table = decotengu.create(validate=False)
-    engine.descent_rate = 10
-    engine.gf_low = 0.3
-    engine.gf_high = 0.85
+    engine.ascent_rate = type(10)
+    engine.descent_rate = type(10)
+    engine.model.gf_low = type(0.3)
+    engine.model.gf_high = type(0.85)
     return engine
 
 
-def dive_shallow():
+def dive_shallow(type=float):
     """
     Shallow dive profile on Air. No gas mix switches.
     """
-    engine = create_engine()
-    engine.add_gas(0, 21)
-    return engine, 17, 90
+    engine = create_engine(type=type)
+    engine.add_gas(type(0), type(21), type(0))
+    return engine, type(17), type(90)
 
 
-def dive_u260():
+def dive_u260(type=float):
     """
     Nitrox dive with one gas switch.
     """
-    engine = create_engine()
-    engine.add_gas(0, 27)
-    engine.add_gas(22, 50)
-    return engine, 45, 25
+    engine = create_engine(type=type)
+    engine.add_gas(type(0), type(27), type(0))
+    engine.add_gas(type(22), type(50), type(0))
+    return engine, type(45), type(25)
 
 
-def dive_he():
+def dive_he(type=float):
     """
     Trimix dive with two gas mix switches.
     """
-    engine = create_engine()
-    engine.add_gas(0, 18, 45)
-    engine.add_gas(22, 50)
-    engine.add_gas(6, 100)
+    engine = create_engine(type=type)
+    engine.add_gas(type(0), type(18), type(45))
+    engine.add_gas(type(22), type(50), type(0))
+    engine.add_gas(type(6), type(100), type(0))
 
-    return engine, 68, 20
+    return engine, type(68), type(20)
 
 
-def dive_deepstop():
+def dive_deepstop(type=float):
     """
     Trimix dive with three gas mix switches.
 
@@ -65,16 +68,16 @@ def dive_deepstop():
     See figure 3, page 7 of the paper for the dive profile and
     decompression stops information.
     """
-    engine = create_engine()
+    engine = create_engine(type=type)
 
-    engine.model.gf_low = 0.2
-    engine.model.gf_high = 0.75
-    engine.add_gas(0, 13, 50)
-    engine.add_gas(33, 36)
-    engine.add_gas(21, 50)
-    engine.add_gas(9, 80)
+    engine.model.gf_low = type(0.2)
+    engine.model.gf_high = type(0.75)
+    engine.add_gas(type(0), type(13), type(50))
+    engine.add_gas(type(33), type(36), type(0))
+    engine.add_gas(type(21), type(50), type(0))
+    engine.add_gas(type(9), type(80), type(0))
 
-    return engine, 90, 20
+    return engine, type(90), type(20)
 
 
 def run(engine, depth, t):
@@ -99,8 +102,15 @@ for name, dive in zip(names, dives):
     rt = run(engine, depth, t)
     print_result('std', name, rt)
 
+    engine, depth, t = dive()
     tab_engine(engine)
     rt = run(engine, depth, t)
     print_result('tab', name, rt)
+
+    with DecimalContext() as ctx:
+        engine, depth, t = dive(type=Decimal)
+        tab_engine(engine)
+        rt = run(engine, depth, t)
+        print_result('tab+dec', name, rt)
 
 # vim: sw=4:et:ai
