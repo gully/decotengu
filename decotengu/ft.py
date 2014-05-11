@@ -22,26 +22,30 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def recurse_while(predicate, f, start):
+def recurse_while(predicate, f, *args):
     """
-    Execute function `f` while predicate function is true.
+    Accumulate value by executing recursively function `f`.
 
-    If `f` is never executed then `start` value is returned.
+    The function `f` is executed with starting arguments. While the
+    predicate for the result is true, the result is fed into function `f`.
+
+    If predicate is never true then starting arguments are returned.
 
     :param predicate: Predicate function guarding execution.
-    :param f: Function to execute. Value returned by the function is passed
-              as argument for next invocation.
-    :param start: Value passed as argument during first execution of `f` function.
+    :param f: Function to execute.
+    :param *args: Starting arguments.
     """
-    x = None
-    while predicate(start):
-        x = start
-        start = f(x)
+    result = f(*args)
+    result = result if type(result) == tuple else (result, )
+    while predicate(*result):
+        args = result # predicate(args) is always true
+        result = f(*args)
+        result = result if type(result) == tuple else (result, )
+
         if __debug__:
-            logger.debug('next result: {}'.format(start))
-    if x is None:
-        return start
-    return x
+            logger.debug('next result: {}'.format(result))
+
+    return args if len(args) > 1 else args[0]
 
 
 def bisect_find(n, f, *args, **kw):

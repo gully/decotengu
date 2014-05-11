@@ -883,14 +883,14 @@ class Engine(object):
         max_time = self._deco_stop_search_time * 60
         # next_f(arg=(time, data)): (time, data) <- track both time and deco
         # data
-        next_f = lambda arg: (
-            arg[0] + max_time,
-            self._tissue_pressure_const(step.abs_p, max_time, gas, arg[1])
+        next_f = lambda time, depth: (
+            time + max_time,
+            self._tissue_pressure_const(step.abs_p, max_time, gas, depth)
         )
-        inv_f = lambda arg: \
-            not self._can_ascend(step.abs_p, next_time, gas, arg[1], gf)
+        inv_f = lambda time, depth: \
+            not self._can_ascend(step.abs_p, next_time, gas, depth, gf)
 
-        time, data = recurse_while(inv_f, next_f, (0, step.data))
+        time, data = recurse_while(inv_f, next_f, 0, step.data)
 
         if __debug__:
             logger.debug(
