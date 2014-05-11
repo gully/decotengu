@@ -32,10 +32,10 @@ algorithm could be used. They are implemented in DecoTengu only for
 comparison purposes.
 """
 
-from functools import partial
 import logging
 
 from ..engine import Phase, Step, ConfigError
+from .. import const
 
 logger = logging.getLogger(__name__)
 
@@ -131,11 +131,12 @@ class DecoStopStepper(object):
             assert depth % 3 == 0
             logger.debug('deco stepper: deco stop at {}m'.format(depth))
 
-        data = engine._tissue_pressure_const(abs_p, 60, gas, start.data)
-        deco_time = 60
+        MINUTE = const.MINUTE
+        data = engine._tissue_pressure_const(abs_p, MINUTE, gas, start.data)
+        deco_time = MINUTE
         while not engine._can_ascend(abs_p, time, gas, data, gf):
-            data = engine._tissue_pressure_const(abs_p, 60, gas, data)
-            deco_time += 60
+            data = engine._tissue_pressure_const(abs_p, MINUTE, gas, data)
+            deco_time += MINUTE
             if __debug__:
                 logger.debug('deco stepper: time {}s'.format(deco_time))
 
