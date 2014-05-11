@@ -49,7 +49,7 @@ class RecurseWhileTestCase(unittest.TestCase):
 
 class BisectFindTestCase(unittest.TestCase):
     """
-    Bisection algorithm search tests.
+    Bisection search algorithm tests.
     """
     def _f(self, k, at, bt):
         a = at[k - 1]
