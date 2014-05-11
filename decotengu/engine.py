@@ -23,7 +23,6 @@ DecoTengu dive decompression engine.
 [mpdfd] Powell, Mark. Deco for Divers, United Kingdom, 2010
 """
 
-from functools import partial
 from collections import namedtuple, OrderedDict
 import math
 import operator
@@ -33,9 +32,9 @@ from .model import ZH_L16B_GF
 from .error import ConfigError, EngineError
 from .ft import recurse_while, bisect_find
 from .flow import coroutine
-from .const import METER_TO_BAR, EPSILON
+from . import const
 
-logger = logging.getLogger('decotengu.engine')
+logger = logging.getLogger(__name__)
 
 class Phase(object):
     """
@@ -122,7 +121,7 @@ class Engine(object):
     def __init__(self):
         super().__init__()
         self.model = ZH_L16B_GF()
-        self.surface_pressure = 1.01325
+        self.surface_pressure = const.SURFACE_PRESSURE
         self.ascent_rate = 10.0
         self.descent_rate = 20.0
         self.last_stop_6m = False
@@ -138,8 +137,8 @@ class Engine(object):
         #
         self._deco_stop_search_time = 4
 
-        self._meter_to_bar = METER_TO_BAR
-        self._p3m = 3 * METER_TO_BAR
+        self._meter_to_bar = const.METER_TO_BAR
+        self._p3m = 3 * const.METER_TO_BAR
 
 
     def _to_pressure(self, depth):
@@ -377,7 +376,7 @@ class Engine(object):
             yield step
 
         last = gas_list[-1]
-        if abs(step.abs_p - self._to_pressure(last.depth)) < EPSILON:
+        if abs(step.abs_p - self._to_pressure(last.depth)) < const.EPSILON:
             assert gas != last
             step = self._switch_gas(step, last)
             yield step
@@ -417,7 +416,7 @@ class Engine(object):
 
         # we should not arrive at the surface - it is non-ndl dive at this
         # stage
-        assert not abs(step.abs_p - self.surface_pressure) < EPSILON
+        assert not abs(step.abs_p - self.surface_pressure) < const.EPSILON
 
         stages = self._deco_ascent_stages(step.abs_p, gas_list)
         yield from self._deco_staged_ascent(step, stages)
@@ -523,7 +522,7 @@ class Engine(object):
                     'Invalid first stop depth pressure {}bar ({}m)' \
                     .format(p, depth)
 
-                if abs(p - abs_p) < EPSILON:
+                if abs(p - abs_p) < const.EPSILON:
                     logger.debug(
                         'find first stop: free from {} to {}, ascent time={}' \
                         .format(start.abs_p, abs_p, time)
@@ -712,7 +711,7 @@ class Engine(object):
         gp = self._to_pressure(gas.depth)
         logger.debug('ascent gas switch to {} at {}bar'.format(gas, step.abs_p))
         assert step.abs_p - gp < self._p3m
-        if abs(step.abs_p - gp) < EPSILON:
+        if abs(step.abs_p - gp) < const.EPSILON:
             steps = (self._switch_gas(step, gas),)
         else:
             assert step.abs_p > gp
@@ -853,9 +852,9 @@ class Engine(object):
             n = self._n_stops(abs_p, depth)
             for k in range(n):
                 gf += gf_step
-                if ls_6m and abs(abs_p - k * self._p3m - stop_at_6m) < EPSILON:
+                if ls_6m and abs(abs_p - k * self._p3m - stop_at_6m) < const.EPSILON:
                     yield depth, gas, 2 * ts_3m, gf + gf_step
-                    assert abs(self.model.gf_high - gf - gf_step) < EPSILON
+                    assert abs(self.model.gf_high - gf - gf_step) < const.EPSILON
                     break
                 else:
                     yield depth, gas, ts_3m, gf
