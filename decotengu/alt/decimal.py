@@ -76,13 +76,20 @@ class DecimalContext(object):
         ctx = self.ctx.__enter__()
         ctx.prec = self.prec
 
-        attrs = ('WATER_VAPOUR_PRESSURE_DEFAULT', 'LOG_2')
+        attrs = (
+            'WATER_VAPOUR_PRESSURE_DEFAULT', 'LOG_2', 'SURFACE_PRESSURE',
+            'METER_TO_BAR', 'ROUND_VALUE', 'MINUTE'
+        )
         self._override(self.const, attrs, self.const_data)
+        self.const_data['SCALE'] = self.const.SCALE
+        self.const.SCALE = self.prec - 4
+        self.const.EPSILON = 10 ** -self.const.SCALE
 
         self.tab_data['exposure_t'] = self.tab.exposure_t
         exp_t = self.tab.exposure_t
         self.tab.exposure_t = lambda t, hl: \
             tuple(self.type(v) for v in exp_t(t, hl))
+        self._override(self.tab, ('MAX_DEPTH', ), self.tab_data)
 
         for cls in (self.model.ZH_L16B_GF, self.model.ZH_L16C_GF):
             self.model_data[cls] = {}
@@ -97,6 +104,8 @@ class DecimalContext(object):
         Param undo all changes to the constants of decompression models.
         """
         self._undo(self.const, self.const_data)
+        self.const.SCALE = 10
+        self.const.EPSILON = 10 ** -self.const.SCALE
         self._undo(self.tab, self.tab_data)
         for cls in (self.model.ZH_L16B_GF, self.model.ZH_L16C_GF):
             self._undo(cls, self.model_data[cls])

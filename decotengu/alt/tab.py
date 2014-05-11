@@ -119,7 +119,7 @@ def ceil_pressure(pressure, meter_to_bar):
     :param pressure: Input pressure value [bar].
     :param meter_to_bar: Meter to bar conversion constant.
     """
-    return (round(pressure / meter_to_bar + 0.499999)) * meter_to_bar
+    return (round(pressure / meter_to_bar + const.ROUND_VALUE)) * meter_to_bar
 
 
 def split_time(time, max_time):
@@ -147,7 +147,7 @@ def split_time(time, max_time):
     k = int(time // max_time)
     r = time % max_time
     t1 = r // const.TIME_3M * const.TIME_3M
-    t2 = round(r % const.TIME_3M, 10)
+    t2 = round(r % const.TIME_3M, const.SCALE)
     return k, t1, t2
 
 
@@ -190,7 +190,7 @@ class TabTissueCalculator(TissueCalculator):
 
         # start from 3m, increase by 3m, depth multiplied by 6s (ascent
         # rate 10m/min)
-        times = range(18, MAX_DEPTH * 6 + 18, 18)
+        times = range(18, int(MAX_DEPTH * 6 + 18), 18)
         self._n2_exp_time = [exposure_t(t, self.n2_half_life) for t in times]
         self._n2_exp_1m = exposure_t(6, self.n2_half_life)
         self._n2_exp_2m = exposure_t(12, self.n2_half_life)
@@ -222,7 +222,7 @@ class TabTissueCalculator(TissueCalculator):
         :param p_he: He pressure in Current tissue compartment [bar].
         :param tissue_no: Tissue number.
         """
-        time = round(time, 10)
+        time = round(time, const.SCALE)
         if time == 60:
             n2_exp = self._n2_exp_10m[tissue_no]
             he_exp = self._he_exp_10m[tissue_no]
@@ -358,7 +358,7 @@ class FirstStopTabFinder(object):
                 'tabular first stop search: linear stopped at' \
                 ' {}bar'.format(depth)
             )
-            assert round(depth, 10) >= abs_p, depth
+            assert round(depth, const.SCALE) >= abs_p, depth
         step = start._replace(abs_p=depth, time=start.time + time, data=data)
 
         if depth > abs_p > const.EPSILON:
