@@ -1,3 +1,8 @@
+Alternative Implementations
+===========================
+
+.. automodule:: decotengu.alt.tab
+
 ..   The calculations are divided into the following parts
 ..
 ..   - descent

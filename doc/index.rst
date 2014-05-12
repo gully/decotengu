@@ -37,6 +37,7 @@ Table of Contents
    cmd
    model
    algo
+   alt
    design
    api
    changelog
