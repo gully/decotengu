@@ -67,12 +67,13 @@ from .. import const
 
 logger = logging.getLogger(__name__)
 
-# Maximum depth change for Schreiner equation when using precomputed values
-# of `exp` function. We want this constant to be multiply of full minute
-# to make it useful for calculation of decompression stop length.
-MAX_DEPTH = 30 # time: MAX_DEPTH * 6s
-assert MAX_DEPTH * 6 % 60 == 0, 'Invalid max depth value'
+# Maximum time change for constant depth when using tabular Schreiner
+# equation. Useful when calculating bottom time or length of deco stop.
+MAX_CONST_TIME = 8
 
+# Maximum time for change depth when using tabular Schreiner equation.
+# Useful when calculating descent or ascent.
+MAX_CHANGE_TIME = 3
 
 def eq_schreiner_t(abs_p, time, gas, rate, pressure, half_life, texp,
         wvp=const.WATER_VAPOUR_PRESSURE_DEFAULT):
@@ -158,26 +159,30 @@ class TabTissueCalculator(TissueCalculator):
     Calculate tissue gas loading using precomputed values for exp and ln
     functions.
 
-    :var _n2_exp_time: Collection of precomputed values for exp function
-        between 3m and max depth change allowed by the calculator (every
-        3m, 6s at 10m/min). For nitrogen.
+    :var _n2_exp_3m: Collection of precomputed values for exp function
+        between 3m and depth derived from max depth change time allowed by
+        the calculator (every 3m, 18s at 10m/min). For nitrogen.
     :var _n2_exp_1m: Precomputed Nitrogen values for exp function for 1m depth
         change (6s at 10m/min). For nitrogen.
     :var _n2_exp_2m: Precomputed values for exp function for 2m depth
         change (12s at 10m/min). For nitrogen.
-    :var _n2_exp_10m: Precomputed values for exp function for 10m depth
-        change (1min at 10m/min). For nitrogen.
-    :var _he_exp_time: Collection of precomputed values for exp function
-        between 3m and max depth change allowed by the calculator (every
-        3m, 6s at 10m/min). For helium.
+    :var _n2_exp_10m: Collection of precomputed values for exp function
+        between 10m and depth derived from max depth change time allowed by
+        the calculator (every 10m, 60s at 10m/min). For nitrogen.
+    :var _he_exp_3m: Collection of precomputed values for exp function
+        between 3m and depth derived from max depth change time allowed by
+        the calculator (every 3m, 18s at 10m/min). For helium.
     :var _he_exp_1m: Precomputed Nitrogen values for exp function for 1m depth
         change (6s at 10m/min). For helium.
     :var _he_exp_2m: Precomputed values for exp function for 2m depth
         change (12s at 10m/min). For helium.
-    :var _he_exp_10m: Precomputed values for exp function for 10m depth
-        change (1min at 10m/min). For helium.
-    :var max_depth: Maximum depth change allowed by the calculator.
-    :var max_time: Maximum time change allowed by the calculator.
+    :var _he_exp_10m: Collection of precomputed values for exp function
+        between 10m and max depth derived from max depth change time
+        allowed by the calculator (every 10m, 60s at 10m/min). For helium.
+    :var max_const_time: Maximum time allowed for constant depth
+        calculations when using tabular tissue calculator.
+    :var max_change_time: Maximum time allowed to ascent or descent
+        when using tabular tissue calculator.
     """
     def __init__(self, n2_half_life, he_half_life):
         """
@@ -188,23 +193,28 @@ class TabTissueCalculator(TissueCalculator):
         """
         super().__init__(n2_half_life, he_half_life)
 
-        # start from 3m, increase by 3m, depth multiplied by 6s (ascent
-        # rate 10m/min)
-        times = range(18, int(MAX_DEPTH * 6 + 18), 18)
-        self._n2_exp_time = [exposure_t(t, self.n2_half_life) for t in times]
-        self._n2_exp_1m = exposure_t(6, self.n2_half_life)
-        self._n2_exp_2m = exposure_t(12, self.n2_half_life)
-        self._n2_exp_10m = exposure_t(60, self.n2_half_life)
-        self._he_exp_time = [exposure_t(t, self.he_half_life) for t in times]
-        self._he_exp_1m = exposure_t(6, self.he_half_life)
-        self._he_exp_2m = exposure_t(12, self.he_half_life)
-        self._he_exp_10m = exposure_t(60, self.he_half_life)
+        # every 3m or 18s
+        times = range(18, int(MAX_CHANGE_TIME * 60) + 1, 18)
+        self._n2_exp_3m = [exposure_t(t, self.n2_half_life) for t in times]
+        self._he_exp_3m = [exposure_t(t, self.he_half_life) for t in times]
 
-        self.max_depth = MAX_DEPTH
-        self.max_time = self.max_depth * 6
-        logger.debug('max depth={}m, max_time={}s'.format(
-            self.max_depth, self.max_time
-        ))
+        self._n2_exp_1m = exposure_t(6, self.n2_half_life)
+        self._he_exp_1m = exposure_t(6, self.he_half_life)
+        self._n2_exp_2m = exposure_t(12, self.n2_half_life)
+        self._he_exp_2m = exposure_t(12, self.he_half_life)
+
+        # used by deco stop calculations, every 1min
+        times = range(60, int(MAX_CONST_TIME * 60) + 1, 60)
+        self._n2_exp_10m = [exposure_t(t, self.n2_half_life) for t in times]
+        self._he_exp_10m = [exposure_t(t, self.he_half_life) for t in times]
+
+        self.max_const_time = MAX_CONST_TIME * 60
+        self.max_change_time = MAX_CHANGE_TIME * 60
+        if __debug__:
+            logger.debug(
+                'max const time={}s, max change time={}s'
+                .format(self.max_const_time, self.max_change_time)
+            )
 
 
     def load_tissue(self, abs_p, time, gas, rate, p_n2, p_he, tissue_no):
@@ -222,20 +232,23 @@ class TabTissueCalculator(TissueCalculator):
         :param p_he: He pressure in Current tissue compartment [bar].
         :param tissue_no: Tissue number.
         """
+        assert time > 0
+
         time = round(time, const.SCALE)
-        if time == 60:
-            n2_exp = self._n2_exp_10m[tissue_no]
-            he_exp = self._he_exp_10m[tissue_no]
+        if time % 60 == 0 and time <= self.max_const_time:
+            idx = int(time // 60) - 1
+            n2_exp = self._n2_exp_10m[idx][tissue_no]
+            he_exp = self._he_exp_10m[idx][tissue_no]
+        elif time % 18 == 0 and time <= self.max_change_time:
+            idx = int(time // 18) - 1
+            n2_exp = self._n2_exp_3m[idx][tissue_no]
+            he_exp = self._he_exp_3m[idx][tissue_no]
         elif time == 6:
             n2_exp = self._n2_exp_1m[tissue_no]
             he_exp = self._he_exp_1m[tissue_no]
         elif time == 12:
             n2_exp = self._n2_exp_2m[tissue_no]
             he_exp = self._he_exp_2m[tissue_no]
-        elif 0 < time <= self.max_time and time % 18 == 0:
-            idx = int(time // 18) - 1
-            n2_exp = self._n2_exp_time[idx][tissue_no]
-            he_exp = self._he_exp_time[idx][tissue_no]
         else:
             raise ValueError('Invalid time value {}'.format(time))
 
@@ -306,7 +319,7 @@ class FirstStopTabFinder(object):
             )
 
         engine = self.engine
-        max_time = engine.model.calc.max_time
+        max_time = engine.model.calc.max_change_time
 
         # round up current depth, i.e. 31.2m -> 32m
         depth = ceil_pressure(start.abs_p - abs_p, engine._meter_to_bar)
@@ -359,6 +372,7 @@ class FirstStopTabFinder(object):
                 ' {}bar'.format(depth)
             )
             assert round(depth, const.SCALE) >= abs_p, depth
+
         step = start._replace(abs_p=depth, time=start.time + time, data=data)
 
         if depth > abs_p > const.EPSILON:
@@ -380,36 +394,66 @@ def tab_engine(engine):
     calc = TabTissueCalculator(model.N2_HALF_LIFE, model.HE_HALF_LIFE)
     model.calc = calc
 
-    engine._deco_stop_search_time = calc.max_time // 60
+    max_const_time = engine.model.calc.max_const_time
+    max_change_time = engine.model.calc.max_change_time
+    engine._deco_stop_search_time = max_const_time // 60
 
     logger.warning('overriding descent rate and ascent rate to 10m/min')
     engine.descent_rate = 10
     engine.ascent_rate = 10
 
-    max_time = engine.model.calc.max_time
-    engine._step_next_descent = linearize(engine._step_next_descent, max_time)
-    engine._step_next = linearize(engine._step_next, max_time)
-    engine._step_next_ascent = linearize(engine._step_next_ascent, max_time)
+    engine._step_next_descent = linearize(
+        engine._step_next_descent, max_const_time, max_change_time
+    )
+    engine._step_next_ascent = linearize(
+        engine._step_next_ascent, max_const_time, max_change_time
+    )
+    engine._step_next = linearize(
+        engine._step_next, max_const_time, max_change_time
+    )
     engine._find_first_stop = FirstStopTabFinder(engine, engine._find_first_stop)
-    # FIXME: precompute 1, 2, 3, ..., 8 minutes for exp function
-    from .naive import DecoStopStepper
-    engine._deco_stop = DecoStopStepper(engine)
 
 
-def linearize(method, max_time):
+def linearize(method, max_const_time, max_change_time):
     """
     Override a method of DecoTengu engine object to divide tissue
     saturation calculations into steps, so it is possible to use tabular
-    tissue calculation.
+    tissue calculator.
+
+    Both maximum time for constant depth and depth change are used to
+    minimize number of steps to be performed.
 
     :param method: Method to override.
-    :param max_time: Maximum time handled by tissue calculator.
+    :param max_const_time: Maximum time for constant depth calculations.
+    :param max_change_time: Maximum time for depth change calculations.
     """
     def wrapper(step, time, gas, **kw):
+        start = step
         if __debug__:
-            logger.debug('tabular calculations: split time {}s'.format(time))
+            logger.debug('linearize: time to split {}s'.format(time))
 
-        k, t1, t2 = split_time(time, max_time)
+        # arrange calls, so `method` is always called with time > 0 at the
+        # very end
+        n = int(time // max_const_time)
+        t = time % max_const_time
+        if t:
+            time = t
+        else:
+            n -= 1
+            time = max_const_time
+
+        for k in range(n):
+            step = method(step, max_const_time, gas, **kw)
+
+        k, t1, t2 = split_time(time, max_change_time)
+
+        if __debug__:
+            logger.debug(
+                'linearize: advanced by {}s'.format(max_const_time * n)
+            )
+            logger.debug(
+                'linearize: splitted n={}, t1={}, t2={}'.format(k, t1, t2)
+            )
 
         # arrange calls, so `method` is always called with time > 0 at the
         # very end
@@ -420,10 +464,12 @@ def linearize(method, max_time):
             step = method(step, t1, gas, **kw)
             time -= t1
         for i in range(1, k):
-            step = method(step, max_time, gas, **kw)
-            time -= max_time
+            step = method(step, max_change_time, gas, **kw)
+            time -= max_change_time
         assert time > 0, time
-        return method(step, time, gas, **kw)
+
+        step = method(step, time, gas, **kw)
+        return step._replace(prev=start)
 
     return wrapper
 

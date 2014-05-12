@@ -189,11 +189,8 @@ class TabularTissueCalculatorTestCase(unittest.TestCase):
         # non-divisible by 18
         self.assertRaises(ValueError, c.load_tissue, 4, 31, AIR, -1, 3, 1, 1)
 
-        # being 0
-        self.assertRaises(ValueError, c.load_tissue, 4, 0, AIR, -1, 3, 1, 1)
-
         # outside max time range
-        t = c.max_time + 1
+        t = c.max_const_time + 1
         self.assertRaises(ValueError, c.load_tissue, 4, t, AIR, -1, 3, 1, 1)
 
 
@@ -244,7 +241,7 @@ class FirstStopTabFinderTestCase(unittest.TestCase):
     def setUp(self):
         engine = self.engine = _engine()
         tab_engine(engine)
-        assert engine.model.calc.max_depth > 27
+        assert engine.model.calc.max_change_time >= 180
 
 
     def test_in_deco_zone(self):

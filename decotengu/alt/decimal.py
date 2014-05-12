@@ -89,7 +89,8 @@ class DecimalContext(object):
         exp_t = self.tab.exposure_t
         self.tab.exposure_t = lambda t, hl: \
             tuple(self.type(v) for v in exp_t(t, hl))
-        self._override(self.tab, ('MAX_DEPTH', ), self.tab_data)
+        attrs = 'MAX_CONST_TIME', 'MAX_CHANGE_TIME'
+        self._override(self.tab, attrs, self.tab_data)
 
         for cls in (self.model.ZH_L16B_GF, self.model.ZH_L16C_GF):
             self.model_data[cls] = {}
