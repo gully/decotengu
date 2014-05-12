@@ -6,7 +6,9 @@ configurations and few diving scenarios.
 """
 
 from decimal import Decimal
+import itertools
 import logging
+from pprint import pprint
 import time
 
 logging.basicConfig(level=logging.ERROR)
@@ -19,8 +21,10 @@ from decotengu.alt.decimal import DecimalContext
 COUNT = 10 ** 3
 
 
-def create_engine(type=float):
+def create_engine(type=float, stepper=False):
     engine, deco_table = decotengu.create(validate=False)
+    if stepper:
+        engine._deco_stop = DecoStopStepper(engine)
     engine.ascent_rate = type(10)
     engine.descent_rate = type(10)
     engine.model.gf_low = type(0.3)
@@ -28,30 +32,30 @@ def create_engine(type=float):
     return engine
 
 
-def dive_shallow(type=float):
+def dive_shallow(type=float, stepper=False):
     """
     Shallow dive profile on Air. No gas mix switches.
     """
-    engine = create_engine(type=type)
+    engine = create_engine(type=type, stepper=stepper)
     engine.add_gas(type(0), type(21), type(0))
     return engine, type(17), type(90)
 
 
-def dive_u260(type=float):
+def dive_u260(type=float, stepper=False):
     """
     Nitrox dive with one gas switch.
     """
-    engine = create_engine(type=type)
+    engine = create_engine(type=type, stepper=stepper)
     engine.add_gas(type(0), type(27), type(0))
     engine.add_gas(type(22), type(50), type(0))
     return engine, type(45), type(25)
 
 
-def dive_he(type=float):
+def dive_he(type=float, stepper=False):
     """
     Trimix dive with two gas mix switches.
     """
-    engine = create_engine(type=type)
+    engine = create_engine(type=type, stepper=stepper)
     engine.add_gas(type(0), type(18), type(45))
     engine.add_gas(type(22), type(50), type(0))
     engine.add_gas(type(6), type(100), type(0))
@@ -59,7 +63,7 @@ def dive_he(type=float):
     return engine, type(68), type(20)
 
 
-def dive_deepstop(type=float):
+def dive_deepstop(type=float, stepper=False):
     """
     Trimix dive with three gas mix switches.
 
@@ -68,7 +72,7 @@ def dive_deepstop(type=float):
     See figure 3, page 7 of the paper for the dive profile and
     decompression stops information.
     """
-    engine = create_engine(type=type)
+    engine = create_engine(type=type, stepper=stepper)
 
     engine.model.gf_low = type(0.2)
     engine.model.gf_high = type(0.75)
@@ -94,23 +98,49 @@ def print_result(engine, name, t):
     print('{},{},{:.2f}'.format(engine, name, t))
 
 
-names = tuple('Scenario {}'.format(i) for i in range(1, 5))
+names = (
+    'Standard', 'Standard + Stepper', 'Tabular', 'Tabular + Stepper',
+    'Tabular + Decimal',
+)
+scenarios = tuple('Scenario {}'.format(i) for i in range(1, 5))
 dives = dive_shallow, dive_u260, dive_he, dive_deepstop
-print('engine,name,time')
-for name, dive in zip(names, dives):
+
+results = {}
+for n, s in itertools.product(names, scenarios):
+    results[n] = {}
+    results[n][s] = {}
+
+for scenario, dive in zip(scenarios, dives):
     engine, depth, t = dive()
     rt = run(engine, depth, t)
-    print_result('std', name, rt)
+    results['Standard'][scenario] = rt
+
+    engine, depth, t = dive(stepper=True)
+    rt = run(engine, depth, t)
+    results['Standard + Stepper'][scenario] = rt
 
     engine, depth, t = dive()
     tab_engine(engine)
     rt = run(engine, depth, t)
-    print_result('tab', name, rt)
+    results['Tabular'][scenario] = rt
+
+    engine, depth, t = dive(stepper=True)
+    tab_engine(engine)
+    rt = run(engine, depth, t)
+    results['Tabular + Stepper'][scenario] = rt
 
     with DecimalContext() as ctx:
         engine, depth, t = dive(type=Decimal)
         tab_engine(engine)
         rt = run(engine, depth, t)
-        print_result('tab+dec', name, rt)
+        results['Tabular + Decimal'][scenario] = rt
+
+s = ''.join('{:>12}'.format(s) for s in scenarios)
+print(' ' * 20 + s)
+
+for n in names:
+    t = '{:>20}'.format(n)
+    s = ''.join('{:>12.2f}'.format(results[n][s]) for s in scenarios)
+    print(t + s)
 
 # vim: sw=4:et:ai
