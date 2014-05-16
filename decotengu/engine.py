@@ -759,7 +759,7 @@ class Engine(object):
         :param start: Starting dive step.
         :param stages: Dive stages.
 
-        .. seealso:: :func:`decotengu.Engine._ascent_stages_free`
+        .. seealso:: :func:`decotengu.Engine._free_ascent_stages`
         """
         step = start
         for depth, gas in stages:
