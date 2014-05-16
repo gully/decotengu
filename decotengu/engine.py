@@ -763,7 +763,7 @@ class Engine(object):
         """
         step = start
         for depth, gas in stages:
-            if step.abs_p - self._to_pressure(gas.depth) < self._p3m:
+            if step.gas != gas: # first step might not need gas switch
                 # if gas switch drives us into deco zone, then stop ascent
                 # leaving `step` as first decompression stop
                 logger.debug('attempt to switch gas {} at {}'.format(gas, step))
