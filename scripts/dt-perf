@@ -3,6 +3,8 @@
 """
 Script to measure DecoTengu overall performance for different
 configurations and few diving scenarios.
+
+The script report times in milliseconds.
 """
 
 from decimal import Decimal
@@ -18,7 +20,7 @@ from decotengu.alt.naive import DecoStopStepper
 from decotengu.alt.tab import tab_engine
 from decotengu.alt.decimal import DecimalContext
 
-COUNT = 10 ** 3
+COUNT = 5 * 10 ** 1
 
 
 def create_engine(type=float, stepper=False):
@@ -140,7 +142,7 @@ print(' ' * 20 + s)
 
 for n in names:
     t = '{:>20}'.format(n)
-    s = ''.join('{:>12.2f}'.format(results[n][s]) for s in scenarios)
+    s = ''.join('{:>12.1f}'.format(results[n][s] / COUNT * 1000) for s in scenarios)
     print(t + s)
 
 # vim: sw=4:et:ai
