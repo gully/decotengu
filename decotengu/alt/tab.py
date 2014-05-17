@@ -20,9 +20,9 @@
 """
 Tabular Calculations
 --------------------
-To calculate inert gas saturation of tissues, the decompression model uses
-Schreiner equation, which calls exponential function. Such call can be too
-costly or even impossible on some of the hardware architectures, i.e.
+To calculate saturation of inert gas in tissues, the decompression model
+uses Schreiner equation, which calls exponential function. Such call can be
+too costly or even impossible on some of the hardware architectures, i.e.
 microcontrollers lacking FPU. To make decompression software available on
 such hardware architectures, the exponential function values can be
 precomputed and stored in a table. DecoTengu library allows to experiment
