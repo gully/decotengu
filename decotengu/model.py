@@ -78,7 +78,7 @@ The Schreiner equation is
 
     .. math::
 
-        P = P_alv + R * (t - 1 / k) - (P_alv - P - R / k) * e^{-k * t}
+        P = P_{alv} + R * (t - 1 / k) - (P_{alv} - P - R / k) * e^{-k * t}
 
 Pressure of inert gas in tissue compartment :math:`P` (on the right of the
 equation) is initial pressure in tissue compartment, i.e. `0.79` bar on the
@@ -89,37 +89,37 @@ of a dive.
 
 The variables of the equation are
 
-:math:`P_alv`
-    Pressure of inspired inert gas: :math:`P_alv = F_gas * (P_abs - P_wvp)`
+:math:`P_{alv}`
+    Pressure of inspired inert gas: :math:`P_{alv} = F_{gas} * (P_{abs} - P_{wvp})`
 
 :math:`t`
     Time of exposure in minutes.
 
 :math:`k`
-    Tissue compartment half-life time constant: :math:`k = ln(2) / T_hl`
+    Tissue compartment half-life time constant: :math:`k = ln(2) / T_{hl}`
 
 :math:`R`
-    Rate of change of inert gas pressure: :math:`R = F_gas * P_rate`
+    Rate of change of inert gas pressure: :math:`R = F_{gas} * P_{rate}`
 
 where
 
-:math:`P_abs`
+:math:`P_{abs}`
     Absolute pressure of current depth [bar].
 
-:math:`F_gas`
+:math:`F_{gas}`
     Inert gas fraction, i.e. `0.79` for air.
 
-:math:`P_rate`
+:math:`P_{rate}`
     Pressure rate change [bar/min] (for example, about 1 bar/min is
     10m/min).
 
-:math:`T_hl`
+:math:`T_{hl}`
     Inert gas half-life time for tissue compartment.
 
-:math:`P_wvp`
+:math:`P_{wvp}`
     Water vapour pressure.
 
-The values for :math:`P_rate` parameter can be
+The values for :math:`P_{rate}` parameter can be
 
 zero
     constant depth exposure
@@ -150,34 +150,34 @@ variables are
 
     :math:`P = 0.79` (initial pressure of inert gas in tissue compartment - 79% of :math:`N_2`)
 
-    :math:`P_abs = 1` (starting from 0m or 1 bar)
+    :math:`P_{abs} = 1` (starting from 0m or 1 bar)
 
-    :math:`F_gas = 0.68` (EAN32)
+    :math:`F_{gas} = 0.68` (EAN32)
 
-    :math:`P_alv = 0.68 * (1 - 0.0627) = 0.637364`
+    :math:`P_{alv} = 0.68 * (1 - 0.0627) = 0.637364`
 
     :math:`R = 0.68 * 2` (20m/min is 2 bar per minute pressure change)
 
-    :math:`T_hl = 5.0`  (:math:`N_2` half-life time for first tissue compartment in ZH-L16B-GF)
+    :math:`T_{hl} = 5.0`  (:math:`N_2` half-life time for first tissue compartment in ZH-L16B-GF)
 
     :math:`t = 1.5` (1.5 minute to descent by 30m at 20m/min)
 
-    :math:`k = ln(2) / T_hl = 0.138629`
+    :math:`k = ln(2) / T_{hl} = 0.138629`
 
 and pressure in the first tissue compartment is
 
     .. math::
 
-       P = P_alv + 1.36  * (1.5 - 1 / k) - (P_alv - 0.79 - 1.36 / k) * e^{-k * 1.5} = 0.959477
+       P = P_{alv} + 1.36  * (1.5 - 1 / k) - (P_{alv} - 0.79 - 1.36 / k) * e^{-k * 1.5} = 0.959477
 
 Next, continue dive at 30m for 20 minutes
 
     :math:`P = 0.959477` (inert gas pressure in tissue compartment after
     descent to 30m)
 
-    :math:`P_abs = 4` (30m or 4 bar)
+    :math:`P_{abs} = 4` (30m or 4 bar)
 
-    :math:`P_alv = 0.68 * (4 - 0.0627) = 2.677364`
+    :math:`P_{alv} = 0.68 * (4 - 0.0627) = 2.677364`
 
     :math:`R = 0.68 * 0` (constant depth, no pressure change)
 
@@ -187,7 +187,7 @@ and pressure in first tissue compartment is (note :math:`R` is zero and cancels 
 
     .. math::
 
-       P = P_alv + 0 - (P_alv - 0.959477 - 0) * e^{-k * 20} = 2.569995
+       P = P_{alv} + 0 - (P_{alv} - 0.959477 - 0) * e^{-k * 20} = 2.569995
 
 Finally, ascent from 30m to 10m
 
@@ -202,7 +202,7 @@ and pressure in first tissue compartment is
 
     .. math::
 
-       P = P_alv + (-0.68)  * (2 - 1 / k) - (P_alv - 2.569995 - (-0.68) / k) * e^{-k * 2} = 2.423739
+       P = P_{alv} + (-0.68)  * (2 - 1 / k) - (P_{alv} - 2.569995 - (-0.68) / k) * e^{-k * 2} = 2.423739
 
 Using :func:`eq_schreiner` function (note the implementation of this function expects time in seconds)
 
@@ -252,9 +252,9 @@ variables can be supported then with the following equations
 
         P = P_{n2} + P_{he}
 
-        A = (A_{n2} * P_{n2} + A_he * P_{he}) / P
+        A = (A_{n2} * P_{n2} + A_{he} * P_{he}) / P
 
-        B = (B_{n2} * P_{n2} + B_he * P_{he}) / P
+        B = (B_{n2} * P_{n2} + B_{he} * P_{he}) / P
 
 
 where
@@ -394,15 +394,15 @@ def eq_schreiner(abs_p, time, gas, rate, pressure, half_life,
 
     See :ref:`eq-schreiner` section for details.
 
-    :param abs_p: Absolute pressure of current depth [bar] (:math:`P_abs`).
-    :param time: Time of exposure [s], i.e. time of ascent (:math:`T_time`).
-    :param gas: Inert gas fraction, i.e. for air it is 0.79 (:math:`F_gas`).
-    :param rate: Pressure rate change [bar/min] (:math:`P_rate`).
+    :param abs_p: Absolute pressure of current depth [bar] (:math:`P_{abs}`).
+    :param time: Time of exposure [s], i.e. time of ascent (:math:`T_{time}`).
+    :param gas: Inert gas fraction, i.e. for air it is 0.79 (:math:`F_{gas}`).
+    :param rate: Pressure rate change [bar/min] (:math:`P_{rate}`).
     :param pressure: Current, initial pressure in tissue compartment [bar]
         (:math:`P`).
     :param half_life: Current tissue compartment half-life time constant value
-        (:math:`T_hl`).
-    :param wvp: Water vapour pressure (:math:`P_wvp`).
+        (:math:`T_{hl}`).
+    :param wvp: Water vapour pressure (:math:`P_{wvp}`).
     """
     assert time > 0, 'time={}'.format(time)
     palv = gas * (abs_p - wvp)

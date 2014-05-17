@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath('doc'))
 
 extensions = [
     'sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'sphinx.ext.doctest',
-    'sphinx.ext.todo', 'sphinx.ext.viewcode'
+    'sphinx.ext.todo', 'sphinx.ext.viewcode', 'sphinx.ext.mathjax'
 ]
 project = 'decotengu'
 source_suffix = '.rst'
