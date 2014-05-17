@@ -784,7 +784,7 @@ class Engine(object):
                 yield step
                 if abs(step.abs_p - depth) > 0: # deco stop found
                     break
-                # otherwise at target depth without deco stop
+                # otherwise at target depth of ascent stage without deco stop
             else:
                 break # already at deco zone
 
