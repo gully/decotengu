@@ -17,4 +17,30 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+"""
+The decompression calculations in DecoTengu are divided into various parts
+
+- descent
+- bottom time
+- finding first stop
+- free ascent to first stop (or surface)
+- decompression ascent to surface when decompression required
+- tissues saturation calculations
+
+Each part can be replaced with an alternative, independent implementation.
+The `decotengu.alt` module provides some of such alternatives
+
+- first stop tabular finder - search for first deco stop using tabular
+  tissue calculator
+- tabular tissue calculator - calculate tissues saturation using
+  precomputed values of exponential function (useful when exponential
+  function is too expensive on a given hardware)
+- deco stop stepper - naive algorithm to find length of decompression stop
+  using 1 minute intervals
+
+.. - ascent jump - go to next depth, then calculate tissue saturation for time
+..  which would take to get from previous to next depth (used by those who
+..  try to avoid ascent part of Schreiner equation)
+"""
+
 # vim: sw=4:et:ai
