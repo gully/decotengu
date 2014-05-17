@@ -26,24 +26,50 @@ too costly or even impossible on some of the hardware architectures, i.e.
 microcontrollers lacking FPU. To make decompression software available on
 such hardware architectures, the exponential function values can be
 precomputed and stored in a table. DecoTengu library allows to experiment
-with dive decompression calculations using such technique.
+with dive decompression calculations using such technique, which we will
+call tabular tissue calculations.
 
-The precalculated values of exponential function imply algorithms and
-configuration constraints
+The precalculated values of exponential function imply configuration
+constraints and algorithms changes, which is discuseed in the following
+sections.
 
-- ascent and descent rate is 10m/min - depth change is correlated with
-  time, i.e. we ascent 10 meters or for 1 minute and such constraint
-  simplifies algorithms
-- there is maximum depth and time change, which can be used for
-  decompression calculations, i.e. 24m (2.4min) - the table with
-  precomputed values of exponential function is limited by amount of
-  available memory; this forces us to use combination of linear and binary
-  searches as opposed to perforrming binary search only, i.e. when
-  looking for first decompression stop
-- the smallest depth change is limited to 1m (6s) - again, available
-  memory drives this constraint and forces us to round up current depth
-  value, i.e. from 31.2m to 32m
+Configuration Constraints
+~~~~~~~~~~~~~~~~~~~~~~~~~
+The main configuration constraint for DecoTengu tabular tissue calculations
+is the number of precomputed values of exponential function. This is driven
+by limited amount of computer memory.
 
+Above constraint limits maximum depth and time change, which can be
+calculated by DecoTengu in a single dive step. For example, by default,
+we can descent or ascent only by 30m in a single step.
+
+To keep the number of precomputed values of exponential function constant
+and to allow maximum depth change of 30m, we need to make ascent and
+descent rates constant. Therefore, next configuration constraint sets
+ascent and descent rates to 10m/min.
+
+The last configuration constraint is the smallest depth change for which
+tissue saturation can be calculated. By default it is 1m (or 6s at
+10m/min), which forces us to round up current depth value, i.e. from 31.2m
+to 32m.
+
+Algorithm Changes
+~~~~~~~~~~~~~~~~~
+The maximum depth change, discussed in previous section, forces us to
+change some of the algorithms implemented by DecoTengu. The descent or
+ascent part of a dive can be changed easily by dividing those dive phases
+into multiple steps. Also, depth rounding due to smallest depth change
+constraint is required.
+
+Bit more complex changes are required when finding first decompression
+stop.
+
+The algorithm finding first decompression stop has to be divided into two
+parts
+
+- linear search of depth range containing first decompression stop
+- binary search, which narrows the depth range to exact depth of
+  decompression stop
 
 Implementation
 ~~~~~~~~~~~~~~
