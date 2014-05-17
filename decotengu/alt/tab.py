@@ -73,15 +73,53 @@ parts
 
 Implementation
 ~~~~~~~~~~~~~~
-Tabular decompression calculations using precalculated values of `exp` and
-`log` functions.
+The values of exponential function are precomputed and stored by tabular
+tissue calculator class :py:class:`decotengu.alt.tab.TabTissueCalculator`.
+Also, this class calls redefined Schreiner equation to use the precomputed
+values.
 
-Implemented 
+First decompression stop algorithm for tabular tissue calculations is
+implemented by :py:class:`decotengu.alt.tab.FirstStopTabFinder` callable
+class.
 
-- tabular tissue calculator, which uses precalculated values of `exp` and
-  `log` functions
-- first decompression stop finder - required when tabular tissue calculator
-  is used
+The function :py:func:`decotengu.alt.tab.linearize` divides various dive
+phases like dive ascent into multiple dive steps.
+
+The helper function :py:func:`decotengu.alt.tab.tab_engine` takes
+decompression engine object as an argument and overrides engine
+configuration and methods with above classes and functions, so
+decompression calculations can be performed with tabular tissue calculator.
+
+Example
+~~~~~~~
+To calculate dive decompression information using tabular tissue calculator
+override decompression engine object with
+:py:func:`decotengu.alt.tab.tab_engine` function.
+
+Create the decompression engine first
+
+    >>> import decotengu
+    >>> from decotengu.alt.tab import tab_engine
+    >>> engine, deco_table = decotengu.create()
+    >>> engine.add_gas(0, 21)
+
+Override the engine
+
+    >>> tab_engine(engine)
+    >>> print(engine.model.calc) # doctest:+ELLIPSIS
+    <decotengu.alt.tab.TabTissueCalculator object at ...>
+
+Perform calculations
+
+    >>> profile = list(engine.calculate(35, 40))
+    >>> for stop in deco_table.stops:
+    ...     print(stop)
+    DecoStop(depth=18.0, time=1)
+    DecoStop(depth=15.0, time=1)
+    DecoStop(depth=12.0, time=3)
+    DecoStop(depth=9.0, time=6)
+    DecoStop(depth=6.0, time=9)
+    DecoStop(depth=3.0, time=21)
 """
 
 from functools import partial
