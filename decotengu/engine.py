@@ -766,14 +766,17 @@ class Engine(object):
             if step.gas != gas: # first step might not need gas switch
                 # if gas switch drives us into deco zone, then stop ascent
                 # leaving `step` as first decompression stop
-                logger.debug('attempt to switch gas {} at {}'.format(gas, step))
+                if __debug__:
+                    logger.debug('attempt to switch gas {} at {}'.format(gas, step))
                 gs_steps = self._can_switch_gas(step, gas)
                 if gs_steps:
                     step = gs_steps[-1]
                     yield from gs_steps
-                    logger.debug('gas switch performed')
+                    if __debug__:
+                        logger.debug('gas switch performed')
                 else:
-                    logger.debug('gas switch into deco zone, revert')
+                    if __debug__:
+                        logger.debug('gas switch into deco zone, revert')
                     break
 
             # check if there is first decompression stop at this ascent
