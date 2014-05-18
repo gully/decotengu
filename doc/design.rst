@@ -37,7 +37,7 @@ of calculations is carried by DecoTengu data model, see
 
    +----------------------------+             +--------------------+
    |          Engine            |             |    <<abstract>>    |
-   +----------------------------+             |      ZH_L16_GF     |
+   +----------------------------+             |     ZH_L16_GF      |
    | ascent_rate = 10           |      model  +--------------------+
    | descent_rate = 20          |x----------->| N2_A               |
    | surface_pressure = 1.01325 |        [1]  | N2_B               |
@@ -165,5 +165,55 @@ object is a callable, which replaces decompression engine :func:`calculate
    +--------------+      <<replace>>      | time_delta   |
    | calculate()<-.-.-.-.-.-.-.-.-.-.-.-.-| f_calc       |
    +--------------+                       +--------------+
+
+Tabular Tissue Calculator
+-------------------------
+
+.. code::
+   :class: diagram
+
+                                        +------------------+
+                                        | TissueCalculator |
+                                        +------------------+
+                                                /_\
+                                                 |
+   +--------------------+         calc +---------------------+
+   |    <<abstract>>    |x------------>| TabTissueCalculator |
+   |     ZH_L16_GF      |          [1] +---------------------+
+   +--------------------+              | _n2_exp_3m          |
+                                       | _n2_exp_1m          |
+                                       | _n2_exp_2m          |
+                                       | _n2_exp_10m         |
+                                       | _he_exp_3m          |
+                                       | _he_exp_1m          |
+                                       | _he_exp_2m          |
+                                       | _he_exp_10m         |
+                                       | max_const_time      |
+                                       | max_change_time     |
+                                       +---------------------+
+                                       | load_tissue()       |
+                                       +---------------------+
+
+
+.. code::
+   :class: diagram
+
+   +----------------------+       <<replace>> +--------------+
+   |       Engine         |    -.-.-.-.-.-.-.-|              |
+   +----------------------+    .              |              |
+   | _step_next_descent()<.-.-.-  <<replace>> | <<callable>> |
+   | _step_next()<-.-.-.-.-.-.-.-.-.-.-.-.-.-.|  linearize   |
+   | _step_next_ascent()<-.-.-.-              |              |
+   | _find_first_stop()<-.|    .  <<replace>> |              |
+   +---------------------|+    -.-.-.-.-.-.-.-|              |
+                         .                    +--------------+
+                         |
+                         . <<replace>>
+                         |
+               +--------------------+
+               |    <<callable>>    |
+               | FirstStopTabFinder |
+               +--------------------+
+
 
 .. vim: sw=4:et:ai
