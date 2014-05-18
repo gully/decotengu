@@ -198,22 +198,22 @@ Tabular Tissue Calculator
 .. code::
    :class: diagram
 
-   +----------------------+       <<replace>> +--------------+
-   |       Engine         |    -.-.-.-.-.-.-.-|              |
-   +----------------------+    .              |              |
-   | _step_next_descent()<.-.-.-  <<replace>> | <<callable>> |
-   | _step_next()<-.-.-.-.-.-.-.-.-.-.-.-.-.-.|  linearize   |
-   | _step_next_ascent()<-.-.-.-              |              |
-   | _find_first_stop()<-.|    .  <<replace>> |              |
-   +---------------------|+    -.-.-.-.-.-.-.-|              |
-                         .                    +--------------+
-                         |
-                         . <<replace>>
-                         |
-               +--------------------+
-               |    <<callable>>    |
-               | FirstStopTabFinder |
-               +--------------------+
+   +----------------------+           <<replace>>       +--------------+
+   |       Engine         |        -.-.-.-.-.-.-.-.-.-.-|              |
+   +----------------------+        .                    |              |
+   | _step_next_descent()<.-.-.-.-.-  <<replace>>       | <<callable>> |
+   | _step_next()<-.-.-.-.-.-.-----.-.-.-.-.-.-.-.-.-.-.|  linearize   |
+   | _step_next_ascent()<-.-.-.-.-.-                    |              |
+   | _find_first_stop()<-.-.-.     .  <<replace>>       |              |
+   +-----------------------+ |     -.-.-.-.-.-.-.-.-.-.-|              |
+                             .                          +--------------+
+                             |
+                             .<<replace>>
+                             |
+                   +--------------------+
+                   |    <<callable>>    |
+                   | FirstStopTabFinder |
+                   +--------------------+
 
 
 .. vim: sw=4:et:ai
