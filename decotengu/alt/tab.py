@@ -33,6 +33,8 @@ The precalculated values of exponential function imply configuration
 constraints and algorithms changes, which is discuseed in the following
 sections.
 
+.. _tab-conf:
+
 Configuration Constraints
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 The main configuration constraint for DecoTengu tabular tissue calculations
@@ -52,6 +54,8 @@ The last configuration constraint is the smallest depth change for which
 tissue saturation can be calculated. By default it is 1m (or 6s at
 10m/min), which forces us to round up current depth value, i.e. from 31.2m
 to 32m.
+
+.. _tab-algo:
 
 Algorithm Changes
 ~~~~~~~~~~~~~~~~~

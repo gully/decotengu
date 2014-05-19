@@ -168,6 +168,14 @@ object is a callable, which replaces decompression engine :func:`calculate
 
 Tabular Tissue Calculator
 -------------------------
+The :py:class:`decotengu.alt.tab.TabTissueCalculator` class implements
+tabular tissue calculator. It precomputes exponential function values and
+stores them as `_{n2,he}_exp_*` attributes. The `max_const_time` and
+`max_change_time` attributes imply the number of precomputed values.
+
+The :py:meth:`decotengu.model.TissueCalculator.load_tissue` method has to
+be overriden to use :py:func:`decotengu.alt.tab.eq_schreiner_t` function,
+which uses precomputed values of exponential function.
 
 .. code::
    :class: diagram
@@ -189,11 +197,24 @@ Tabular Tissue Calculator
                                        | _he_exp_2m          |
                                        | _he_exp_10m         |
                                        | max_const_time      |
-                                       | max_change_time     |
-                                       +---------------------+
-                                       | load_tissue()       |
-                                       +---------------------+
+       +----------------+              | max_change_time     |
+       |  <<callable>>  |    <<use>>   +---------------------+
+       | eq_schreiner_t |<-.-.-.-.-.-.-.-load_tissue()       |
+       +----------------+              +---------------------+
 
+To allow :py:class:`DecoTengu decompression engine <decotengu.Engine>` to
+use tabular tissue calculator, its :py:meth:`decotengu.Engine._step_next`,
+:py:meth:`decotengu.Engine._step_next_descent` and
+:py:meth:`decotengu.Engine._step_next_ascent` methods have to be overriden
+to divide dive steps into multiple steps. The override
+is done with :py:func:`decotengu.alt.tab.linearize` function.
+
+The :py:class:`decotengu.alt.tab.FirstStopTabFinder` class is a callable,
+which overrides implementation of the algorithm finding first decompression
+stop.
+
+Both overrides are done for the reasons outlined in :ref:`tab-conf` and
+:ref:`tab-algo` sections.
 
 .. code::
    :class: diagram
