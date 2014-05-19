@@ -18,14 +18,73 @@
 #
 
 """
-Context manager for overriding float data type with a decimal data type.
+Decimal Calculations
+--------------------
+DecoTengu allows to experiment with accuracy of decompression calculations
+by providing context manager for overriding float data type with a decimal
+data type.
 
-By default, float type is used for decompression calculations. This module
-allows to change the default and experiment with fixed point arithmetics.
+By default, float type is used for decompression calculations. The contex
+manager implemented in `decotengu.alt.decimal` module enables programmer to
+change the default and experiment with fixed point arithmetics.
 
-The implementation mixes in local context manager from `decimal` module. In
-the future, it should be probably allowed to use custom decimal types
-without `decimal` module dependency.
+**NOTE 1:** The implementation uses local context manager provided by
+Python's `decimal` module. In the future, it should be probably allowed to
+use custom decimal types without `decimal` module dependency.
+
+**NOTE 2:** At the moment, only tabular tissue calculator can be used with
+decimal type override.
+
+Example
+~~~~~~~
+As an example, we will compare a dive to 90 meters for 20 minutes when
+using float type and decimal type with precision 9.
+
+Let's calculate dive profile using float type
+
+    >>> from decotengu import create
+    >>> from decotengu.alt.tab import tab_engine
+    >>> engine, deco_table = create()
+    >>> tab_engine(engine)
+    >>> engine.model.gf_low = 0.2
+    >>> engine.model.gf_high = 0.75
+    >>> engine.add_gas(0, 13, 50)
+    >>> engine.add_gas(33, 36)
+    >>> engine.add_gas(21, 50)
+    >>> engine.add_gas(9, 80)
+    >>> profile = tuple(engine.calculate(90, 20, descent=False))
+    >>> last = profile[-1]
+
+and dive profile using decimal type with precision 9
+
+    >>> from decotengu.alt.decimal import DecimalContext
+    >>> from decimal import Decimal
+    >>> with DecimalContext(prec=9) as ctx:
+    ...     engine, deco_table_dec = create()
+    ...     tab_engine(engine)
+    ...     engine.model.gf_low = Decimal(0.2)
+    ...     engine.model.gf_high = Decimal(0.75)
+    ...     engine.add_gas(Decimal(0), Decimal(13), Decimal(50))
+    ...     engine.add_gas(Decimal(33), Decimal(36), Decimal(0))
+    ...     engine.add_gas(Decimal(21), Decimal(50), Decimal(0))
+    ...     engine.add_gas(Decimal(9), Decimal(80), Decimal(0))
+    ...     profile_dec = tuple(engine.calculate(Decimal(90), Decimal(20), descent=False))
+    >>> last_dec = profile_dec[-1]
+
+Check the total time of dive decompression phase
+
+    >>> deco_table.total
+    102
+    >>> deco_table_dec.total
+    102
+
+Calculate maximum absolute error of saturation of inert gas in a tissue at
+the surface
+
+    >>> max_error = max(abs(v1[0] - float(v2[0]) + v1[1] - float(v2[1])) for v1, v2 in zip(last.data.tissues, last_dec.data.tissues))
+    >>> round(max_error, 10)
+    6.2461e-06
+
 """
 
 from decimal import Decimal, localcontext
