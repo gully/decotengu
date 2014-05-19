@@ -4,9 +4,10 @@ DecoTengu 0.8.0
 ---------------
 - implemented tabular tissue saturation calculator to allow decompression
   calculations without exponential function
+- implemented naive algorithm calculating length of decompression stop
+  using 1 minute interval; to be used for comparison purposes only
 - implemented initial support for calculations with decimal data type
-- fixed a bug, which caused performance degradation of the algorithm
-  searching for decompression stop length
+- various performance improvements
 
 DecoTengu 0.7.0
 ---------------
