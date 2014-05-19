@@ -18,19 +18,29 @@
 #
 
 """
-Naive decompression code.
+Naive Algorithms
+----------------
+Naive dive decompression calculations.
 
-The implemented algorithms
+The algorithms are quite inefficient, usually :math:`O(n)` while
+:math:`O(log(n))` algorithm could be used. They are implemented in
+DecoTengu for comparison purposes only.
 
-- ascent jump - go to next depth, then calculate tissue saturation for
-  time, which would take to get from previous to next depth (can be used
-  when trying to avoid Schreiner equation)
-- deco stop stepper - perform dive decompression using 1min intervals
+Decompression Stop Stepper
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+The decompression stop stepper is simple algorithm to calculate length of
+a decompression stop.
 
-The algorithms are quite inefficient, usually O(n) while O(log(n))
-algorithm could be used. They are implemented in DecoTengu only for
-comparison purposes.
+Decompression stop length is calculated by increasing length of the stop
+by one minute until it is possible to ascent to next stop or to the
+surface.
+
+The algorithm is implemented by :py:class:`decotengu.alt.naive.DecoStopStepper`
+class.
 """
+#- ascent jump - go to next depth, then calculate tissue saturation for
+#  time, which would take to get from previous to next depth (can be used
+#  when trying to avoid Schreiner equation)
 
 import logging
 
@@ -106,7 +116,7 @@ class DecoStopStepper(object):
 
     :var engine: DecoTengu decompression engine.
 
-    .. seealso:: :func:`decotengu.Engine._deco_stop`
+    .. seealso:: :py:meth:`decotengu.Engine._deco_stop`
     """
     def __init__(self, engine):
         """
@@ -121,7 +131,7 @@ class DecoStopStepper(object):
         """
         Execute dive decompression stop using 1min intervals.
 
-        .. seealso:: `decotengu.Engine._deco_stop`
+        .. seealso:: :py:meth:`decotengu.Engine._deco_stop`
         """
         engine = self.engine
         abs_p = start.abs_p

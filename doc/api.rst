@@ -96,4 +96,13 @@ Tabular Tissue Calculator
 .. autoclass:: decotengu.alt.tab.FirstStopTabFinder
    :members: __call__
 
+Naive Algorithms
+----------------
+.. autosummary::
+
+   decotengu.alt.naive.DecoStopStepper
+
+.. autoclass:: decotengu.alt.naive.DecoStopStepper
+   :members: __call__
+
 .. vim: sw=4:et:ai
