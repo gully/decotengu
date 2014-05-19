@@ -38,7 +38,7 @@ DecoTengu depends on Python 3.3 or later.
 
 To install DecoTengu from PyPi ::
 
-    $ easy_install --user decotengu
+    $ pip install --user decotengu
 
 To use latest version of DecoTengu from source code repository ::
 
