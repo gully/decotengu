@@ -24,6 +24,13 @@ Library features
    dive data saving in a CSV file and plotting of the data.
 #. Highly configurable (surface pressure, ascent rate, descent rate, meter
    to bar conversion constants, etc.).
+#. Supported various alternative implementations for performance and
+   accuracy comparison purposes
+
+   #. For decompression calculations without exponential function.
+   #. For decompression calculations using fixed precision type.
+   #. Naive algorithms implemented by some dive computers and diving
+      software.
 
 Installation
 ------------
