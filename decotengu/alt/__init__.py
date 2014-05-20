@@ -37,6 +37,7 @@ The `decotengu.alt` module provides some of such alternatives
   function is too expensive on a given hardware)
 - deco stop stepper - naive algorithm to find length of decompression stop
   using 1 minute intervals
+- decompression calculations using fixed point arithmetic
 
 .. - ascent jump - go to next depth, then calculate tissue saturation for time
 ..  which would take to get from previous to next depth (used by those who

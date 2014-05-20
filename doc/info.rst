@@ -28,7 +28,7 @@ Library features
    accuracy comparison purposes
 
    #. For decompression calculations without exponential function.
-   #. For decompression calculations using fixed precision type.
+   #. For decompression calculations using fixed point arithmetic.
    #. Naive algorithms implemented by some dive computers and diving
       software.
 

@@ -111,8 +111,9 @@ class DecoStopStepper(object):
     """
     Execute decompression stop using 1min intervals.
 
-    The algorithm is quite inefficient, but is used by some of the
-    implementations, so this class is created for comparison purposes.
+    The algorithm is quite inefficient, but is used by some of the diving
+    computers and software, so this class is created for comparison
+    purposes.
 
     :var engine: DecoTengu decompression engine.
 

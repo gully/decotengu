@@ -30,7 +30,7 @@ with dive decompression calculations using such technique, which we will
 call tabular tissue calculations.
 
 The precalculated values of exponential function imply configuration
-constraints and algorithms changes, which is discuseed in the following
+constraints and algorithms changes, which are discuseed in the following
 sections.
 
 .. _tab-conf:
@@ -60,7 +60,7 @@ to 32m.
 Algorithm Changes
 ~~~~~~~~~~~~~~~~~
 The maximum depth change, discussed in previous section, forces us to
-change some of the algorithms implemented by DecoTengu. The descent or
+modify some of the algorithms implemented by DecoTengu. The descent or
 ascent part of a dive can be changed easily by dividing those dive phases
 into multiple steps. Also, depth rounding due to smallest depth change
 constraint is required.
@@ -91,8 +91,9 @@ phases like dive ascent into multiple dive steps.
 
 The helper function :py:func:`decotengu.alt.tab.tab_engine` takes
 decompression engine object as an argument and overrides engine
-configuration and methods with above classes and functions, so
-decompression calculations can be performed with tabular tissue calculator.
+configuration and methods using classes and functions mentioned in above
+paragraphs, so decompression calculations can be performed with tabular
+tissue calculator.
 
 Example
 ~~~~~~~
