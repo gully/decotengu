@@ -807,11 +807,10 @@ class Engine(object):
             assert depth % 3 == 0 and depth > 0, depth
         n_stops = self._n_stops(step.abs_p)
         gf_step = (self.model.gf_high - self.model.gf_low) / n_stops
-        logger.debug('deco engine: gf step={:.4}'.format(gf_step))
+        if __debug__:
+            logger.debug('deco engine: gf step={:.4}'.format(gf_step))
 
         bottom_gas = self._gas_list[0]
-        first_stop = step.abs_p
-        gf_low = self.model.gf_low
         stages = self._deco_stops(start, stages)
         for depth, gas, time, gf in stages:
             # switch gas
@@ -827,7 +826,8 @@ class Engine(object):
             step = self._step_next_ascent(step, time, gas, gf=gf)
             yield step
 
-        logger.debug('deco engine: gf at surface={:.4f}'.format(step.data.gf))
+        if __debug__:
+            logger.debug('deco engine: gf at surface={:.4f}'.format(step.data.gf))
 
 
     def _deco_stops(self, step, stages):
