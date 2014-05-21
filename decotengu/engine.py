@@ -801,17 +801,13 @@ class Engine(object):
 
         .. seealso:: :func:`decotengu.Engine._ascent_stages_deco`
         """
-        step = start
         if __debug__:
-            depth = self._to_depth(step.abs_p)
+            depth = self._to_depth(start.abs_p)
             assert depth % 3 == 0 and depth > 0, depth
-        n_stops = self._n_stops(step.abs_p)
-        gf_step = (self.model.gf_high - self.model.gf_low) / n_stops
-        if __debug__:
-            logger.debug('deco engine: gf step={:.4}'.format(gf_step))
 
         bottom_gas = self._gas_list[0]
         stages = self._deco_stops(start, stages)
+        step = start
         for depth, gas, time, gf in stages:
             # switch gas
             if step.abs_p >= self._to_pressure(gas.depth) and gas != bottom_gas:
@@ -852,6 +848,9 @@ class Engine(object):
         gf_step = (self.model.gf_high - self.model.gf_low) / k
         ts_3m = self._pressure_to_time(self._p3m, self.ascent_rate)
         gf = step.data.gf
+
+        if __debug__:
+            logger.debug('deco engine: gf step={:.4}'.format(gf_step))
 
         abs_p = step.abs_p
         stop_at_6m = self.surface_pressure + 2 * self._p3m
