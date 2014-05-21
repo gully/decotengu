@@ -43,7 +43,7 @@ class DecoStepperTestCase(unittest.TestCase):
 
         engine, dt = create()
         stepper = Stepper(engine)
-        engine._deco_stop =  stepper
+        engine._deco_stop = stepper
         engine.model.gf_low = 0.2
         engine.model.gf_high = 0.9
         engine.add_gas(0, 27)

@@ -127,7 +127,6 @@ Perform calculations
     DecoStop(depth=3.0, time=21)
 """
 
-from functools import partial
 import math
 import logging
 

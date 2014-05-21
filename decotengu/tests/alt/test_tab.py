@@ -25,10 +25,10 @@ from decimal import Decimal
 
 from decotengu.alt.tab import eq_schreiner_t, exposure_t, \
     ceil_pressure, split_time, TabTissueCalculator, tab_engine
-from decotengu.model import ZH_L16B_GF, ZH_L16C_GF, Data
+from decotengu.model import ZH_L16B_GF
 from decotengu.engine import Phase
 
-from ..tools import _engine, _step, _data, AIR
+from ..tools import _engine, _step, AIR
 
 import unittest
 from unittest import mock

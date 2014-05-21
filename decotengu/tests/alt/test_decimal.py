@@ -24,7 +24,6 @@ Decimal override tests.
 from decimal import Decimal, localcontext
 
 from decotengu.alt.decimal import DecimalContext
-from decotengu.model import ZH_L16B_GF, ZH_L16C_GF
 
 import unittest
 

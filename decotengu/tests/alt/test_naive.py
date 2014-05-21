@@ -28,7 +28,6 @@ from decotengu.alt.naive import AscentJumper, DecoStopStepper
 from ..tools import _step, _engine, _data, AIR
 
 import unittest
-from unittest import mock
 
 
 class AscentJumperTestCase(unittest.TestCase):
