@@ -21,7 +21,6 @@
 Conveyor to move depth between points in time.
 """
 
-from collections import namedtuple
 from functools import partial
 import logging
 import math
