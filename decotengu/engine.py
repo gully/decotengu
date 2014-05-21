@@ -213,6 +213,22 @@ class Engine(object):
         return abs_p >= self.model.ceiling_limit(data)
 
 
+    def _can_ascend(self, abs_p, time, gas, data, gf=None):
+        """
+        Check if a diver can ascent from depth for specified amount of
+        time.
+
+        :param abs_p: Starting pressure indicating the depth [bar].
+        :param time: Time of ascent in seconds.
+        :param gas: Gas mix configuration.
+        :param data: Decompression model data.
+        ;param gf: Gradient factor to be used for ceiling check.
+        """
+        data = self._tissue_pressure_ascent(abs_p, time, gas, data)
+        p = abs_p - self._time_to_pressure(time, self.ascent_rate)
+        return p >= self.model.ceiling_limit(data, gf=gf)
+
+
     def _step_start(self, abs_p, gas):
         """
         Create the very first dive step.
@@ -322,22 +338,6 @@ class Engine(object):
         rate = -self.ascent_rate * self._meter_to_bar
         tp = self.model.load(abs_p, time, gas, rate, data)
         return tp
-
-
-    def _can_ascend(self, abs_p, time, gas, data, gf=None):
-        """
-        Check if a diver can ascent from depth for specified amount of
-        time.
-
-        :param abs_p: Starting pressure indicating the depth [bar].
-        :param time: Time of ascent in seconds.
-        :param gas: Gas mix configuration.
-        :param data: Decompression model data.
-        ;param gf: Gradient factor to be used for ceiling check.
-        """
-        data = self._tissue_pressure_ascent(abs_p, time, gas, data)
-        p = abs_p - self._time_to_pressure(time, self.ascent_rate)
-        return p >= self.model.ceiling_limit(data, gf=gf)
 
 
     def _switch_gas(self, step, gas):
