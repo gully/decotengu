@@ -46,6 +46,9 @@ def dive_shallow(type=float, stepper=False):
 def dive_u260(type=float, stepper=False):
     """
     Nitrox dive with one gas switch.
+
+    The gas mix switch is performed at 22m, before first decompression stop
+    at 18m.
     """
     engine = create_engine(type=type, stepper=stepper)
     engine.add_gas(type(0), type(27), type(0))
@@ -73,6 +76,9 @@ def dive_deepstop(type=float, stepper=False):
 
     See figure 3, page 7 of the paper for the dive profile and
     decompression stops information.
+
+    The first gas mix switch is performed at 33m, after first deco stop at
+    57m.
     """
     engine = create_engine(type=type, stepper=stepper)
 
