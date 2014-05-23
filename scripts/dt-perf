@@ -7,6 +7,7 @@ configurations and few diving scenarios.
 The script report times in milliseconds.
 """
 
+import argparse
 from decimal import Decimal
 import itertools
 import logging
@@ -21,6 +22,10 @@ from decotengu.alt.tab import tab_engine
 from decotengu.alt.decimal import DecimalContext
 
 COUNT = 5 * 10 ** 1
+
+parser = argparse.ArgumentParser(description='DecoTengu performance script')
+parser.add_argument('iter', type=int, default=COUNT, help='number of iterations')
+args = parser.parse_args()
 
 
 def create_engine(type=float, stepper=False):
@@ -94,7 +99,7 @@ def dive_deepstop(type=float, stepper=False):
 
 def run(engine, depth, t):
     t1 = time.clock()
-    for i in range(COUNT):
+    for i in range(args.iter):
         data = engine.calculate(depth, t, descent=False)
         tuple(data)
     t2 = time.clock()
@@ -148,7 +153,7 @@ print(' ' * 20 + s)
 
 for n in names:
     t = '{:>20}'.format(n)
-    s = ''.join('{:>12.1f}'.format(results[n][s] / COUNT * 1000) for s in scenarios)
+    s = ''.join('{:>12.1f}'.format(results[n][s] / args.iter * 1000) for s in scenarios)
     print(t + s)
 
 # vim: sw=4:et:ai
