@@ -710,8 +710,6 @@ class Engine(object):
 
         :param step: Current dive step.
         :param gas: Gas to switch to.
-
-        .. seealso:: :func:`decotengu.Engine._can_switch_gas`
         """
         gp = self._to_pressure(gas.depth)
         logger.debug('ascent gas switch to {} at {}bar'.format(gas, step.abs_p))
@@ -734,24 +732,6 @@ class Engine(object):
         return steps
 
 
-    def _can_switch_gas(self, start, gas):
-        """
-        Check if gas mix can be switched to without violating decompression
-        model ascent invariant.
-
-        If gas mix switch is possible, then gas mix switch dive steps are
-        returned, null otherwise.
-
-        :param step: Current dive step.
-        :param gas: Gas to switch to.
-
-        .. seealso:: :func:`decotengu.Engine._ascent_switch_gas`
-        """
-        gs_steps = self._ascent_switch_gas(start, gas)
-        last = gs_steps[-1]
-        return gs_steps if self._inv_limit(last.abs_p, last.data) else None
-
-
     def _free_staged_ascent(self, start, stages):
         """
         Perform staged ascent until first decompression stop.
@@ -768,8 +748,8 @@ class Engine(object):
                 # leaving `step` as first decompression stop
                 if __debug__:
                     logger.debug('attempt to switch gas {} at {}'.format(gas, step))
-                gs_steps = self._can_switch_gas(step, gas)
-                if gs_steps:
+                gs_steps = self._ascent_switch_gas(step, gas)
+                if self._inv_limit(gs_steps[-1].abs_p, gs_steps[-1].data):
                     step = gs_steps[-1]
                     yield from gs_steps
                     if __debug__:

@@ -694,28 +694,6 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         self.assertEquals(steps[1], steps[2].prev)
 
 
-    def test_can_switch_gas_ok(self):
-        """
-        Test gas mix switch validator (allowed)
-        """
-        data = _data(0.3, 0.7, 0.7)
-        start = _step(Phase.ASCENT, 3.4, 1200, AIR, data=data)
-
-        steps = self.engine._can_switch_gas(start, EAN50)
-        self.assertTrue(steps)
-
-
-    def test_can_switch_gas_not_ok(self):
-        """
-        Test gas mix switch validator (not allowed)
-        """
-        data = _data(0.3, 4.0, 4.0)
-        start = _step(Phase.ASCENT, 3.4, 1200, AIR, data=data)
-
-        steps = self.engine._can_switch_gas(start, EAN50)
-        self.assertIsNone(steps)
-
-
     def test_free_staged_ascent(self):
         """
         Test deco engine deco free staged ascent
@@ -757,14 +735,16 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         s7 = _step(Phase.ASCENT, 3.1, 1086, prev=s6) # gas switch, step 3
         s8 = _step(Phase.ASCENT, 1.0, 1200, prev=s7) # ascent to surface
 
-        self.engine._can_switch_gas = mock.MagicMock(return_value=[s5, s6, s7])
+        self.engine._ascent_switch_gas = mock.MagicMock(return_value=[s5, s6, s7])
+        self.engine._inv_limit = mock.MagicMock(return_value=True)
         # s3 -> s4 and s7 -> s8
         self.engine._find_first_stop = mock.MagicMock(side_effect=[s4, s8])
 
         steps = list(self.engine._free_staged_ascent(s3, stages))
         self.assertEquals([s4, s5, s6, s7, s8], steps)
 
-        self.assertEqual(1, self.engine._can_switch_gas.call_count)
+        self.assertEqual(1, self.engine._ascent_switch_gas.call_count)
+        self.assertEqual(1, self.engine._inv_limit.call_count)
         self.assertEqual(2, self.engine._find_first_stop.call_count)
 
 
@@ -784,15 +764,15 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         s4 = _step(Phase.ASCENT, 3.4, 1068, prev=s3) # ascent target
                                                      # and first deco stop
 
-        # _can_switch_gas is None -> should result in deco stop at 24m
+        # _inv_limit is False -> should result in deco stop at 24m
         # (note, gas switch planned at 22m)
-        self.engine._can_switch_gas = mock.MagicMock(return_value=None)
+        self.engine._inv_limit = mock.MagicMock(return_value=False)
         self.engine._find_first_stop = mock.MagicMock(return_value=s4)
 
         steps = list(self.engine._free_staged_ascent(s3, stages))
         self.assertEquals([s4], steps)
 
-        self.assertEqual(1, self.engine._can_switch_gas.call_count)
+        self.assertEqual(1, self.engine._inv_limit.call_count)
         self.assertEqual(1, self.engine._find_first_stop.call_count)
 
 
