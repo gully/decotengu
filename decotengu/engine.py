@@ -762,14 +762,15 @@ class Engine(object):
             # check if there is first decompression stop at this ascent
             # stage
             s = self._find_first_stop(step, depth, gas)
-            if s.time > step.time:
+            if s is step:
+                break # already at deco zone
+            else:
                 step = s
                 yield step
                 if abs(step.abs_p - depth) > 0: # deco stop found
                     break
-                # otherwise at target depth of ascent stage without deco stop
-            else:
-                break # already at deco zone
+                # else: at target depth of ascent stage without deco stop,
+                #       so move to next stage
 
 
     def _deco_staged_ascent(self, start, stages):
