@@ -27,7 +27,7 @@ from functools import wraps
 def coroutine(func):
     """
     Decorator for a coroutine function.
-    
+
     Advances a coroutine to its first ``(yield)`` statement.
     """
     def start(*args, **kwargs):
