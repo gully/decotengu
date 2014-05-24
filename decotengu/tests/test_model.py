@@ -249,7 +249,7 @@ class DecoModelValidatorTestCase(unittest.TestCase):
         """
         engine = Engine()
         data = Data([1.263320, 2.157535], 0.3)
-        s = Step(Phase.CONST, 2.2, 3, AIR, data, None)
+        s = Step(Phase.CONST, 2.2, 3, AIR, data)
 
         validator = DecoModelValidator(engine)
         engine.model.ceiling_limit = mock.MagicMock(return_value=2.19)
@@ -262,7 +262,7 @@ class DecoModelValidatorTestCase(unittest.TestCase):
         """
         engine = Engine()
         data = Data([2.263320, 2.957535], 0.9)
-        s = Step(Phase.CONST, 1.3127, 3, AIR, data, None)
+        s = Step(Phase.CONST, 1.3127, 3, AIR, data)
 
         mod = DecoModelValidator(engine)()
         engine.model.ceiling_limit = mock.MagicMock(return_value=2.21)
@@ -276,13 +276,13 @@ class DecoModelValidatorTestCase(unittest.TestCase):
         engine = _engine()
 
         data = Data([(1.263320, 0), (2.157535, 0)], 0.3)
-        s1 = Step(Phase.ASCENT, 3.1, 1500, AIR, data, None)
-        s2 = Step(Phase.DECO_STOP, 3.1, 1560, AIR, data, s1)
+        s1 = Step(Phase.ASCENT, 3.1, 1500, AIR, data)
+        s2 = Step(Phase.DECO_STOP, 3.1, 1560, AIR, data)
 
         validator = DecoModelValidator(engine)
         # ascent to 18m should not be possible
         engine.model.ceiling_limit = mock.MagicMock(return_value=2.81)
-        validator._first_stop_at_ceiling(s2) # no exception expected
+        validator._first_stop_at_ceiling(s1, s2) # no exception expected
         self.assertTrue(validator._first_stop_checked)
 
 
@@ -293,13 +293,13 @@ class DecoModelValidatorTestCase(unittest.TestCase):
         engine = _engine()
 
         data = Data([(1.263320, 0), (2.157535, 0)], 0.3)
-        s1 = Step(Phase.ASCENT, 3.1, 1500, AIR, data, None)
-        s2 = Step(Phase.DECO_STOP, 3.1, 1560, AIR, data, s1)
+        s1 = Step(Phase.ASCENT, 3.1, 1500, AIR, data)
+        s2 = Step(Phase.DECO_STOP, 3.1, 1560, AIR, data)
 
         validator = DecoModelValidator(engine)
         # ascent to 18m should not be possible, so error expected
         engine.model.ceiling_limit = mock.MagicMock(return_value=2.79)
-        self.assertRaises(EngineError, validator._first_stop_at_ceiling, s2)
+        self.assertRaises(EngineError, validator._first_stop_at_ceiling, s1, s2)
         self.assertFalse(validator._first_stop_checked)
 
 

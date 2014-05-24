@@ -667,11 +667,13 @@ class DecoModelValidator(object):
         """
         Start the coroutine.
         """
-        logger.debug('started deco model validator')
+        logger.info('started deco model validator')
+        prev = None
         while True:
             step = yield
             self._ceiling_limit(step)
-            self._first_stop_at_ceiling(step)
+            self._first_stop_at_ceiling(prev, step)
+            prev = step
 
 
     def _ceiling_limit(self, step):
@@ -688,15 +690,16 @@ class DecoModelValidator(object):
             )
 
 
-    def _first_stop_at_ceiling(self, step):
+    def _first_stop_at_ceiling(self, prev, step):
         """
         Verify that first decompression stop is at pressure ceiling limit.
 
+        :param prev: Previous dive step.
         :param step: Dive step to verify.
         """
         # FIXME: Phase circular import, so using 'deco_stop' below
         if not self._first_stop_checked and step.phase == 'deco_stop':
-            first_stop = step.prev
+            first_stop = prev
             ts_3m = self.engine._pressure_to_time(
                 self.engine._p3m, self.engine.ascent_rate
             )

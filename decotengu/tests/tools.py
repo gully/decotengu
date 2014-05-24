@@ -30,11 +30,11 @@ AIR = GasMix(depth=0, o2=21, n2=79, he=0)
 EAN50 = GasMix(depth=22, o2=50, n2=50, he=0)
 O2 = GasMix(depth=6, o2=100, n2=0, he=0)
 
-def _step(phase, abs_p, time, gas=AIR, prev=None, data=None):
+def _step(phase, abs_p, time, gas=AIR, data=None):
     if data is None:
         data = mock.MagicMock()
         data.gf = 0.3
-    step = Step(phase, abs_p, time, gas, data, prev)
+    step = Step(phase, abs_p, time, gas, data)
     return step
 
 

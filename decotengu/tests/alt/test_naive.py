@@ -69,9 +69,6 @@ class DecoStopStepperTestCase(unittest.TestCase):
 
         # 5min of deco
         self.assertEquals(1500, step.time)
-        # ensure previous step of deco stop is the starting step; this is
-        # important, i.e. for decompression stop length calculation
-        self.assertEquals(start, step.prev)
 
 
 # vim: sw=4:et:ai

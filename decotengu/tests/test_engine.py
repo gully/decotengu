@@ -103,7 +103,6 @@ class EngineTestCase(unittest.TestCase):
         self.assertEquals(Phase.GAS_SWITCH, step.phase)
         self.assertEquals(3.0, step.abs_p)
         self.assertEquals(120, step.time)
-        self.assertEquals(start, step.prev)
 
 
     def test_ceiling_invariant(self):
@@ -137,7 +136,6 @@ class EngineTestCase(unittest.TestCase):
         self.assertEqual(1.2, step.abs_p)
         self.assertEqual(0, step.time)
         self.assertEqual(AIR, step.gas)
-        self.assertIs(None, step.prev)
 
         self.engine.model.init.assert_called_once_with(1)
 
@@ -157,7 +155,6 @@ class EngineTestCase(unittest.TestCase):
         self.assertEquals(150, step.time)
         self.assertEquals(AIR, step.gas)
         self.assertEquals(data, step.data)
-        self.assertIs(start, step.prev)
         self.engine._tissue_pressure_const.assert_called_once_with(
             3.0, 30, AIR, start.data
         )
@@ -178,7 +175,6 @@ class EngineTestCase(unittest.TestCase):
         self.assertEquals(150, step.time)
         self.assertEquals(AIR, step.gas)
         self.assertEquals(data, step.data)
-        self.assertIs(start, step.prev)
         self.engine._tissue_pressure_descent.assert_called_once_with(
             3.0, 30, AIR, start.data
         )
@@ -199,7 +195,6 @@ class EngineTestCase(unittest.TestCase):
         self.assertEquals(150, step.time)
         self.assertEquals(AIR, step.gas)
         self.assertEquals(data, step.data)
-        self.assertIs(start, step.prev)
 
         self.engine._tissue_pressure_ascent.assert_called_once_with(
             3.0, 30, AIR, start.data
@@ -474,18 +469,15 @@ class EngineDiveDescentTestCase(unittest.TestCase):
         self.assertEquals(4.6, s2.abs_p)
         self.assertAlmostEquals(216, s2.time) # 1m is 6s at 10m/min
         self.assertEquals(ean30, s2.gas)
-        self.assertEquals(s1, s2.prev)
 
         # test gas switch
         self.assertEquals(4.6, s3.abs_p)
         self.assertAlmostEquals(216, s3.time)
         self.assertEquals(air, s3.gas)
-        self.assertEquals(s2, s3.prev)
 
         self.assertEquals(6.6, s4.abs_p)
         self.assertAlmostEquals(336, s4.time) # 1m is 6s at 10m/min
         self.assertEquals(air, s4.gas)
-        self.assertEquals(s3, s4.prev)
 
 
     def test_dive_descent_travel_exact(self):
@@ -508,13 +500,11 @@ class EngineDiveDescentTestCase(unittest.TestCase):
         self.assertEquals(4.6, s2.abs_p)
         self.assertAlmostEquals(216, s2.time) # 1m is 6s at 10m/min
         self.assertEquals(ean30, s2.gas)
-        self.assertEquals(s1, s2.prev)
 
         # test gas switch
         self.assertEquals(4.6, s3.abs_p)
         self.assertAlmostEquals(216, s3.time)
         self.assertEquals(air, s3.gas)
-        self.assertEquals(s2, s3.prev)
 
 
 
@@ -658,7 +648,6 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         self.assertEquals(1, len(steps))
         self.assertEquals(3.2, steps[0].abs_p)
         self.assertEquals(1200, steps[0].time)
-        self.assertEquals(start, steps[0].prev)
 
 
     def test_ascent_switch_gas(self):
@@ -683,15 +672,12 @@ class EngineDiveAscentTestCase(unittest.TestCase):
 
         self.assertAlmostEquals(3.3, steps[0].abs_p)
         self.assertEquals(1206, steps[0].time)
-        self.assertEquals(start, steps[0].prev)
 
         self.assertAlmostEquals(3.3, steps[1].abs_p)
         self.assertEquals(1206, steps[1].time)
-        self.assertEquals(steps[0], steps[1].prev)
 
         self.assertEquals(3.1, steps[2].abs_p)
         self.assertEquals(1218, steps[2].time)
-        self.assertEquals(steps[1], steps[2].prev)
 
 
     def test_free_staged_ascent(self):
@@ -701,9 +687,9 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         Verify ascent to surface with no deco and no gas mix switch.
         """
         s1 = _step(Phase.START, 1.0, 0)
-        s2 = _step(Phase.DESCENT, 3.5, 150, prev=s1)
-        s3 = _step(Phase.CONST, 3.5, 1050, prev=s2)
-        s4 = _step(Phase.ASCENT, 1.0, 1200, prev=s3)
+        s2 = _step(Phase.DESCENT, 3.5, 150)
+        s3 = _step(Phase.CONST, 3.5, 1050)
+        s4 = _step(Phase.ASCENT, 1.0, 1200)
 
         # s3 -> s4
         self.engine._find_first_stop = mock.MagicMock(return_value=s4)
@@ -727,13 +713,13 @@ class EngineDiveAscentTestCase(unittest.TestCase):
             (1.0, EAN50),
         ]
         s1 = _step(Phase.START, 1.0, 0)
-        s2 = _step(Phase.DESCENT, 4.5, 150, prev=s1)
-        s3 = _step(Phase.CONST, 4.5, 1050, prev=s2)
-        s4 = _step(Phase.ASCENT, 3.4, 1068, prev=s3) # ascent
-        s5 = _step(Phase.ASCENT, 3.2, 1080, prev=s4) # gas switch, step 1
-        s6 = _step(Phase.ASCENT, 3.2, 1080, prev=s5) # gas switch, step 2
-        s7 = _step(Phase.ASCENT, 3.1, 1086, prev=s6) # gas switch, step 3
-        s8 = _step(Phase.ASCENT, 1.0, 1200, prev=s7) # ascent to surface
+        s2 = _step(Phase.DESCENT, 4.5, 150)
+        s3 = _step(Phase.CONST, 4.5, 1050)
+        s4 = _step(Phase.ASCENT, 3.4, 1068) # ascent
+        s5 = _step(Phase.ASCENT, 3.2, 1080) # gas switch, step 1
+        s6 = _step(Phase.ASCENT, 3.2, 1080) # gas switch, step 2
+        s7 = _step(Phase.ASCENT, 3.1, 1086) # gas switch, step 3
+        s8 = _step(Phase.ASCENT, 1.0, 1200) # ascent to surface
 
         self.engine._ascent_switch_gas = mock.MagicMock(return_value=[s5, s6, s7])
         self.engine._inv_limit = mock.MagicMock(return_value=True)
@@ -759,9 +745,9 @@ class EngineDiveAscentTestCase(unittest.TestCase):
             (1.0, EAN50),
         ]
         s1 = _step(Phase.START, 1.0, 0)
-        s2 = _step(Phase.DESCENT, 4.5, 150, prev=s1)
-        s3 = _step(Phase.CONST, 4.5, 1050, prev=s2)
-        s4 = _step(Phase.ASCENT, 3.4, 1068, prev=s3) # ascent target
+        s2 = _step(Phase.DESCENT, 4.5, 150)
+        s3 = _step(Phase.CONST, 4.5, 1050)
+        s4 = _step(Phase.ASCENT, 3.4, 1068) # ascent target
                                                      # and first deco stop
 
         # _inv_limit is False -> should result in deco stop at 24m
@@ -1066,14 +1052,14 @@ class DecoTableTestCase(unittest.TestCase):
         self.engine = engine = _engine(air=True)
 
         s1 = _step(Phase.CONST, 3.5, 40)
-        s2 = _step(Phase.ASCENT, 2.5, 100, prev=s1)
-        s3 = _step(Phase.DECO_STOP, 2.5, 160, prev=s2)
-        s4 = _step(Phase.DECO_STOP, 2.5, 200, prev=s3)
-        s5 = _step(Phase.DECO_STOP, 2.5, 250, prev=s4) # 3min
-        s6 = _step(Phase.ASCENT, 2.2, 258, prev=s5)
-        s7 = _step(Phase.DECO_STOP, 2.2, 300, prev=s6) # 1min
+        s2 = _step(Phase.ASCENT, 2.5, 100)
+        s3 = _step(Phase.DECO_STOP, 2.5, 160)
+        s4 = _step(Phase.DECO_STOP, 2.5, 200)
+        s5 = _step(Phase.DECO_STOP, 2.5, 250) # 3min
+        s6 = _step(Phase.ASCENT, 2.2, 258)
+        s7 = _step(Phase.DECO_STOP, 2.2, 300) # 1min
         # start of next stop at 9m, to be skipped
-        s8 = _step(Phase.ASCENT, 1.9, 318, prev=s7)
+        s8 = _step(Phase.ASCENT, 1.9, 318)
 
         stops = (s1, s2, s3, s4, s5, s6, s7, s8)
 
@@ -1106,16 +1092,16 @@ class DecoTableTestCase(unittest.TestCase):
         the main test case deco table.
         """
         s1 = _step(Phase.ASCENT, 3.5, 0)
-        s2 = _step(Phase.DECO_STOP, 2.8, 5, prev=s1)
-        s3 = _step(Phase.DECO_STOP, 2.8, 10, prev=s2)
-        s4 = _step(Phase.ASCENT, 2.5, 100, prev=s3)
-        s5 = _step(Phase.DECO_STOP, 2.5, 160, prev=s4)
-        s6 = _step(Phase.DECO_STOP, 2.5, 200, prev=s5)
-        s7 = _step(Phase.DECO_STOP, 2.5, 250, prev=s6) # 3min
-        s8 = _step(Phase.ASCENT, 2.2, 258, prev=s7)
-        s9 = _step(Phase.DECO_STOP, 2.2, 300, prev=s8) # 1min
+        s2 = _step(Phase.DECO_STOP, 2.8, 5)
+        s3 = _step(Phase.DECO_STOP, 2.8, 10)
+        s4 = _step(Phase.ASCENT, 2.5, 100)
+        s5 = _step(Phase.DECO_STOP, 2.5, 160)
+        s6 = _step(Phase.DECO_STOP, 2.5, 200)
+        s7 = _step(Phase.DECO_STOP, 2.5, 250) # 3min
+        s8 = _step(Phase.ASCENT, 2.2, 258)
+        s9 = _step(Phase.DECO_STOP, 2.2, 300) # 1min
         # start of next stop at 9m, to be skipped
-        s10 = _step(Phase.ASCENT, 1.9, 318, prev=s9)
+        s10 = _step(Phase.ASCENT, 1.9, 318)
 
         steps1 = (s4, s5, s6, s7, s8, s9, s10)
         steps2 = (s1, s2, s3, s4, s5, s6, s7, s8, s9, s10)

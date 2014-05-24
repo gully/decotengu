@@ -47,9 +47,9 @@ class DiveStepInfoTestCase(unittest.TestCase):
         engine.model = model
 
         d = _data(0.3, 2.2, 2.3)
-        s1 = Step(Phase.CONST, 3.0, 100, AIR, d, None)
+        s1 = Step(Phase.CONST, 3.0, 100, AIR, d)
         d = _data(0.4, 1.2, 1.3)
-        s2 = Step(Phase.DECO_STOP, 2.5, 145, AIR, d, s1)
+        s2 = Step(Phase.DECO_STOP, 2.5, 145, AIR, d)
 
         data = []
         @coroutine

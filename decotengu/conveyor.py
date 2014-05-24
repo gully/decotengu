@@ -112,17 +112,20 @@ class Conveyor(object):
             logger.debug('conveyor time delta {}'.format(self.time_delta))
 
         data = self.f_calc(*args, **kw)
-        yield next(data)
+        step = next(data)
+        yield step
 
+        prev = step
         for end in data:
-            prev = end.prev
             if end.phase == 'gas_switch':
                 yield end
                 continue
 
             # determine descent/ascent/const engine method
             f_step = self.engine._step_next # default const
-            if end.phase == Phase.ASCENT:
+            if end.phase == Phase.DECO_STOP:
+                f_step = partial(self.engine._step_next, phase=Phase.DECO_STOP)
+            elif end.phase == Phase.ASCENT:
                 assert end.abs_p - prev.abs_p < 0
                 f_step = partial(self.engine._step_next_ascent, gf=end.data.gf)
             elif end.phase == Phase.DESCENT:
@@ -161,5 +164,6 @@ class Conveyor(object):
                 logger.debug('step expansion validation ok')
 
             yield end
+            prev = end
 
 # vim: sw=4:et:ai

@@ -102,7 +102,7 @@ class AscentJumper(object):
         for i in range(start.time, end_time, 60):
             abs_p = step.abs_p - dp # jump
             data = model.load(abs_p, 60, gas, 0, step.data)
-            step = Step(Phase.DECO_STOP, abs_p, step.time + 60, gas, data, step)
+            step = Step(Phase.DECO_STOP, abs_p, step.time + 60, gas, data)
             yield step
 
 
@@ -154,8 +154,7 @@ class DecoStopStepper(object):
         step = start._replace(
             phase=Phase.DECO_STOP,
             time=start.time + deco_time,
-            data=data,
-            prev=start
+            data=data
         )
         return step
 

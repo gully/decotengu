@@ -81,7 +81,7 @@ class ConveyorTestCase(unittest.TestCase):
         Conveyor simply forwards dive steps on gas switch
         """
         s1 = _step(Phase.ASCENT, 3.1, 1000)
-        s2 = _step(Phase.GAS_SWITCH, 3.1, 1000, prev=s1)
+        s2 = _step(Phase.GAS_SWITCH, 3.1, 1000)
         conveyor = Conveyor(mock.MagicMock(), 0.12)
         conveyor.f_calc = lambda *args: iter((s1, s2))
         t = conveyor()

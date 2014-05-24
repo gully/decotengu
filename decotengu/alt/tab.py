@@ -537,7 +537,7 @@ def linearize(method, max_const_time, max_change_time):
         assert time > 0, time
 
         step = method(step, time, gas, **kw)
-        return step._replace(prev=start)
+        return step
 
     return wrapper
 

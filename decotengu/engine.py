@@ -67,7 +67,7 @@ class Phase(object):
     GAS_SWITCH = 'gas_switch'
 
 
-Step = namedtuple('Step', 'phase abs_p time gas data prev')
+Step = namedtuple('Step', 'phase abs_p time gas data')
 Step.__repr__ = lambda s: 'Step(phase="{}", abs_p={:.4f}, time={},' \
     ' gf={:.4f})'.format(
         s.phase, s.abs_p, s.time, s.data.gf
@@ -80,7 +80,6 @@ Dive step information.
 :var time: Time of dive [s].
 :var gas: Gas mix configuration.
 :var data: Decompression model data.
-:var prev: Previous dive step.
 """
 
 GasMix = namedtuple('GasMix', 'depth o2 n2 he')
@@ -243,7 +242,7 @@ class Engine(object):
         :param gas: Gas mix configuration.
         """
         data = self.model.init(self.surface_pressure)
-        step = Step(Phase.START, abs_p, 0, gas, data, None)
+        step = Step(Phase.START, abs_p, 0, gas, data)
         return step
 
 
@@ -259,7 +258,7 @@ class Engine(object):
         :param phase: Dive phase.
         """
         data = self._tissue_pressure_const(step.abs_p, time, gas, step.data)
-        return Step(phase, step.abs_p, step.time + time, gas, data, step)
+        return Step(phase, step.abs_p, step.time + time, gas, data)
 
 
     def _step_next_descent(self, step, time, gas, phase='descent'):
@@ -274,7 +273,7 @@ class Engine(object):
         """
         data = self._tissue_pressure_descent(step.abs_p, time, gas, step.data)
         pressure = step.abs_p + self._time_to_pressure(time, self.descent_rate)
-        return Step(phase, pressure, step.time + time, gas, data, step)
+        return Step(phase, pressure, step.time + time, gas, data)
 
 
     def _step_next_ascent(self, step, time, gas, gf=None, phase='ascent'):
@@ -296,7 +295,7 @@ class Engine(object):
         if gf is not None:
             # FIXME: make it model independent
             data = data._replace(gf=gf)
-        return Step(phase, pressure, step.time + time, gas, data, step)
+        return Step(phase, pressure, step.time + time, gas, data)
 
 
     def _tissue_pressure_const(self, abs_p, time, gas, data):
@@ -346,7 +345,7 @@ class Engine(object):
 
         The switch results in new dive step.
         """
-        step = step._replace(phase=Phase.GAS_SWITCH, gas=gas, prev=step)
+        step = step._replace(phase=Phase.GAS_SWITCH, gas=gas)
         logger.debug('switched to gas mix {} at {}'.format(gas, step))
         return step
 
@@ -1052,10 +1051,12 @@ class DecoTable(object):
                 if depth in stops:
                     stops[depth][1] = step.time
                 else:
-                    stops[depth] = [step.prev.time, step.time]
+                    stops[depth] = [prev.time, step.time]
                 if __debug__:
                     t = stops[depth][1] - stops[depth][0]
                     logger.debug('deco stop length at {}m: {}s'.format(depth, t))
+
+            prev = step
 
 
 # vim: sw=4:et:ai
