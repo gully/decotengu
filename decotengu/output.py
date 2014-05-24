@@ -114,8 +114,10 @@ def csv_writer(f, target=None):
             sample.gas.o2, sample.gas.n2, sample.gas.he
         ]
         for tissue in sample.tissues:
-            r2 = [tissue.no, tissue.pressure, tissue.limit, tissue.gf,
-                tissue.gf_limit, sample.phase]
+            r2 = [
+                tissue.no, tissue.pressure, tissue.limit, tissue.gf,
+                tissue.gf_limit, sample.phase
+            ]
             fcsv.writerow(r1 + r2)
 
         if target:
