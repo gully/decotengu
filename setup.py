@@ -38,7 +38,9 @@ setup(
     include_package_data=True,
     long_description=\
 """\
-DecoTengu - dive decompression library.
+DecoTengu is Python dive decompression library to experiment with various
+implementations of Buhlmann decompression model with Eric Baker's gradient
+factors.
 """,
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)'
