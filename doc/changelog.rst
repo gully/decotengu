@@ -2,6 +2,9 @@ Changelog
 =========
 DecoTengu 0.9.0
 ---------------
+- memory usage improvements
+- API change: decompression table is ``Engine.deco_table`` attribute
+  instead of being a coroutine
 
 DecoTengu 0.8.0
 ---------------
