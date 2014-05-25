@@ -136,7 +136,7 @@ class Engine(object):
         #
         #   decotengu.tests.integration.test_engine.ProfileTestCase.test_deepstop
         #
-        self._deco_stop_search_time = 4
+        self._deco_stop_search_time = 8
 
         self._meter_to_bar = const.METER_TO_BAR
         self._p3m = 3 * const.METER_TO_BAR
@@ -873,6 +873,17 @@ class Engine(object):
             logger.debug('deco stop: calculate at {}m'.format(depth))
             assert depth % 3 == 0 and depth > 0, depth
 
+        # there are a lot of 1 minute deco stops, so check if we can ascend
+        # after 1 minute first; otherwise continue searching for the
+        # decompression stop length
+        data = self._tissue_pressure_const(
+            step.abs_p, const.MINUTE, gas, step.data
+        )
+        if self._can_ascend(step.abs_p, next_time, gas, data, gf):
+            return Step(
+                Phase.DECO_STOP, step.abs_p, step.time + const.MINUTE, gas, data
+            )
+
         max_time = self._deco_stop_search_time * 60
         # next_f(arg=(time, data)): (time, data) <- track both time and deco
         # data
@@ -883,7 +894,7 @@ class Engine(object):
         inv_f = lambda time, data: \
             not self._can_ascend(step.abs_p, next_time, gas, data, gf)
 
-        time, data = recurse_while(inv_f, next_f, 0, step.data)
+        time, data = recurse_while(inv_f, next_f, const.MINUTE, data)
 
         if __debug__:
             logger.debug(
@@ -900,7 +911,9 @@ class Engine(object):
         exec_deco_stop = lambda k: \
             not self._can_ascend(step.abs_p, next_time, gas, next_f(k), gf)
 
-        n = self._deco_stop_search_time
+        # ascent is possible after self._deco_stop_search_time * 60, so
+        # check for self._deco_stop_search_time - 1
+        n = self._deco_stop_search_time - 1
         k = bisect_find(n, exec_deco_stop)
         k += 1 # at k * 60 diver should still stay at deco stop as
                # exec_deco_stop is true - ascent minute later

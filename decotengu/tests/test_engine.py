@@ -915,8 +915,29 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         data = _data(0.3, 2.5, 2.5, 2.5)
         step = _step(Phase.ASCENT, 2.5, 1200, data=data)
 
+        self.engine._can_ascend = mock.MagicMock(return_value=False)
         f_r.return_value = (0, data)
-        f_bf.return_value = 0 # expect 1min deco stop
+        f_bf.return_value = 2 # expect 3min deco stop
+
+        step = self.engine._deco_stop(step, 18, AIR, 0.42)
+        self.assertEquals(1380, step.time)
+
+
+    @mock.patch('decotengu.engine.recurse_while')
+    @mock.patch('decotengu.engine.bisect_find')
+    def test_deco_stop_1min(self, f_bf, f_r):
+        """
+        Test 1min deco stop calculation
+        """
+        self.engine.model.gf_low = 0.30
+        self.engine.model.gf_high = 0.90
+
+        data = _data(0.3, 2.5, 2.5, 2.5)
+        step = _step(Phase.ASCENT, 2.5, 1200, data=data)
+
+        self.engine._can_ascend = mock.MagicMock(return_value=True)
+        f_r.return_value = None
+        f_bf.return_value = None
 
         step = self.engine._deco_stop(step, 18, AIR, 0.42)
         self.assertEquals(1260, step.time)
