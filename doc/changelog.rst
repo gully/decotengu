@@ -1,5 +1,8 @@
 Changelog
 =========
+DecoTengu 0.10.0
+----------------
+
 DecoTengu 0.9.0
 ---------------
 - memory usage improvements
