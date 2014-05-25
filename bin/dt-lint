@@ -116,7 +116,7 @@ from decotengu.alt.tab import tab_engine
 from decotengu.output import DiveStepInfoGenerator, csv_writer
 from decotengu.flow import sender
 
-engine, deco_table = decotengu.create(time_delta=args.time_delta)
+engine = decotengu.create(time_delta=args.time_delta)
 engine.last_stop_6m = args.last_stop_6m
 pipeline = []
 
@@ -179,13 +179,12 @@ for m in engine._gas_list:
     print(' o2={}%, he={}% at {}m'.format(m.o2, m.he, m.depth))
 print()
 
-stops = deco_table.stops
-if stops:
+if engine.deco_table:
     print('Decompression stops ({}):'.format(args.model.upper()))
-    for stop in stops:
+    for stop in engine.deco_table:
         print(' {:4.0f}m {:3}min'.format(stop.depth, stop.time))
     print('-' * 13)
-    print('Sum: {:5}min'.format(deco_table.total))
+    print('Sum: {:5}min'.format(engine.deco_table.total))
 else:
     print('No decompression dive ({}).'.format(args.model.upper()))
 

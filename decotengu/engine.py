@@ -113,6 +113,7 @@ class Engine(object):
     :var ascent_rate: Ascent rate during a dive [m/min].
     :var descent_rate: Descent rate during a dive [m/min].
     :var last_stop_6m: If true, then last deco stop is at 6m (not default 3m).
+    :var deco_table: List of decompression stops.
     :var _gas_list: List of gas mixes.
     :var _deco_stop_search_time: Time limit for decompression stop linear
         search.
@@ -124,6 +125,7 @@ class Engine(object):
         self.ascent_rate = 10.0
         self.descent_rate = 20.0
         self.last_stop_6m = False
+        self.deco_table = DecoTable()
 
         self._gas_list = []
         self._travel_gas_list = []
@@ -221,7 +223,7 @@ class Engine(object):
         :param time: Time of ascent in seconds.
         :param gas: Gas mix configuration.
         :param data: Decompression model data.
-        ;param gf: Gradient factor to be used for ceiling check.
+        :param gf: Gradient factor to be used for ceiling check.
         """
         data = self._tissue_pressure_ascent(abs_p, time, gas, data)
         p = abs_p - self._time_to_pressure(time, self.ascent_rate)
@@ -795,7 +797,12 @@ class Engine(object):
                     yield step
 
             # execute deco stop
-            step = self._deco_stop(step, time, gas, gf)
+            end = self._deco_stop(step, time, gas, gf)
+            self.deco_table.append(
+                self._to_depth(step.abs_p),
+                end.time - step.time
+            )
+            step = end
             yield step
 
             # ascend to next deco stop
@@ -954,6 +961,7 @@ class Engine(object):
         .. seealso:: :func:`decotengu.Engine._validate_gas_list`
         .. seealso:: :func:`decotengu.Engine.add_gas`
         """
+        del self.deco_table[:]
         self._validate_gas_list(depth)
 
         # prepare travel and bottom gas mixes
@@ -987,76 +995,38 @@ class Engine(object):
 
 
 
-class DecoTable(object):
+class DecoTable(list):
     """
     Decompression table summary.
 
-    The class is coroutine class - create coroutine object, then call it to
-    start the coroutine.
+    The class is a list of decompression stops.
 
     The decompression stops time is in minutes.
 
-    :var engine: Decompression engine.
-    :var _stops: Internal structure containing decompression stops
-        information (see `stops` property for the list of decompression
-        stops).
-
     .. seealso:: :class:`decotengu.engine.DecoStop`
     """
-    def __init__(self, engine):
-        """
-        Create decompression table summary.
-
-        :param engine: Decompression engine.
-        """
-        self._stops = OrderedDict()
-        self.engine = engine
-
-
     @property
     def total(self):
         """
         Total decompression time.
         """
-        return sum(s.time for s in self.stops)
+        return sum(s.time for s in self)
 
 
-    @property
-    def stops(self):
+    def append(self, depth, time):
         """
-        List of decompression stops.
+        Add decompression stop.
+
+        :param depth: Depth of decompression stop [m].
+        :param time: Time of decompression stop [s].
         """
-        times = (math.ceil((s[1] - s[0]) / 60) for s in self._stops.values())
-        stops = [DecoStop(d, t) for d, t in zip(self._stops, times) if t > 0]
+        time = math.ceil(time / 60)
+        stop = DecoStop(depth, time)
 
-        assert all(s.time > 0 for s in stops)
-        assert all(s.depth > 0 for s in stops)
+        assert stop.time > 0
+        assert stop.depth > 0
 
-        return stops
-
-
-    @coroutine
-    def __call__(self):
-        """
-        Create decompression table coroutine to gather decompression stops
-        information.
-        """
-        stops = self._stops = OrderedDict()
-        while True:
-            step = yield
-            if __debug__:
-                logger.debug('received {}'.format(step))
-            if step.phase == Phase.DECO_STOP:
-                depth = self.engine._to_depth(step.abs_p)
-                if depth in stops:
-                    stops[depth][1] = step.time
-                else:
-                    stops[depth] = [prev.time, step.time]
-                if __debug__:
-                    t = stops[depth][1] - stops[depth][0]
-                    logger.debug('deco stop length at {}m: {}s'.format(depth, t))
-
-            prev = step
+        super().append(stop)
 
 
 # vim: sw=4:et:ai

@@ -21,7 +21,7 @@
 Tests for DecoTengu dive decompression engine.
 """
 
-from decotengu.engine import Engine, DecoTable, Phase, GasMix
+from decotengu.engine import Engine, DecoTable, Phase, GasMix, DecoStop
 from decotengu.error import ConfigError, EngineError
 
 from .tools import _step, _engine, _data, AIR, EAN50
@@ -774,10 +774,13 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         start = _step(Phase.ASCENT, 3.1, 2214, data=_data(0.3, 3.0, 3.0))
         self.engine._gas_list = [AIR]
 
-        deco_stop = mock.MagicMock()
-        deco_stop.abs_p = 3.1
-        deco_stop.data.gf = 0.3
-        deco_steps = [deco_stop] * 7
+        deco_steps = []
+        for k in range(7):
+            s = mock.MagicMock()
+            s.abs_p = 3.1
+            s.time = 2214 + 60 + k * 60
+            s.data.gf = 0.3
+            deco_steps.append(s)
         self.engine._deco_stop = mock.MagicMock(side_effect=deco_steps)
 
         steps = list(self.engine._deco_staged_ascent(start, stages))
@@ -812,6 +815,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
             s = mock.MagicMock()
             s.data.gf = 0.3
             s.abs_p = 3.1 - 0.3 * k
+            s.time = 2214 + 60 + k * 60
             deco_steps.append(s)
         self.engine._deco_stop = mock.MagicMock(side_effect=deco_steps)
 
@@ -820,6 +824,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
             s = mock.MagicMock()
             s.data.gf = 0.3
             s.abs_p = 3.1 - 0.3 * k
+            s.time = 2214 + 60 + (k - 1) * 60 + 18
             deco_steps.append(s)
         self.engine._step_next_ascent = mock.MagicMock(side_effect=deco_steps)
         # add gas switch step at 12m
@@ -1043,103 +1048,34 @@ class GasMixTestCase(unittest.TestCase):
 
 class DecoTableTestCase(unittest.TestCase):
     """
-    Deco table mod tests.
+    Deco table tests.
     """
-    def setUp(self):
+    def test_adding_stop(self):
         """
-        Set up deco table tests data.
+        Test adding deco stop to deco table
         """
-        self.engine = engine = _engine(air=True)
+        dt = DecoTable()
+        dt.append(15, 210) # 4min
+        dt.append(12, 58) # 1min
 
-        s1 = _step(Phase.CONST, 3.5, 40)
-        s2 = _step(Phase.ASCENT, 2.5, 100)
-        s3 = _step(Phase.DECO_STOP, 2.5, 160)
-        s4 = _step(Phase.DECO_STOP, 2.5, 200)
-        s5 = _step(Phase.DECO_STOP, 2.5, 250) # 3min
-        s6 = _step(Phase.ASCENT, 2.2, 258)
-        s7 = _step(Phase.DECO_STOP, 2.2, 300) # 1min
-        # start of next stop at 9m, to be skipped
-        s8 = _step(Phase.ASCENT, 1.9, 318)
-
-        stops = (s1, s2, s3, s4, s5, s6, s7, s8)
-
-        self.dt = DecoTable(engine)
-        dtc = self.dtc = self.dt()
-
-        for s in stops:
-            dtc.send(s)
-
-
-    def test_internals(self):
-        """
-        Test deco table mod internals
-        """
-        self.assertEquals(2, len(self.dt._stops), self.dt._stops)
-        self.assertEquals((15, 12), tuple(self.dt._stops))
-
-        times = tuple(self.dt._stops.values())
-        self.assertEquals([100, 250], times[0])
-        self.assertEquals([258, 300], times[1])
-
-
-    def test_internals_restart(self):
-        """
-        Test deco table mod internals after deco table restart
-
-        The test sends first set of dive steps, restart the table and sends
-        the second set of dive steps. The deco table should be calculated
-        using only first set. This test uses its own deco table and skips
-        the main test case deco table.
-        """
-        s1 = _step(Phase.ASCENT, 3.5, 0)
-        s2 = _step(Phase.DECO_STOP, 2.8, 5)
-        s3 = _step(Phase.DECO_STOP, 2.8, 10)
-        s4 = _step(Phase.ASCENT, 2.5, 100)
-        s5 = _step(Phase.DECO_STOP, 2.5, 160)
-        s6 = _step(Phase.DECO_STOP, 2.5, 200)
-        s7 = _step(Phase.DECO_STOP, 2.5, 250) # 3min
-        s8 = _step(Phase.ASCENT, 2.2, 258)
-        s9 = _step(Phase.DECO_STOP, 2.2, 300) # 1min
-        # start of next stop at 9m, to be skipped
-        s10 = _step(Phase.ASCENT, 1.9, 318)
-
-        steps1 = (s4, s5, s6, s7, s8, s9, s10)
-        steps2 = (s1, s2, s3, s4, s5, s6, s7, s8, s9, s10)
-
-        dt = DecoTable(self.engine)
-        dtc = dt()
-        for s in steps1:
-            dtc.send(s)
-
-        # test preconditions
-        assert len(dt._stops) == 2, dt._stops
-        assert tuple(dt._stops) == (15, 12), dt._stops
-
-        # restart
-        dtc = dt()
-        for s in steps2:
-            dtc.send(s)
-        self.assertEquals(3, len(dt._stops), dt._stops)
-        self.assertEquals((18, 15, 12), tuple(dt._stops))
-
-
-    def test_deco_stops(self):
-        """
-        Test deco table mod deco stops summary
-        """
-        stops = self.dt.stops
-        self.assertEquals(2, len(stops))
-        self.assertEquals(15, stops[0].depth)
-        self.assertEquals(3, stops[0].time)
-        self.assertEquals(12, stops[1].depth)
-        self.assertEquals(1, stops[1].time)
+        self.assertEquals(2, len(dt))
+        self.assertEquals(15, dt[0].depth)
+        self.assertEquals(4, dt[0].time)
+        self.assertEquals(12, dt[1].depth)
+        self.assertEquals(1, dt[1].time)
 
 
     def test_total(self):
         """
         Test deco table mod total time summary
         """
-        self.assertEquals(4, self.dt.total)
+        stops = (
+            DecoStop(15, 3),
+            DecoStop(12, 1),
+        )
+        dt = DecoTable()
+        dt.extend(stops)
+        self.assertEquals(4, dt.total)
 
 
 # vim: sw=4:et:ai

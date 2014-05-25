@@ -36,15 +36,16 @@ class EngineTest(unittest.TestCase):
     Abstract class for all DecoTengu engine test cases.
     """
     def _engine(self, *args, **kw):
-        engine, dt = create(*args, **kw)
+        engine = create(*args, **kw)
         tab_engine(engine)
-        return engine, dt
+        return engine
 
 
     def setUp(self):
         self.ctx = DecimalContext()
         self.ctx.__enter__()
-        self.engine, self.dt = self._engine()
+        self.engine = self._engine()
+        self.dt = self.engine.deco_table
 
 
     def tearDown(self):
@@ -74,25 +75,25 @@ class ProfileTestCase(EngineTest):
         # it seems the dive profile in Baker paper does not take into
         # account descent
         data = list(engine.calculate(Decimal(90), Decimal(20), descent=False))
-        self.assertEquals((57, 1), dt.stops[0])
-        self.assertEquals((54, 1), dt.stops[1])
-        self.assertEquals((51, 1), dt.stops[2])
-        self.assertEquals((48, 1), dt.stops[3])
-        self.assertEquals((45, 1), dt.stops[4])
-        self.assertEquals((42, 1), dt.stops[5])
-        self.assertEquals((39, 2), dt.stops[6])
-        self.assertEquals((36, 2), dt.stops[7]) # 1 minute less
-        self.assertEquals((33, 1), dt.stops[8])
-        self.assertEquals((30, 2), dt.stops[9])
-        self.assertEquals((27, 2), dt.stops[10])
-        self.assertEquals((24, 2), dt.stops[11])
-        self.assertEquals((21, 3), dt.stops[12]) # 1 minute less
-        self.assertEquals((18, 5), dt.stops[13]) # 2 minutes more
-        self.assertEquals((15, 6), dt.stops[14])
-        self.assertEquals((12, 8), dt.stops[15])
-        self.assertEquals((9, 11), dt.stops[16]) # 1 minute more
-        self.assertEquals((6, 18), dt.stops[17]) # 2 minutes more
-        self.assertEquals((3, 34), dt.stops[18]) # 2 minutes more
+        self.assertEquals((57, 1), dt[0])
+        self.assertEquals((54, 1), dt[1])
+        self.assertEquals((51, 1), dt[2])
+        self.assertEquals((48, 1), dt[3])
+        self.assertEquals((45, 1), dt[4])
+        self.assertEquals((42, 1), dt[5])
+        self.assertEquals((39, 2), dt[6])
+        self.assertEquals((36, 2), dt[7]) # 1 minute less
+        self.assertEquals((33, 1), dt[8])
+        self.assertEquals((30, 2), dt[9])
+        self.assertEquals((27, 2), dt[10])
+        self.assertEquals((24, 2), dt[11])
+        self.assertEquals((21, 3), dt[12]) # 1 minute less
+        self.assertEquals((18, 5), dt[13]) # 2 minutes more
+        self.assertEquals((15, 6), dt[14])
+        self.assertEquals((12, 8), dt[15])
+        self.assertEquals((9, 11), dt[16]) # 1 minute more
+        self.assertEquals((6, 18), dt[17]) # 2 minutes more
+        self.assertEquals((3, 34), dt[18]) # 2 minutes more
 
 
 # vim: sw=4:et:ai

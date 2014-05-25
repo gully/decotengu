@@ -105,7 +105,7 @@ Create the decompression engine first
 
     >>> import decotengu
     >>> from decotengu.alt.tab import tab_engine
-    >>> engine, deco_table = decotengu.create()
+    >>> engine = decotengu.create()
     >>> engine.add_gas(0, 21)
 
 Override the engine
@@ -117,7 +117,7 @@ Override the engine
 Perform calculations
 
     >>> profile = list(engine.calculate(35, 40))
-    >>> for stop in deco_table.stops:
+    >>> for stop in engine.deco_table:
     ...     print(stop)
     DecoStop(depth=18.0, time=1)
     DecoStop(depth=15.0, time=1)

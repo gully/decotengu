@@ -47,18 +47,18 @@ of calculations is carried by DecoTengu data model, see
    +----------------------------+             | HE_HALF_LIFE       |        [1] | calc
                   x                           +--------------------+            v
                   |                           | gf_low = 0.3       |    +------------------+
-                  .                           | gf_high = 0.85     |    | TissueCalculator |
-                  | <<send>>                  +--------------------+    +------------------+
-                  .                           | init()             |    | n2_half_life     |
-                  |                           | load()             |    | he_half_life     |
+                  |                           | gf_high = 0.85     |    | TissueCalculator |
+                  |                           +--------------------+    +------------------+
+                  |                           | init()             |    | n2_half_life     |
+              [1] | deco_table                | load()             |    | he_half_life     |
                   v                           | ceiling_limit()    |    +------------------+
           +---------------+                   +--------------------+
-          | <<coroutine>> |                      /_\          /_\
-          |   DecoTable   |                       |            |
+          |   DecoTable   |                      /_\          /_\
           +---------------+                       |            |
-          | stops         |              +------------+    +------------+
-          | tissues       |              | ZH_L16B_GF |    | ZH_L16C_GF |
+          | total         |                       |            |
           +---------------+              +------------+    +------------+
+                                         | ZH_L16B_GF |    | ZH_L16C_GF |
+                                         +------------+    +------------+
 
 
 .. _design-data-model:
@@ -85,9 +85,9 @@ The gas mix information is modeled as :class:`GasMix
 which should sum to `100%`, it has switch depth attribute, which indicates
 the deepest depth at which gas mix can be used.
 
-The decompression stops information is extracted from dive steps by
-:class:`decompression table coroutine <decotengu.DecoTable>` as
-instances of :class:`DecoStop class <decotengu.engine.DecoStop>`.
+The decompression stops information is stored by :class:`decompression
+table <decotengu.DecoTable>` as list of :class:`DecoStop objects
+<decotengu.engine.DecoStop>`.
 
 .. code::
    :class: diagram

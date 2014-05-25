@@ -33,13 +33,13 @@ class EngineTest(unittest.TestCase):
     Abstract class for all DecoTengu engine test cases.
     """
     def _engine(self, *args, **kw):
-        engine, dt = create(*args, **kw)
+        engine = create(*args, **kw)
         tab_engine(engine)
-        return engine, dt
+        return engine
 
 
     def setUp(self):
-        self.engine, self.dt = self._engine()
+        self.engine = self._engine()
 
 
 
@@ -58,7 +58,7 @@ class EngineTestCase(EngineTest):
         times = {21: 18, 22: 18, 24: 18}
         stops = {21: 7, 22: 7, 24: 7}
         for depth in mix_depth:
-            engine, dt = self._engine()
+            engine = self._engine()
             engine.model.gf_low = 0.2
             engine.model.gf_high = 0.9
             engine.add_gas(0, 21)
@@ -67,7 +67,8 @@ class EngineTestCase(EngineTest):
 
             data = list(engine.calculate(40, 35))
 
-            self.assertEquals(stops[depth], len(dt.stops), dt.stops)
+            dt = engine.deco_table
+            self.assertEquals(stops[depth], len(dt), dt)
             self.assertEquals(times[depth], dt.total)
 
 
@@ -75,7 +76,8 @@ class EngineTestCase(EngineTest):
         """
         Test a dive with travel gas mix
         """
-        engine, dt = self._engine()
+        engine = self._engine()
+        dt = engine.deco_table
         engine.model.gf_low = 0.2
         engine.model.gf_high = 0.75
         engine.add_gas(0, 36, travel=True)
@@ -96,18 +98,19 @@ class EngineTestCase(EngineTest):
         decompression stop at 6m is extended by much more than sum of deco
         stops at 3m and 6m.
         """
-        engine, dt = self._engine()
+        engine = self._engine()
+        dt = engine.deco_table
         engine.last_stop_6m = True
         engine.add_gas(0, 21)
 
         data = list(engine.calculate(45, 25))
-        self.assertEquals(6, dt.stops[-1].depth)
-        self.assertEquals(30, dt.stops[-1].time)
+        self.assertEquals(6, dt[-1].depth)
+        self.assertEquals(30, dt[-1].time)
 
         engine.last_stop_6m = False
         data = list(engine.calculate(45, 25))
-        self.assertEquals(3, dt.stops[-1].depth)
-        t = dt.stops[-1].time + dt.stops[-2].time
+        self.assertEquals(3, dt[-1].depth)
+        t = dt[-1].time + dt[-2].time
         self.assertEquals(23, t)
 
 
@@ -119,19 +122,20 @@ class EngineTestCase(EngineTest):
         stop at 3m, the decompression stop at 6m is extended just a bit
         comparing to sum of deco stops at 3m and 6m.
         """
-        engine, dt = self._engine()
+        engine = self._engine()
+        dt = engine.deco_table
         engine.last_stop_6m = True
         engine.add_gas(0, 21)
         engine.add_gas(24, 50)
 
         data = list(engine.calculate(45, 25))
-        self.assertEquals(6, dt.stops[-1].depth)
-        self.assertEquals(14, dt.stops[-1].time) # or 15 for descent_rate=10
+        self.assertEquals(6, dt[-1].depth)
+        self.assertEquals(14, dt[-1].time) # or 15 for descent_rate=10
 
         engine.last_stop_6m = False
         data = list(engine.calculate(45, 25))
-        self.assertEquals(3, dt.stops[-1].depth)
-        t = dt.stops[-1].time + dt.stops[-2].time
+        self.assertEquals(3, dt[-1].depth)
+        t = dt[-1].time + dt[-2].time
         self.assertEquals(12, t) # or 13 for descent_rate=10
 
 

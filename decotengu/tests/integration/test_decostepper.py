@@ -41,7 +41,7 @@ class DecoStepperTestCase(unittest.TestCase):
                 self.called = True
                 return super().__call__(step, time, gas, gf)
 
-        engine, dt = create()
+        engine = create()
         stepper = Stepper(engine)
         engine._deco_stop = stepper
         engine.model.gf_low = 0.2
@@ -53,8 +53,8 @@ class DecoStepperTestCase(unittest.TestCase):
         data = list(engine.calculate(40, 35))
 
         self.assertTrue(stepper.called)
-        self.assertEquals(7, len(dt.stops))
-        self.assertEquals(15, dt.total)
+        self.assertEquals(7, len(engine.deco_table))
+        self.assertEquals(15, engine.deco_table.total)
 
 
 # vim: sw=4:et:ai

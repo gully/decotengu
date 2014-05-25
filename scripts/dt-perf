@@ -29,7 +29,7 @@ args = parser.parse_args()
 
 
 def create_engine(type=float, stepper=False):
-    engine, deco_table = decotengu.create(validate=False)
+    engine = decotengu.create(validate=False)
     if stepper:
         engine._deco_stop = DecoStopStepper(engine)
     engine.ascent_rate = type(10)

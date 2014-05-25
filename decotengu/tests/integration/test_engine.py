@@ -33,12 +33,12 @@ class EngineTest(unittest.TestCase):
     Abstract class for all DecoTengu engine test cases.
     """
     def _engine(self, *args, **kw):
-        engine, dt = create(*args, **kw)
-        return engine, dt
+        engine = create(*args, **kw)
+        return engine
 
 
     def setUp(self):
-        self.engine, self.dt = self._engine()
+        self.engine = self._engine()
 
 
 
@@ -52,7 +52,7 @@ class EngineTestCase(EngineTest):
         """
         time_delta = [None, 60, 0.1]
         for t in time_delta:
-            engine, dt = self._engine(time_delta=t)
+            engine = self._engine(time_delta=t)
             engine.model.gf_low = 0.2
             engine.model.gf_high = 0.9
             engine.add_gas(0, 27)
@@ -61,7 +61,8 @@ class EngineTestCase(EngineTest):
 
             data = list(engine.calculate(40, 35))
 
-            self.assertEquals(6, len(dt.stops))
+            dt = engine.deco_table
+            self.assertEquals(6, len(dt))
             self.assertEquals(14, dt.total, 'time delta={}'.format(t))
 
 
@@ -77,7 +78,7 @@ class EngineTestCase(EngineTest):
         times = {21: 20, 22: 19, 24: 19}
         stops = {21: 8, 22: 7, 24: 7}
         for delta, depth in itertools.product(time_delta, mix_depth):
-            engine, dt = self._engine(time_delta=delta)
+            engine = self._engine(time_delta=delta)
             engine.model.gf_low = 0.2
             engine.model.gf_high = 0.9
             engine.add_gas(0, 21)
@@ -86,7 +87,8 @@ class EngineTestCase(EngineTest):
 
             data = list(engine.calculate(40, 35))
 
-            self.assertEquals(stops[depth], len(dt.stops), dt.stops)
+            dt = engine.deco_table
+            self.assertEquals(stops[depth], len(dt), dt)
             self.assertEquals(times[depth], dt.total)
 
 
@@ -94,7 +96,7 @@ class EngineTestCase(EngineTest):
         """
         Test a dive with travel gas mix
         """
-        engine, dt = self._engine()
+        engine = self._engine()
         engine.model.gf_low = 0.2
         engine.model.gf_high = 0.75
         engine.add_gas(0, 36, travel=True)
@@ -104,7 +106,7 @@ class EngineTestCase(EngineTest):
         engine.add_gas(9, 80)
 
         data = list(engine.calculate(90, 20))
-        self.assertEquals(89, dt.total)
+        self.assertEquals(89, engine.deco_table.total)
 
 
     def test_last_stop_6m_air(self):
@@ -115,18 +117,18 @@ class EngineTestCase(EngineTest):
         decompression stop at 6m is extended by much more than sum of deco
         stops at 3m and 6m.
         """
-        engine, dt = self._engine()
+        engine = self._engine()
         engine.last_stop_6m = True
         engine.add_gas(0, 21)
 
         data = list(engine.calculate(45, 25))
-        self.assertEquals(6, dt.stops[-1].depth)
-        self.assertEquals(32, dt.stops[-1].time)
+        self.assertEquals(6, engine.deco_table[-1].depth)
+        self.assertEquals(32, engine.deco_table[-1].time)
 
         engine.last_stop_6m = False
         data = list(engine.calculate(45, 25))
-        self.assertEquals(3, dt.stops[-1].depth)
-        t = dt.stops[-1].time + dt.stops[-2].time
+        self.assertEquals(3, engine.deco_table[-1].depth)
+        t = engine.deco_table[-1].time + engine.deco_table[-2].time
         self.assertEquals(25, t)
 
 
@@ -138,19 +140,19 @@ class EngineTestCase(EngineTest):
         stop at 3m, the decompression stop at 6m is extended just a bit
         comparing to sum of deco stops at 3m and 6m.
         """
-        engine, dt = self._engine()
+        engine = self._engine()
         engine.last_stop_6m = True
         engine.add_gas(0, 21)
         engine.add_gas(24, 50)
 
         data = list(engine.calculate(45, 25))
-        self.assertEquals(6, dt.stops[-1].depth)
-        self.assertEquals(15, dt.stops[-1].time)
+        self.assertEquals(6, engine.deco_table[-1].depth)
+        self.assertEquals(15, engine.deco_table[-1].time)
 
         engine.last_stop_6m = False
         data = list(engine.calculate(45, 25))
-        self.assertEquals(3, dt.stops[-1].depth)
-        t = dt.stops[-1].time + dt.stops[-2].time
+        self.assertEquals(3, engine.deco_table[-1].depth)
+        t = engine.deco_table[-1].time + engine.deco_table[-2].time
         self.assertEquals(13, t)
 
 
@@ -169,12 +171,11 @@ class NDLTestCase(EngineTest):
         Test NDL dive to 30m (gf high 100)
         """
         engine = self.engine
-        dt = self.dt
         engine.model.gf_high = 1.0
         engine.add_gas(0, 21)
 
         list(engine.calculate(30, 19))
-        self.assertEquals(0, dt.total)
+        self.assertEquals(0, engine.deco_table.total)
 
 
     def test_ndl_dive_30m_90(self):
@@ -182,12 +183,11 @@ class NDLTestCase(EngineTest):
         Test NDL dive to 30m (gf high 90)
         """
         engine = self.engine
-        dt = self.dt
         engine.model.gf_high = 0.9
         engine.add_gas(0, 21)
 
         list(engine.calculate(30, 18))
-        self.assertEquals(0, dt.total)
+        self.assertEquals(0, engine.deco_table.total)
 
 
     def test_non_ndl_dive_30m_90(self):
@@ -195,12 +195,11 @@ class NDLTestCase(EngineTest):
         Test non-NDL dive to 30m (gf high 90)
         """
         engine = self.engine
-        dt = self.dt
         engine.model.gf_high = 0.9
         engine.add_gas(0, 21)
 
         list(engine.calculate(30, 19))
-        self.assertTrue(dt.total > 0)
+        self.assertTrue(engine.deco_table.total > 0)
 
 
 
@@ -216,7 +215,7 @@ class ProfileTestCase(EngineTest):
         decompression stops information.
         """
         engine = self.engine
-        dt = self.dt
+        dt = engine.deco_table
         engine.model.gf_low = 0.2
         engine.model.gf_high = 0.75
         engine.add_gas(0, 13, 50)
@@ -227,25 +226,25 @@ class ProfileTestCase(EngineTest):
         # it seems the dive profile in Baker paper does not take into
         # account descent
         data = list(engine.calculate(90, 20, descent=False))
-        self.assertEquals((57, 1), dt.stops[0])
-        self.assertEquals((54, 1), dt.stops[1])
-        self.assertEquals((51, 1), dt.stops[2])
-        self.assertEquals((48, 1), dt.stops[3])
-        self.assertEquals((45, 1), dt.stops[4])
-        self.assertEquals((42, 1), dt.stops[5])
-        self.assertEquals((39, 2), dt.stops[6])
-        self.assertEquals((36, 2), dt.stops[7]) # 1 minute less
-        self.assertEquals((33, 1), dt.stops[8])
-        self.assertEquals((30, 2), dt.stops[9])
-        self.assertEquals((27, 2), dt.stops[10])
-        self.assertEquals((24, 2), dt.stops[11])
-        self.assertEquals((21, 3), dt.stops[12]) # 1 minute less
-        self.assertEquals((18, 5), dt.stops[13]) # 2 minutes more
-        self.assertEquals((15, 6), dt.stops[14])
-        self.assertEquals((12, 8), dt.stops[15])
-        self.assertEquals((9, 11), dt.stops[16]) # 1 minute more
-        self.assertEquals((6, 18), dt.stops[17]) # 2 minutes more
-        self.assertEquals((3, 34), dt.stops[18]) # 2 minutes more
+        self.assertEquals((57, 1), dt[0])
+        self.assertEquals((54, 1), dt[1])
+        self.assertEquals((51, 1), dt[2])
+        self.assertEquals((48, 1), dt[3])
+        self.assertEquals((45, 1), dt[4])
+        self.assertEquals((42, 1), dt[5])
+        self.assertEquals((39, 2), dt[6])
+        self.assertEquals((36, 2), dt[7]) # 1 minute less
+        self.assertEquals((33, 1), dt[8])
+        self.assertEquals((30, 2), dt[9])
+        self.assertEquals((27, 2), dt[10])
+        self.assertEquals((24, 2), dt[11])
+        self.assertEquals((21, 3), dt[12]) # 1 minute less
+        self.assertEquals((18, 5), dt[13]) # 2 minutes more
+        self.assertEquals((15, 6), dt[14])
+        self.assertEquals((12, 8), dt[15])
+        self.assertEquals((9, 11), dt[16]) # 1 minute more
+        self.assertEquals((6, 18), dt[17]) # 2 minutes more
+        self.assertEquals((3, 34), dt[18]) # 2 minutes more
 
 
 # vim: sw=4:et:ai

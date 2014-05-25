@@ -44,7 +44,8 @@ Let's calculate dive profile using float type
 
     >>> from decotengu import create
     >>> from decotengu.alt.tab import tab_engine
-    >>> engine, deco_table = create()
+    >>> engine = create()
+    >>> deco_table = engine.deco_table
     >>> tab_engine(engine)
     >>> engine.model.gf_low = 0.2
     >>> engine.model.gf_high = 0.75
@@ -60,7 +61,8 @@ and dive profile using decimal type with precision 9
     >>> from decotengu.alt.decimal import DecimalContext
     >>> from decimal import Decimal
     >>> with DecimalContext(prec=9) as ctx:
-    ...     engine, deco_table_dec = create()
+    ...     engine = create()
+    ...     deco_table_dec = engine.deco_table
     ...     tab_engine(engine)
     ...     engine.model.gf_low = Decimal(0.2)
     ...     engine.model.gf_high = Decimal(0.75)

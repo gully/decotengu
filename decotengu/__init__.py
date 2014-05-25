@@ -33,7 +33,7 @@ following example executes calculations for a dive to 35 meters for 40
 minutes on air::
 
     >>> import decotengu
-    >>> engine, deco_table = decotengu.create()
+    >>> engine = decotengu.create()
     >>> engine.add_gas(0, 21)
     >>> profile = engine.calculate(35, 40)
 
@@ -53,7 +53,7 @@ an iterator with dive profile steps::
 After dive profile iterator is fully exhausted, the dive table can be used
 to obtain all information about decompression stops::
 
-    >>> for stop in deco_table.stops:
+    >>> for stop in engine.deco_table:
     ...     print(stop)
     DecoStop(depth=18.0, time=1)
     DecoStop(depth=15.0, time=1)
@@ -64,7 +64,7 @@ to obtain all information about decompression stops::
 
 and total time of dive decompression obligations::
 
-    >>> deco_table.total
+    >>> engine.deco_table.total
     44
 
 Configuring Decompression Model
@@ -73,7 +73,7 @@ The default decompression model used by DecoTengu library is Buhlmann's
 :class:`ZH-L16B <ZH_L16B>` model with gradient factors - ZH-L16B-GF::
 
     >>> import decotengu
-    >>> engine, deco_table = decotengu.create()
+    >>> engine = decotengu.create()
     >>> engine.add_gas(0, 21)
     >>> engine.model      # doctest:+ELLIPSIS
     <decotengu.model.ZH_L16B_GF object at ...>
@@ -88,11 +88,11 @@ We can switch to ZH-L16C-GF decompression model easily::
     >>> profile = engine.calculate(35, 40)
     >>> list(profile)            # doctest:+ELLIPSIS
     [Step...]
-    >>> deco_table.total
+    >>> engine.deco_table.total
     51
-    >>> deco_table.stops[0]
+    >>> engine.deco_table[0]
     DecoStop(depth=18.0, time=1)
-    >>> deco_table.stops[-1]
+    >>> engine.deco_table[-1]
     DecoStop(depth=3.0, time=26)
 
 Above, the total dive decompression time is longer due to ZH-L16C-GF being
@@ -108,11 +108,11 @@ attributes::
     >>> profile = engine.calculate(35, 40)
     >>> list(profile)            # doctest:+ELLIPSIS
     [Step...]
-    >>> deco_table.total
+    >>> engine.deco_table.total
     47
-    >>> deco_table.stops[0]
+    >>> engine.deco_table[0]
     DecoStop(depth=21.0, time=1)
-    >>> deco_table.stops[-1]
+    >>> engine.deco_table[-1]
     DecoStop(depth=3.0, time=24)
 
 """
@@ -127,17 +127,17 @@ __version__ = '0.9.0'
 
 def create(time_delta=None, validate=True):
     """
-    Create decompression engine with decompression table.
+    Create decompression engine .
 
     The decompression model validation is enabled by default.
 
     Usage
 
     >>> import decotengu
-    >>> engine, dt = decotengu.create()
+    >>> engine = decotengu.create()
     >>> engine.add_gas(0, 21)
     >>> data = list(engine.calculate(35, 40))
-    >>> dt.total
+    >>> engine.deco_table.total
     44
 
     :param time_delta: Time between dive steps.
@@ -145,9 +145,8 @@ def create(time_delta=None, validate=True):
                      validator.
     """
     engine = Engine()
-    dt = DecoTable(engine)
 
-    pipeline = [dt]
+    pipeline = []
     if validate:
         pipeline.append(DecoModelValidator(engine))
 
@@ -155,7 +154,7 @@ def create(time_delta=None, validate=True):
         engine.calculate = Conveyor(engine, time_delta)
     engine.calculate = sender(engine.calculate, *pipeline)
 
-    return engine, dt
+    return engine
 
 
 __all__ = ['create', 'Engine', 'ZH_L16B_GF', 'ZH_L16C_GF']
