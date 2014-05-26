@@ -2,9 +2,11 @@ Changelog
 =========
 DecoTengu 0.10.0
 ----------------
-- implemented new algorithm finding first decompression stop
+- implemented new, faster and simpler algorithm finding first decompression
+  stop
 - old algorithm finding first decompression stop, based on binary search,
-  moved to decotengu.alt.bisect module
+  moved to decotengu.alt.bisect module and still can be used for comparison
+  purposes
 
 DecoTengu 0.9.0
 ---------------
