@@ -127,6 +127,21 @@ method.
 
 Finding First Decompression Stop
 --------------------------------
+The algorithm finding first decompression stop calculates absolute pressure
+of first decompression stop. The first decompression stop is at shallowest
+depth, which is outside dive decompression zone. The stop is at depth
+divisible by 3, it is measured in meters and its absolute pressure is
+measured in bars.
+
+The algorithm finding first decompression stop is
+
+#. Let :math:`p` be current depth.
+#. Let :math:`p_t` be target depth.
+#. Let :math:`p_l` be depth of current ceiling limit.
+#. Let :math:`p_l = ceil(p_l / 3) * 3`.
+#. If :math:`p > p_l` and :math:`p > p_t` then :math:`p = p_l` and jump to
+   (3) above.
+#. Otherwise :math:`p_l` is the depth of first decompression stop.
 
 The algorithm is implemented by :func:`decotengu.Engine._find_first_stop`
 method.
