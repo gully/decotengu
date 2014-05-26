@@ -113,6 +113,8 @@ class BisectFindFirstStop(object):
         :param abs_p: Absolute pressure of target depth - surface or gas
             switch depth.
         :param gas: Gas mix configuration.
+
+        .. seealso:: :py:meth:`decotengu.Engine._find_first_stop`
         """
         engine = self.engine
 

@@ -96,6 +96,15 @@ Tabular Tissue Calculator
 .. autoclass:: decotengu.alt.tab.FirstStopTabFinder
    :members: __call__
 
+First Decompression Stop Binary Search
+--------------------------------------
+.. autosummary::
+
+   decotengu.alt.bisect.BisectFindFirstStop
+
+.. autoclass:: decotengu.alt.bisect.BisectFindFirstStop
+   :members: __call__
+
 Naive Algorithms
 ----------------
 .. autosummary::
