@@ -20,7 +20,56 @@
 """
 First Decompression Stop Binary Search
 --------------------------------------
-:download:`gfdeco.f`
+In his :download:`Gradient Factor Decompression Program in Fortran <gfdeco.f>`,
+Erik C. Baker uses binary search algorithm to find start of decompression
+zone.
+
+DecoTengu provides similar implementation, with the exception that Baker's
+code tries to identify start of decompression zone with 'desired accuracy'
+and DecoTengu tries to find depth of first decompression stop.
+
+The algorithm finding first decompression stop calculates absolute pressure
+of first decompression stop. The first decompression stop is at shallowest
+depth, which is outside dive decompression zone. The stop is at depth
+divisible by 3, it is measured in meters and its absolute pressure is
+measured in bars.
+
+The calculation is performed between absolute pressure of current depth and
+absolute pressure of target depth. The target depth is the surface or any
+other depth divisible by 3 (i.e. gas mix switch depth).
+
+The algorithm tries multiple ascent time values such that ascent by
+proposed time value is finished at depth divisible by 3 and checks if
+ascent does not violate ascent ceiling. The largest such time value defines
+the first decompression stop.
+
+The time values are proposed using binary search algorithm. We assume
+knowledge of this algorithm.
+
+The algorithm returns absolute pressure of detph of first decompression
+stop or the target depth. It returns the starting depth if a diver is
+already in decompression zone.
+
+The algorithm finding first decompression stop is
+
+#. Let :math:`t_{3m}` be time required to ascend by 3 meters.
+#. Let :math:`t` be time required to ascend from current depth to target
+   depth.
+#. Let :math:`dt = t` mod :math:`t_{3m}`.
+#. Let :math:`n = t` div :math:`t_{3m}`.
+#. Using binary search find :math:`k` such that :math:`0 \le k \le n` and
+   ascent by time :math:`k * t_{3m} + dt` is possible without violating
+   ascent ceiling.
+#. If :math:`k = 0`, then return absolute pressure of starting depth.
+#. Otherwise, return absolute pressure of depth after ascent by time
+   :math:`k * t_{3m} + dt`.
+
+The complexity of the algorithm is :math:`O(log(n))`, where :math:`n` is
+current depth minus ceiling of current depth divided by 3 number. It
+depends on complexity of binary search algorithm.
+
+The algorithm is implemented by
+:py:class:`decotengu.alt.bisect.BisectFindFirstStop` class.
 """
 
 import logging
