@@ -32,7 +32,7 @@ import sys
 #
 
 class ValidateAlternative(argparse.Action):
-    ALT = {'tab', 'ascentjump', 'decostep'}
+    ALT = {'tab', 'ascentjump', 'decostep', 'bisect'}
     def __call__(self, parser, args, values, option_string=None):
         alt = set(values.split(','))
 
@@ -94,8 +94,7 @@ parser.add_argument(
 parser.add_argument(
     '--use', dest='alt',
     default=(), type=str, action=ValidateAlternative,
-    help='list of alternative implementations to be used: ascentjump,'  \
-        ' decostep, tab'
+    help='list of alternative implementations use'
 )
 parser.add_argument('depth', type=int, help='dive maximum depth [meter]')
 parser.add_argument('time', type=int, help='dive bottom time [minute]')
@@ -111,8 +110,6 @@ else:
 #
 
 import decotengu
-from decotengu.alt.naive import AscentJumper, DecoStopStepper
-from decotengu.alt.tab import tab_engine
 from decotengu.output import DiveStepInfoGenerator, csv_writer
 from decotengu.flow import sender
 
@@ -149,11 +146,17 @@ else:
     engine.add_gas(0, 21)
 
 if 'ascentjump' in args.alt:
+    from decotengu.alt.naive import AscentJumper
     engine._free_ascent = AscentJumper(engine)
 if 'decostep' in args.alt:
+    from decotengu.alt.naive import DecoStopStepper
     engine._deco_stop = DecoStopStepper(engine)
 if 'tab' in args.alt:
+    from decotengu.alt.tab import tab_engine
     tab_engine(engine)
+if 'bisect' in args.alt:
+    from decotengu.alt.bisect import BisectFindFirstStop
+    engine._find_first_stop = BisectFindFirstStop(engine)
 
 #
 # Execute calculations and provide summary
