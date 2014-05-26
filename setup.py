@@ -39,7 +39,7 @@ setup(
     long_description=\
 """\
 DecoTengu is Python dive decompression library to experiment with various
-implementations of Buhlmann decompression model with Eric Baker's gradient
+implementations of Buhlmann decompression model with Erik Baker's gradient
 factors.
 """,
     classifiers=[

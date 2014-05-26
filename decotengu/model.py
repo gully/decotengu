@@ -21,7 +21,7 @@
 Introduction
 --------------
 The DecoTengu implements Buhlmann decompression model ZH-L16 with gradient
-factors by Eric Baker, which we will refer to as ZH-L16-GF.
+factors by Erik Baker, which we will refer to as ZH-L16-GF.
 
 The initial version of the Buhlmann decompression model (ZH-L16A) was
 found not safe enough, its parameters were revised and two new, more
@@ -66,7 +66,7 @@ The parameters mentioned in previous section are used by two equations
 #. Schreiner equation to calculate inert gas pressure of a tissue
    compartment (implemented by :func:`eq_schreiner` function).
 
-#. Buhlmann equation extended with gradient factors by Eric Baker to
+#. Buhlmann equation extended with gradient factors by Erik Baker to
    calculate ascent ceiling of a tissue compartment (implemented by
    :func:`eq_gf_limit` function).
 
@@ -229,7 +229,7 @@ inert gas pressure in a tissue compartment is visualized on figure
 
 Buhlmann Equation
 ^^^^^^^^^^^^^^^^^
-Buhlmann equation extended with gradient factors by Eric Baker is
+Buhlmann equation extended with gradient factors by Erik Baker is
 
     .. math::
 
@@ -359,9 +359,9 @@ The pressure of ascent ceiling of a diver is calculated with the
 
 References
 ----------
-* Baker, Eric. :download:`Understanding M-values <mvalues.pdf>`.
-* Baker, Eric. :download:`Clearing Up The Confusion About "Deep Stops" <deepstops.pdf>`.
-* Baker, Eric. :download:`Untitled, known as "Deco Lessons" <decolessons.pdf>`.
+* Baker, Erik. :download:`Understanding M-values <mvalues.pdf>`.
+* Baker, Erik. :download:`Clearing Up The Confusion About "Deep Stops" <deepstops.pdf>`.
+* Baker, Erik. :download:`Untitled, known as "Deco Lessons" <decolessons.pdf>`.
 * Powell, Mark. *Deco for Divers*, United Kingdom, 2010.
 * `HeinrichsWeikamp <http://www.heinrichsweikamp.com/>`_. `OSTC dive computer
   source code <https://bitbucket.org/heinrichsweikamp/ostc2_code>`_.
@@ -415,7 +415,7 @@ def eq_schreiner(abs_p, time, gas, rate, pressure, half_life,
 def eq_gf_limit(gf, p_n2, p_he, a_n2, b_n2, a_he, b_he):
     """
     Calculate ascent ceiling limit of a tissue compartment using Buhlmann
-    equation extended with gradient factors by Eric Baker.
+    equation extended with gradient factors by Erik Baker.
 
     The returned value is absolute pressure of depth of the ascent ceiling.
 
@@ -437,7 +437,7 @@ def eq_gf_limit(gf, p_n2, p_he, a_n2, b_n2, a_he, b_he):
 class ZH_L16_GF(object):
     """
     Base abstract class for Buhlmann ZH-L16 decompression model with
-    gradient factors by Eric Baker - ZH-L16B-GF.
+    gradient factors by Erik Baker - ZH-L16B-GF.
 
     :var gf_low: Gradient factor low parameter.
     :var gf_high: Gradient factor high parameter.

@@ -9,7 +9,7 @@ calculations and is responsible to pass data between various classes of
 the library.
 
 The :class:`decotengu.model.ZH_L16_GF` abstract class implements ZH-L16
-Buhlmann decompression model with gradient factors by Eric Baker
+Buhlmann decompression model with gradient factors by Erik Baker
 (ZH-L16-GF). It receives pressure of depth and time information to
 calculate tissues gas loading and is used by DecoTengu engine to
 calculate ascent ceiling limits.

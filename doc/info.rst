@@ -6,7 +6,7 @@ Features
 --------
 Diving features
 
-#. Buhlmann diving decompression model with gradient factors by Eric
+#. Buhlmann diving decompression model with gradient factors by Erik
    Baker - ZH-L16B-GF and ZH-L16C-GF.
 #. Nitrox and trimix gas mixes.
 #. Unlimited amount of travel and decompression gas mixes.
