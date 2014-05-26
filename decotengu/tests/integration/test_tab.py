@@ -21,6 +21,8 @@
 Tabular tissue calculator integration tests.
 """
 
+from pprint import pformat
+
 from decotengu import create
 from decotengu.alt.tab import tab_engine, linearize
 
@@ -56,7 +58,7 @@ class EngineTestCase(EngineTest):
         """
         mix_depth = [21, 22, 24]
         times = {21: 18, 22: 18, 24: 18}
-        stops = {21: 7, 22: 7, 24: 7}
+        stops = {21: 7, 22: 7, 24: 8}
         for depth in mix_depth:
             engine = self._engine()
             engine.model.gf_low = 0.2
@@ -68,8 +70,9 @@ class EngineTestCase(EngineTest):
             data = list(engine.calculate(40, 35))
 
             dt = engine.deco_table
-            self.assertEquals(stops[depth], len(dt), dt)
-            self.assertEquals(times[depth], dt.total)
+            msg = 'switch depth={}, \n{}'.format(depth, pformat(dt))
+            self.assertEquals(stops[depth], len(dt), msg)
+            self.assertEquals(times[depth], dt.total, msg)
 
 
     def test_dive_with_travel_gas(self):

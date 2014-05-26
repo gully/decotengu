@@ -183,6 +183,17 @@ class Engine(object):
         return pressure / rate / self._meter_to_bar * 60
 
 
+    def _ceil_pressure_3m(self, abs_p):
+        """
+        Calculate absolute pressure value, so when converted to meters its
+        value is divisible by 3.
+
+        :param abs_p: Input absolute pressure [bar].
+        """
+        v = math.ceil((abs_p - self.surface_pressure) / self._p3m)
+        return  v * self._p3m + self.surface_pressure
+
+
     def _n_stops(self, start_abs_p, end_abs_p=None):
         """
         Calculate amount of decompression stops required between start and
@@ -460,26 +471,22 @@ class Engine(object):
 
     def _find_first_stop(self, start, abs_p, gas):
         """
-        Find first first decompression stop using Schreiner equation and
-        bisect algorithm.
+        Find first first decompression stop using Schreiner equation.
 
         Method returns dive step - start of first decompression stop.
 
         Below, by depth we mean absolute pressure of depth expressed in
         bars.
 
-        The first decompression stop depth is searched between depth of
-        starting dive step and target depth parameter. The latter can be
-        surface or any other depth divisible by 3.
-
         The depth of first decompression stop is the shallowest depth,
         which does not breach the ascent limit imposed by ascent ceiling.
         The depth is divisble by 3.
 
-        The implementation of the algorithm does not use
-        :func:`decotengu.DecoTengu._step_next_ascent` method, so it can be
-        safely overriden, i.e. by code using tabular based tissue
-        calculations.
+        The first decompression stop depth is found by ascending to
+        adjusted value of current ascent ceiling limit. The current ascent
+        ceiling value is always adjusted, so its value in meters is
+        divisible by 3. The ascent is repeated while it is possible to do
+        so and until target depth.
 
         :param start: Starting dive step indicating current depth.
         :param abs_p: Absolute pressure of target depth - surface or gas
@@ -489,55 +496,47 @@ class Engine(object):
         assert start.abs_p > abs_p, '{} vs. {}'.format(start.abs_p, abs_p)
         assert self._to_depth(abs_p) % 3 == 0, self._to_depth(abs_p)
 
-        ts_3m = self._pressure_to_time(self._p3m, self.ascent_rate)
+        model = self.model
 
-        t = self._pressure_to_time(start.abs_p - abs_p, self.ascent_rate)
-        dt = t % ts_3m
+        step = start
+        limit = model.ceiling_limit(step.data, step.data.gf)
+        limit = self._ceil_pressure_3m(limit)
+        t = self._pressure_to_time(step.abs_p - limit, self.ascent_rate)
 
-        n = t // ts_3m
         if __debug__:
             logger.debug(
-                'find first stop: {}bar -> {}bar, {}s, n={}, dt={}s'
-                .format(start.abs_p, abs_p, start.time, n, dt)
+                'find fist stop: check ascent from {}bar by {}s (start)'
+                .format(step.abs_p, t)
             )
-        assert t >= 0
-        assert 0 <= dt < ts_3m, dt
-
-        # for each k ascent for k * t(3m) + dt seconds and check if ceiling
-        # limit invariant is not violated; k * t(3m) + dt formula gives
-        # first stop candidates as multiples of 3m
-        f = lambda k, data: \
-            self._can_ascend(start.abs_p, k * ts_3m + dt, gas, start.data)
-
-        # find largest k for which ascent without decompression is possible
-        k = bisect_find(n, f, start.data)
-
-        if k == 0:
-            stop = start
-            if __debug__:
-                logger.debug('first stop find: already at deco zone')
-        else:
-            time = k * ts_3m + dt
-            stop = self._step_next_ascent(start, k * ts_3m + dt, gas)
+        while step.abs_p > limit and step.abs_p > abs_p:
+            step = self._step_next_ascent(step, t, gas)
+            limit = model.ceiling_limit(step.data, step.data.gf)
+            limit = self._ceil_pressure_3m(limit)
+            t = self._pressure_to_time(step.abs_p - limit, self.ascent_rate)
 
             if __debug__:
-                p = start.abs_p - self._time_to_pressure(time, self.ascent_rate)
-                depth = self._to_depth(p)
+                logger.debug(
+                    'find fist stop: check ascent from {}bar by {}s'
+                    .format(step.abs_p, t)
+                )
 
-                assert depth % 3 == 0, \
-                    'Invalid first stop depth pressure {}bar ({}m)' \
-                    .format(p, depth)
+        stop = step
 
-                if abs(p - abs_p) < const.EPSILON:
-                    logger.debug(
-                        'find first stop: free from {} to {}, ascent time={}' \
-                        .format(start.abs_p, abs_p, time)
-                    )
-                else:
-                    logger.debug(
-                        'find first stop: found at {}, ascent time={}' \
-                        .format(p, time)
-                    )
+        if __debug__:
+            depth = self._to_depth(stop.abs_p)
+
+            assert depth % 3 == 0, \
+                'Invalid first stop depth pressure {}bar ({}m)' \
+                .format(stop.abs_p, depth)
+
+            if start is stop:
+                logger.debug('find first stop: at first deco stop already')
+            else:
+                logger.debug(
+                    'find first stop: found at {}m ({}bar), ascent time={}' \
+                    .format(depth, stop.abs_p, stop.time - start.time)
+                )
+
 
         return stop
 

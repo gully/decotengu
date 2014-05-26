@@ -80,6 +80,14 @@ class EngineTestCase(unittest.TestCase):
         self.assertEquals(v, 18) # 3m at 10m/min -> 18s
 
 
+    def test_ceil_pressure_3m(self):
+        """
+        Test ceiling of absolute pressure at value divisble by 3
+        """
+        v = self.engine._ceil_pressure_3m(2.0)
+        self.assertEquals(2.2, v)
+
+
     def test_n_stops(self):
         """
         Test calculation of amount of decompression stops
@@ -265,77 +273,6 @@ class EngineTestCase(unittest.TestCase):
         self.assertFalse(v)
 
 
-    @mock.patch('decotengu.engine.bisect_find')
-    def test_first_stop_finder(self, f_bf):
-        """
-        Test first deco stop finder
-
-        Call Engine._find_first_stop method and check if appropriate
-        ascent time is calculated.
-        """
-        start = _step(Phase.ASCENT, 4.1, 1200)
-        f_bf.return_value = 6 # 31m -> 30m - k * 3m == 12m,
-                              # so ascent for 19m or 114s
-        step = self.engine._find_first_stop(start, 1.0, AIR)
-        self.assertAlmostEqual(1314, step.time)
-        self.assertAlmostEqual(2.2, step.abs_p)
-
-
-    @mock.patch('decotengu.engine.bisect_find')
-    def test_first_stop_finder_at_depth(self, f_bf):
-        """
-        Test first deco stop finder when starting depth is deco stop
-        """
-        start = _step(Phase.ASCENT, 2.2, 1200)
-        f_bf.return_value = 0 # the 12m is depth of deco stop
-        step = self.engine._find_first_stop(start, 1.0, AIR)
-        self.assertEqual(step, start)
-
-
-    @mock.patch('decotengu.engine.bisect_find')
-    def test_first_stop_finder_end(self, f_bf):
-        """
-        Test first deco stop finder when starting and ending depths are at deco stop depth
-
-        Above means that `n` passed to `bisect_find` is `0`. Should not be
-        possible, but let's be defensive here.
-        """
-        start = _step(Phase.ASCENT, 2.3, 1200)
-
-        f_bf.return_value = 0
-        # (2.3 - 2.2) results in n == 0
-        step = self.engine._find_first_stop(start, 2.2, AIR)
-        self.assertEqual(step, start)
-
-
-    @mock.patch('decotengu.engine.bisect_find')
-    def test_first_stop_finder_steps(self, f_bf):
-        """
-        Test if first deco stop finder calculates proper amount of steps (depth=0m)
-        """
-        start = _step(Phase.ASCENT, 4.1, 1200)
-
-        f_bf.return_value = 6
-        self.engine._find_first_stop(start, 1.0, AIR)
-
-        assert f_bf.called # test precondition
-        self.assertEquals(10, f_bf.call_args_list[0][0][0])
-
-
-    @mock.patch('decotengu.engine.bisect_find')
-    def test_first_stop_finder_no_deco(self, f_bf):
-        """
-        Test first deco stop finder when no deco required
-        """
-        start = _step(Phase.ASCENT, 4.1, 1200)
-
-        f_bf.return_value = 10 # 31m -> 30m - k * 3m == 0m,
-                               # so 31m ascent or 186s
-        step = self.engine._find_first_stop(start, 1.0, AIR)
-        self.assertAlmostEqual(1386, step.time)
-        self.assertAlmostEqual(1.0, step.abs_p)
-
-
     def test_calculation_no_gas_error(self):
         """
         Test deco engine dive profile calculation error without any gas mix
@@ -382,6 +319,97 @@ class EngineTestCase(unittest.TestCase):
         self.assertEquals(Phase.START, step.phase, step)
         self.assertEquals(0, step.time, step)
         self.assertEquals(5, step.abs_p, step)
+
+
+
+class FirstStopFinderTestCase(unittest.TestCase):
+    """
+    First deco stop finder tests.
+    """
+    def setUp(self):
+        """
+        Create decompression engine and set unit test friendly pressure
+        parameters.
+        """
+        self.engine = _engine(air=True)
+
+
+    def test_first_stop_finder(self):
+        """
+        Test first deco stop finder
+
+        Call Engine._find_first_stop method and check if appropriate
+        ascent time is calculated.
+        """
+        engine = self.engine
+
+        start = _step(Phase.ASCENT, 4.1, 1200)
+        s1 = _step(Phase.ASCENT, 2.5, 1296) # first ceiling limit at 15m
+        s2 = _step(Phase.ASCENT, 2.2, 1314) # next ceiling limit at 12m
+
+        engine.model.ceiling_limit = mock.MagicMock()
+        # ceiling at 12m second time - limit within (9m, 12]
+        engine._ceil_pressure_3m = mock.MagicMock(side_effect=[2.5, 2.2, 2.2])
+        engine._step_next_ascent = mock.MagicMock(side_effect=[s1, s2])
+
+        step = engine._find_first_stop(start, 1.0, AIR)
+        self.assertAlmostEqual(1314, step.time)
+        self.assertAlmostEqual(2.2, step.abs_p)
+
+
+    def test_first_stop_finder_at_depth(self):
+        """
+        Test first deco stop finder when starting depth is deco stop
+        """
+        engine = self.engine
+        start = _step(Phase.ASCENT, 2.2, 1200)
+
+        engine.model.ceiling_limit = mock.MagicMock()
+        # ceiling at 12m - do not ascend
+        engine._ceil_pressure_3m = mock.MagicMock(return_value=2.2)
+
+        step = self.engine._find_first_stop(start, 1.0, AIR)
+        self.assertEqual(step, start)
+
+
+    def test_first_stop_finder_end(self):
+        """
+        Test first deco stop finder when starting and ending depths are at deco stop depth
+
+        Start ascent at 13m with first deco stop at 12m.
+        """
+        engine = self.engine
+
+        start = _step(Phase.ASCENT, 2.3, 1200)
+
+        engine.model.ceiling_limit = mock.MagicMock()
+        engine._ceil_pressure_3m = mock.MagicMock(return_value=2.2)
+
+        step = engine._find_first_stop(start, 2.2, AIR)
+        self.assertAlmostEqual(1206, step.time)
+        self.assertAlmostEqual(2.2, step.abs_p)
+
+
+    def test_first_stop_finder_no_deco(self):
+        """
+        Test first deco stop finder when no deco required
+
+        Test ascent to surface (or target depth).
+        """
+        engine = self.engine
+
+        start = _step(Phase.ASCENT, 4.1, 1200)
+        s1 = _step(Phase.ASCENT, 1.6, 1350) # first ceiling limit at 6m
+        s2 = _step(Phase.ASCENT, 1.0, 1386) # next ceiling limit at surface
+
+        engine.model.ceiling_limit = mock.MagicMock()
+        # last ceiling above surface
+        engine._ceil_pressure_3m = mock.MagicMock(side_effect=[1.6, 1.0, 0.7])
+        engine._step_next_ascent = mock.MagicMock(side_effect=[s1, s2])
+
+        step = engine._find_first_stop(start, 1.0, AIR)
+        self.assertAlmostEqual(1386, step.time)
+        self.assertAlmostEqual(1.0, step.abs_p)
 
 
 

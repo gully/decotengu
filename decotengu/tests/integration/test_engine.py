@@ -22,6 +22,7 @@ DecoTengu engine integration tests.
 """
 
 import itertools
+from pprint import pformat
 
 from decotengu import create
 
@@ -62,8 +63,8 @@ class EngineTestCase(EngineTest):
             data = list(engine.calculate(40, 35))
 
             dt = engine.deco_table
-            self.assertEquals(6, len(dt))
-            self.assertEquals(14, dt.total, 'time delta={}'.format(t))
+            self.assertEquals(7, len(dt), 'time delta={}'.format(t))
+            self.assertEquals(15, dt.total, 'time delta={}'.format(t))
 
 
     def test_various_time_delta_gas_switch(self):
@@ -76,7 +77,7 @@ class EngineTestCase(EngineTest):
         time_delta = [None, 60, 0.1, 0.5, 5]
         mix_depth = [21, 22, 24]
         times = {21: 20, 22: 19, 24: 19}
-        stops = {21: 8, 22: 7, 24: 7}
+        stops = {21: 8, 22: 7, 24: 8}
         for delta, depth in itertools.product(time_delta, mix_depth):
             engine = self._engine(time_delta=delta)
             engine.model.gf_low = 0.2
@@ -88,8 +89,11 @@ class EngineTestCase(EngineTest):
             data = list(engine.calculate(40, 35))
 
             dt = engine.deco_table
-            self.assertEquals(stops[depth], len(dt), dt)
-            self.assertEquals(times[depth], dt.total)
+            msg = 'switch depth={}, delta={},\n{}'.format(
+                depth, delta, pformat(dt)
+            )
+            self.assertEquals(stops[depth], len(dt), msg)
+            self.assertEquals(times[depth], dt.total, msg)
 
 
     def test_dive_with_travel_gas(self):
