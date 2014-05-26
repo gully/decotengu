@@ -19,6 +19,7 @@ logging.basicConfig(level=logging.ERROR)
 import decotengu
 from decotengu.alt.naive import DecoStopStepper
 from decotengu.alt.tab import tab_engine
+from decotengu.alt.bisect import BisectFindFirstStop
 from decotengu.alt.decimal import DecimalContext
 
 COUNT = 5 * 10 ** 1
@@ -112,8 +113,8 @@ def print_result(engine, name, t):
 
 
 names = (
-    'Standard', 'Standard + Stepper', 'Tabular', 'Tabular + Stepper',
-    'Tabular + Decimal',
+    'Standard', 'Standard + Stepper', 'Standard + Bisect', 'Tabular',
+    'Tabular + Stepper', 'Tabular + Decimal',
 )
 scenarios = tuple('Scenario {}'.format(i) for i in range(1, 5))
 dives = dive_shallow, dive_u260, dive_he, dive_deepstop
@@ -131,6 +132,11 @@ for scenario, dive in zip(scenarios, dives):
     engine, depth, t = dive(stepper=True)
     rt = run(engine, depth, t)
     results['Standard + Stepper'][scenario] = rt
+
+    engine, depth, t = dive()
+    engine._find_first_stop = BisectFindFirstStop(engine)
+    rt = run(engine, depth, t)
+    results['Standard + Bisect'][scenario] = rt
 
     engine, depth, t = dive()
     tab_engine(engine)
