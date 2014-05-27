@@ -407,7 +407,7 @@ def eq_schreiner(abs_p, time, gas, rate, pressure, half_life,
     assert time > 0, 'time={}'.format(time)
     palv = gas * (abs_p - wvp)
     t = time / 60.0
-    k = math.log(2) / half_life
+    k = const.LOG_2 / half_life
     r = gas * rate
     return palv + r * (t - 1 / k) - (palv - pressure - r / k) * math.exp(-k * t)
 
