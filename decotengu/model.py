@@ -63,12 +63,11 @@ Equations
 ---------
 The parameters mentioned in previous section are used by two equations
 
-#. Schreiner equation to calculate inert gas pressure of a tissue
-   compartment (implemented by :func:`eq_schreiner` function).
+#. Schreiner equation to calculate inert gas pressure in a tissue
+   compartment.
 
 #. Buhlmann equation extended with gradient factors by Erik Baker to
-   calculate ascent ceiling of a tissue compartment (implemented by
-   :func:`eq_gf_limit` function).
+   calculate ascent ceiling in a tissue compartment.
 
 .. _eq-schreiner:
 
@@ -204,25 +203,30 @@ and pressure in first tissue compartment is
 
        P = P_{alv} + (-0.68)  * (2 - 1 / k) - (P_{alv} - 2.569995 - (-0.68) / k) * e^{-k * 2} = 2.423739
 
-Using :func:`eq_schreiner` function (note the implementation of this function expects time in seconds)
+Using :py:class:`ZH_L16B_GF` class we can calculate pressure of inert gas
+in the first tissue compartment
 
-    >>> P = eq_schreiner(1, 1.5 * 60, 0.68, 2, 0.79, 5.0)
+    >>> model = ZH_L16B_GF()
+    >>> n2_load = model._tissue_loader(1, 0.68, 2)
+    >>> P = n2_load(1.5, 5.0, 0.79)
     >>> round(P, 6)
     0.959478
-    >>> P = eq_schreiner(4, 20 * 60, 0.68, 0, P, 5.0)
+    >>> n2_load = model._tissue_loader(4, 0.68, 0)
+    >>> P = n2_load(20, 5.0, P)
     >>> round(P, 6)
     2.569996
-    >>> P = eq_schreiner(4, 2 * 60, 0.68, -1, P, 5.0)
+    >>> n2_load = model._tissue_loader(4, 0.68, -1)
+    >>> P = n2_load(2, 5.0, P)
     >>> round(P, 6)
     2.423739
 
 The relationship between dive time, absolute pressure of dive depth and
 inert gas pressure in a tissue compartment is visualized on figure
-:ref:`model-eq-schreiner-plot`.
+:ref:`model-tissue-pressure-plot`.
 
-.. _model-eq-schreiner-plot:
+.. _model-tissue-pressure-plot:
 
-.. figure:: eq-schreiner-plot.png
+.. figure:: tissue-pressure-plot.png
    :align: center
 
    Inert gas pressure in tissue compartment for a dive profile
@@ -346,8 +350,8 @@ The main code for decompression model is implemented in :class:`ZH_L16_GF`
 class.
 
 Inert gas pressure of each tissue compartment for descent, ascent and at
-constant depth is calculated by the :func:`ZH_L16_GF.load` method. It uses
-:func:`Schreiner equation <eq_schreiner>` function.
+constant depth is calculated by the :func:`ZH_L16_GF.load` method, which
+uses Schreiner equation.
 
 The pressure of ascent ceiling of a diver is calculated with the
 :func:`ZH_L16_GF.ceiling_limit` method. The method allows to determine
@@ -387,31 +391,6 @@ Data for ZH-L16-GF decompression model.
 """
 
 
-def eq_schreiner(abs_p, time, gas, rate, pressure, half_life,
-        wvp=const.WATER_VAPOUR_PRESSURE_DEFAULT):
-    """
-    Calculate pressure in a tissue compartment using Schreiner equation.
-
-    See :ref:`eq-schreiner` section for details.
-
-    :param abs_p: Absolute pressure of current depth [bar] (:math:`P_{abs}`).
-    :param time: Time of exposure [s], i.e. time of ascent (:math:`T_{time}`).
-    :param gas: Inert gas fraction, i.e. for air it is 0.79 (:math:`F_{gas}`).
-    :param rate: Pressure rate change [bar/min] (:math:`P_{rate}`).
-    :param pressure: Current, initial pressure in tissue compartment [bar]
-        (:math:`P`).
-    :param half_life: Current tissue compartment half-life time constant value
-        (:math:`T_{hl}`).
-    :param wvp: Water vapour pressure (:math:`P_{wvp}`).
-    """
-    assert time > 0, 'time={}'.format(time)
-    palv = gas * (abs_p - wvp)
-    t = time / 60.0
-    k = const.LOG_2 / half_life
-    r = gas * rate
-    return palv + r * (t - 1 / k) - (palv - pressure - r / k) * math.exp(-k * t)
-
-
 def eq_gf_limit(gf, p_n2, p_he, a_n2, b_n2, a_he, b_he):
     """
     Calculate ascent ceiling limit of a tissue compartment using Buhlmann
@@ -434,6 +413,7 @@ def eq_gf_limit(gf, p_n2, p_he, a_n2, b_n2, a_he, b_he):
     return (p - a * gf) / (gf / b + 1 - gf)
 
 
+
 class ZH_L16_GF(object):
     """
     Base abstract class for Buhlmann ZH-L16 decompression model with
@@ -441,6 +421,7 @@ class ZH_L16_GF(object):
 
     :var gf_low: Gradient factor low parameter.
     :var gf_high: Gradient factor high parameter.
+    :var water_vapour_pressure: Water vapour pressure.
     """
     NUM_COMPARTMENTS = 16
     N2_A = None
@@ -457,9 +438,12 @@ class ZH_L16_GF(object):
         Create instance of the model.
         """
         super().__init__()
-        self.calc = TissueCalculator(self.N2_HALF_LIFE, self.HE_HALF_LIFE)
+        self.n2_half_life = self.N2_HALF_LIFE
+        self.he_half_life = self.HE_HALF_LIFE
         self.gf_low = 0.3
         self.gf_high = 0.85
+
+        self.water_vapour_pressure = const.WATER_VAPOUR_PRESSURE_DEFAULT
 
 
     def init(self, surface_pressure):
@@ -471,7 +455,7 @@ class ZH_L16_GF(object):
 
         :param surface_pressure: Surface pressure [bar].
         """
-        p_n2 = self.START_P_N2 * (surface_pressure - self.calc.water_vapour_pressure)
+        p_n2 = self.START_P_N2 * (surface_pressure - self.water_vapour_pressure)
         p_he = self.START_P_HE
         data = Data(tuple([(p_n2, p_he)] * self.NUM_COMPARTMENTS), self.gf_low)
         return data
@@ -491,16 +475,20 @@ class ZH_L16_GF(object):
 
         .. seealso::
 
-            - :func:`decotengu.model.eq_schreiner`
-            - :func:`decotengu.model.TissueCalculator`
+            - :py:meth:`decotengu.model.ZH_L16_GF._tissue_loaders`
+            - :py:meth:`decotengu.model.ZH_L16_GF._tissue_loader`
         """
-        load = self.calc.load_tissue
+        hl_n2 = self.n2_half_life
+        hl_he = self.he_half_life
+
+        n2_loader, he_loader = self._tissue_loaders(abs_p, gas, rate)
+        time /= 60
+
         tp = tuple(
-            load(abs_p, time, gas, rate, p_n2, p_he, k) 
-                for k, (p_n2, p_he) in enumerate(data.tissues)
+            (n2_loader(time, hl_n2[k], p_n2), he_loader(time, hl_he[k], p_he))
+            for k, (p_n2, p_he) in enumerate(data.tissues)
         )
-        data = Data(tp, data.gf)
-        return data
+        return Data(tp, data.gf)
 
 
     def ceiling_limit(self, data, gf=None):
@@ -520,10 +508,63 @@ class ZH_L16_GF(object):
 
         .. seealso::
 
-            - :func:`decotengu.model.ZH_L16_GF.gf_limit`
-            - :func:`decotengu.model.eq_schreiner`
+            - :py:meth:`decotengu.model.ZH_L16_GF.gf_limit`
+            - :py:meth:`decotengu.model.ZH_L16_GF._tissue_loader`
         """
         return max(self.gf_limit(gf, data))
+
+
+    def _exp(self, time, k):
+        """
+        Calculate value of exponential function for time and tissue
+        compartment half-life time constant :math:`k = ln(2) / T_{hl}`.
+        """
+        return math.exp(-k * time)
+
+
+    def _tissue_loaders(self, abs_p, gas, rate):
+        """
+        Create function to load tissue compartment with inert gas for each
+        inert gas specified in gas mix configuration.
+
+        :param abs_p: Absolute pressure of current depth [bar] (:math:`P_{abs}`).
+        :param gas: Gas mix configuration.
+        :param rate: Pressure rate change [bar/min] (:math:`P_{rate}`).
+        """
+        n2_loader = self._tissue_loader(abs_p, gas.n2 / 100, rate)
+        he_loader = self._tissue_loader(abs_p, gas.he / 100, rate)
+        return n2_loader, he_loader
+
+
+    def _tissue_loader(self, abs_p, f_gas, rate):
+        """
+        Create function to load tissue compartment with inert gas.
+
+        The created function uses Schreiner equation and has the following
+        parameters
+
+        time
+            Time of exposure [min] at depth (:math:`T_{time}`).
+        half_life
+            Inert gas half-life time for tissue compartment (:math:`T_{hl}`).
+        pressure
+            Current, initial partial pressure of inert gas in tissue
+            compartment [bar] (:math:`P`).
+
+        See :ref:`eq-schreiner` section for details.
+
+        :param abs_p: Absolute pressure of current depth [bar] (:math:`P_{abs}`).
+        :param f_gas: Inert gas fraction, i.e. for air it is 0.79 (:math:`F_{gas}`).
+        :param rate: Pressure rate change [bar/min] (:math:`P_{rate}`).
+        """
+        palv = f_gas * (abs_p - self.water_vapour_pressure)
+        r = f_gas * rate
+        def f(t, half_life, pressure):
+            assert t > 0
+            k = const.LOG_2 / half_life
+            return palv + r * (t - 1 / k) - (palv - pressure - r / k) * self._exp(k, t)
+            #return palv + r * (t - 1 / k) - (palv - pressure - r / k) * math.exp(-k * t)
+        return f
 
 
     def gf_limit(self, gf, data):
@@ -607,40 +648,6 @@ class ZH_L16C_GF(ZH_L16_GF): # source: ostc firmware code
         1.51, 3.02, 4.72, 6.99, 10.21, 14.48, 20.53, 29.11, 41.20,
         55.19, 70.69, 90.34, 115.29, 147.42, 188.24, 240.03,
     )
-
-
-
-class TissueCalculator(object):
-    """
-    Tissue calculator to calculate all tissues gas loading.
-    """
-    def __init__(self, n2_half_life, he_half_life):
-        """
-        Create tissue calcuator.
-        """
-        super().__init__()
-        self.water_vapour_pressure = const.WATER_VAPOUR_PRESSURE_DEFAULT
-        self.n2_half_life = n2_half_life
-        self.he_half_life = he_half_life
-
-
-    def load_tissue(self, abs_p, time, gas, rate, p_n2, p_he, tissue_no):
-        """
-        Calculate gas loading of a tissue.
-
-        :param abs_p: Absolute pressure [bar] (current depth).
-        :param time: Time of exposure [second] (i.e. time of ascent).
-        :param gas: Gas mix configuration.
-        :param rate: Pressure rate change [bar/min].
-        :param p_n2: N2 pressure in current tissue compartment [bar].
-        :param p_he: He pressure in Current tissue compartment [bar].
-        :param tissue_no: Tissue number.
-        """
-        hl = self.n2_half_life[tissue_no]
-        p_n2 = eq_schreiner(abs_p, time, gas.n2 / 100, rate, p_n2, hl)
-        hl = self.he_half_life[tissue_no]
-        p_he = eq_schreiner(abs_p, time, gas.he / 100, rate, p_he, hl)
-        return p_n2, p_he
 
 
 

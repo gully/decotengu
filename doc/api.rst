@@ -35,25 +35,19 @@ Decompression Model
    decotengu.model.ZH_L16_GF
    decotengu.model.ZH_L16B_GF
    decotengu.model.ZH_L16C_GF
-   decotengu.model.TissueCalculator
-   decotengu.model.eq_schreiner
    decotengu.model.eq_gf_limit
 
 .. autoclass:: decotengu.model.Data
 
 .. autoclass:: decotengu.model.ZH_L16_GF
    :members:
+   :private-members:
 
 .. autoclass:: decotengu.model.ZH_L16B_GF
    :members:
 
 .. autoclass:: decotengu.model.ZH_L16C_GF
    :members:
-
-.. autoclass:: decotengu.model.TissueCalculator
-   :members:
-
-.. autofunction:: decotengu.model.eq_schreiner
 
 .. autofunction:: decotengu.model.eq_gf_limit
 

@@ -23,8 +23,8 @@ DecoTengu calculator tests.
 
 from decotengu.engine import Engine, Step, Phase
 from decotengu.error import EngineError
-from decotengu.model import eq_schreiner, eq_gf_limit, TissueCalculator, \
-    ZH_L16_GF, ZH_L16B_GF, Data, DecoModelValidator
+from decotengu.model import eq_gf_limit, ZH_L16_GF, ZH_L16B_GF, Data, \
+    DecoModelValidator
 
 from .tools import _engine, AIR
 
@@ -32,43 +32,51 @@ import unittest
 from unittest import mock
 
 
-class SchreinerEquationTestCase(unittest.TestCase):
+class TissueLoadingTestCase(unittest.TestCase):
     """
-    Schreiner equation tests.
+    Tissue compartment loading with inert gas tests.
     """
+    def setUp(self):
+        self.model = ZH_L16B_GF()
+
+
     def test_air_ascent(self):
         """
-        Test Schreiner equation - ascent 10m on air
+        Test tissue compartment loading - ascent by 10m on air
         """
         # ascent, so rate == -1 bar/min
-        v = eq_schreiner(4, 60, 0.79, -1, 3, 5.0)
+        loader = self.model._tissue_loader(4, 0.79, -1)
+        v = loader(1, 5.0, 3)
         self.assertAlmostEqual(2.96198, v, 4)
 
 
     def test_air_descent(self):
         """
-        Test Schreiner equation - descent 10m on air
+        Test tissue compartment loading - descent by 10m on air
         """
         # rate == 1 bar/min
-        v = eq_schreiner(4, 60, 0.79, 1, 3, 5.0)
+        loader = self.model._tissue_loader(4, 0.79, 1)
+        v = loader(1, 5.0, 3)
         self.assertAlmostEqual(3.06661, v, 4)
 
 
     def test_ean_ascent(self):
         """
-        Test Schreiner equation - ascent 10m on EAN32
+        Test tissue compartment loading - ascent by 10m on EAN32
         """
         # ascent, so rate == -1 bar/min
-        v = eq_schreiner(4, 60, 0.68, -1, 3, 5.0)
+        loader = self.model._tissue_loader(4, 0.68, -1)
+        v = loader(1, 5.0, 3)
         self.assertAlmostEqual(2.9132, v, 4)
 
 
     def test_ean_descent(self):
         """
-        Test Schreiner equation - descent 10m on EAN32
+        Test tissues compartment loading - descent by 10m on EAN32
         """
         # rate == 1 bar/min
-        v = eq_schreiner(4, 60, 0.68, 1, 3, 5.0)
+        loader = self.model._tissue_loader(4, 0.68, 1)
+        v = loader(1, 5.0, 3)
         self.assertAlmostEqual(3.00326, v, 4)
 
 
@@ -128,21 +136,26 @@ class ZH_L16_GFTestCase(unittest.TestCase):
 
     def test_tissues_load(self):
         """
-        Test deco model tissues gas loading
+        Test deco model all tissue compartments loading with inert gas
         """
         m = ZH_L16B_GF()
         n = m.NUM_COMPARTMENTS
-        c_load = m.calc.load_tissue = mock.MagicMock(side_effect=range(1, 17))
 
         data = Data([(0.79, 0.0)] * n, None)
-        v = m.load(4, 60, AIR, -1, data)
+        result = m.load(4, 60, AIR, -1, data)
 
-        self.assertEquals(n, c_load.call_count)
-        self.assertEquals(v, Data(tuple(range(1, 17)), None))
+        tissues = result.tissues
+        self.assertTrue(all(v[0] > 0.79 for v in tissues), tissues)
+        self.assertTrue(all(v[1] == 0 for v in tissues), tissues)
 
-        expected = tuple(range(n))
-        results = tuple(t[0][6] for t in c_load.call_args_list)
-        self.assertEquals(expected, results)
+
+    def test_exp(self):
+        """
+        Test calculation of exponential function value for time and tissue compartment
+        """
+        m = ZH_L16B_GF()
+        v = m._exp(1, 0.6 / 5)
+        self.assertAlmostEqual(0.88692043, v)
 
 
     @mock.patch('decotengu.model.eq_gf_limit')
@@ -214,28 +227,6 @@ class ZH_L16_GFTestCase(unittest.TestCase):
         self.assertEquals(m.HE_A, result)
         result = tuple(t[0][6] for t in f.call_args_list)
         self.assertEquals(m.HE_B, result)
-
-
-
-class TissueCalculatorTestCase(unittest.TestCase):
-    """
-    Tissue calculator tests.
-    """
-    def test_tissue_load(self):
-        """
-        Test tissue calculator tissue gas loading
-        """
-        with mock.patch('decotengu.model.eq_schreiner') as f:
-            f.side_effect = [2, 3]
-            m = ZH_L16B_GF
-            c = TissueCalculator(m.N2_HALF_LIFE, m.HE_HALF_LIFE)
-            v = c.load_tissue(4, 60, AIR, -1, 3, 0, 1)
-            self.assertEquals(2, f.call_count) # called once for each inert gas
-
-            args = f.call_args_list
-            self.assertEquals((4, 60, 0.79, -1, 3, 8.0), args[0][0])
-            self.assertEquals((4, 60, 0.0, -1, 0, 3.02), args[1][0])
-            self.assertEquals((2, 3), v)
 
 
 
