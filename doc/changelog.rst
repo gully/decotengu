@@ -1,6 +1,6 @@
 Changelog
 =========
-DecoTengu 0.10.0
+DecoTengu 0.11.0
 ----------------
 
 DecoTengu 0.10.0
