@@ -45,8 +45,9 @@ inert gas exposure with exponential function
         e^{-k * t}
 
 We can precompute the values for above function for 1 minute and for 6
-seconds and store them in a table for each time constant :math:`k`. Then,
-exponential function results can be calculated with formula
+seconds intervals and store them in a table for each time constant
+:math:`k`. Then, exponential function results can be calculated with
+formula
 
     .. math::
 
@@ -62,10 +63,11 @@ where
     6 seconds).
 
 :math:`n_{1min}`
-    Number of one minute time intervals in time :math:`t`.
+    Number of one minute time intervals :math:`t\ div\ 1` in time :math:`t`.
 
 :math:`n_{6s}`
-    Number of 6 second time intervals in time :math:`t % 1`.
+    Number of 6 second time intervals :math:`(t\ mod\ 1) * 10` in time
+    :math:`t\ mod\ 1`.
 
 The precalculated values of exponential function imply configuration
 constraints, which are discussed in the following section.
@@ -200,7 +202,7 @@ class TabExp(object):
 
         kt_exp = self._kt_exp[k]
         n1 = round(time // 1)
-        n2 = round(time % 1 / 0.1)
+        n2 = round(time % 1 * 10)
         result = kt_exp[60] ** n1 * kt_exp[6] ** n2
 
         if __debug__:
