@@ -279,7 +279,7 @@ class DecoModelValidatorTestCase(unittest.TestCase):
 
     def test_first_stop_at_ceiling_error(self):
         """
-        Test first stop at deco ceiling
+        Test first stop at deco ceiling error
         """
         engine = _engine()
 
