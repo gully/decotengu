@@ -533,8 +533,12 @@ class ZH_L16_GF(object):
         :param gas: Gas mix configuration.
         :param rate: Pressure rate change [bar/min] (:math:`P_{rate}`).
         """
-        n2_loader = self._tissue_loader(abs_p, gas.n2 / 100, rate, self.n2_k_const)
-        he_loader = self._tissue_loader(abs_p, gas.he / 100, rate, self.he_k_const)
+        n2_loader = self._tissue_loader(
+            abs_p, gas.n2 / 100, rate, self.n2_k_const
+        )
+        he_loader = self._tissue_loader(
+            abs_p, gas.he / 100, rate, self.he_k_const
+        )
         return n2_loader, he_loader
 
 
