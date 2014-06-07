@@ -2,6 +2,9 @@ Changelog
 =========
 DecoTengu 0.10.0
 ----------------
+
+DecoTengu 0.10.0
+----------------
 - implemented new, faster and simpler algorithm finding first decompression
   stop
 - old algorithm finding first decompression stop, based on binary search,
