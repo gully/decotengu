@@ -80,11 +80,11 @@ The Schreiner equation is
         P = P_{alv} + R * (t - 1 / k) - (P_{alv} - P - R / k) * e^{-k * t}
 
 Pressure of inert gas in tissue compartment :math:`P` (on the right of the
-equation) is initial pressure in tissue compartment, i.e. `0.79` bar on the
-surface. The result of equation is pressure in tissue compartment :math:`P`
-(on the left of the equation) after time of exposure :math:`t`. The inert
-gas pressure value is fed recursively to the equation from start till end
-of a dive.
+equation) is initial pressure of inert gas in tissue compartment, i.e.
+pressure of nitrogen in tissues on the surface. The result of equation is
+pressure in tissue compartment :math:`P` (on the left of the equation)
+after time of exposure :math:`t`. The inert gas pressure value is fed
+recursively to the equation from start till end of a dive.
 
 The variables of the equation are
 
@@ -147,7 +147,7 @@ For the example, the following assumptions are made
 For the start of a dive and descent from 0m to 30m the Schreiner equation
 variables are
 
-    :math:`P = 0.79` (initial pressure of inert gas in tissue compartment - 79% of :math:`N_2`)
+    :math:`P = 0.7902 * (1 - 0.0627) = 0.74065446` (initial pressure of nitrogen in tissue compartment at the surface)
 
     :math:`P_{abs} = 1` (starting from 0m or 1 bar)
 
@@ -167,12 +167,11 @@ and pressure in the first tissue compartment is
 
     .. math::
 
-       P = P_{alv} + 1.36  * (1.5 - 1 / k) - (P_{alv} - 0.79 - 1.36 / k) * e^{-k * 1.5} = 0.959477
+       P = P_{alv} + 1.36  * (1.5 - 1 / k) - (P_{alv} - 0.74065446 - 1.36 / k) * e^{-k * 1.5} = 0.919397
 
 Next, continue dive at 30m for 20 minutes
 
-    :math:`P = 0.959477` (inert gas pressure in tissue compartment after
-    descent to 30m)
+    :math:`P = 0.919397` (inert gas pressure in tissue compartment after descent to 30m)
 
     :math:`P_{abs} = 4` (30m or 4 bar)
 
@@ -186,11 +185,11 @@ and pressure in first tissue compartment is (note :math:`R` is zero and cancels 
 
     .. math::
 
-       P = P_{alv} + 0 - (P_{alv} - 0.959477 - 0) * e^{-k * 20} = 2.569995
+       P = P_{alv} + 0 - (P_{alv} - 0.919397 - 0) * e^{-k * 20} = 2.567490
 
 Finally, ascent from 30m to 10m
 
-    :math:`P = 2.569995`
+    :math:`P = 2.567490`
 
     :math:`R = 0.68 * (-1)` (10m/min is 1 bar per minute pressure change,
     negative as it is ascent)
@@ -201,7 +200,7 @@ and pressure in first tissue compartment is
 
     .. math::
 
-       P = P_{alv} + (-0.68)  * (2 - 1 / k) - (P_{alv} - 2.569995 - (-0.68) / k) * e^{-k * 2} = 2.423739
+       P = P_{alv} + (-0.68)  * (2 - 1 / k) - (P_{alv} - 2.567490 - (-0.68) / k) * e^{-k * 2} = 2.421840
 
 Using :py:class:`ZH_L16B_GF` class we can calculate pressure of nitrogen in
 the first tissue compartment
@@ -210,21 +209,15 @@ the first tissue compartment
     >>> model = ZH_L16B_GF()
     >>> ean32 = GasMix(0, 32, 68, 0)
     >>> data = model.init(1)
-    >>> data
-    >>> P = model.load(1, 1.5 * 60, ean32, 2, data)
-    >>> round(P.tissues[0][0], 6)
-    0.959478
-
-    >>> n2_load = model._tissue_loader(1, 0.68, 2)
-    >>> P = n2_load(1.5, k, 0.79)
-    >>> n2_load = model._tissue_loader(4, 0.68, 0)
-    >>> P = n2_load(20, 5.0, P)
-    >>> round(P, 6)
-    2.569996
-    >>> n2_load = model._tissue_loader(4, 0.68, -1)
-    >>> P = n2_load(2, 5.0, P)
-    >>> round(P, 6)
-    2.423739
+    >>> data = model.load(1, 1.5 * 60, ean32, 2, data)
+    >>> round(data.tissues[0][0], 6)
+    0.919397
+    >>> data = model.load(4, 20 * 60, ean32, 0, data)
+    >>> round(data.tissues[0][0], 6)
+    2.567491
+    >>> data  = model.load(4, 2 * 60, ean32, -1, data)
+    >>> round(data.tissues[0][0], 6)
+    2.42184
 
 The relationship between dive time, absolute pressure of dive depth and
 inert gas pressure in a tissue compartment is visualized on figure
@@ -288,14 +281,14 @@ We continue the example described in Schreiner equation section. In the
 example, the nitrogen pressure in first tissue compartment at various
 depths is
 
-    =========== =============== ==========
+    =========== =============== ===========
      Depth [m]   Runtime [min]    P [bar]
-    ----------- --------------- ----------
-             0               0       0.79
-            30             1.5   0.959478
-            30            21.5   2.569996
-            10            23.5   2.423739
-    =========== =============== ==========
+    ----------- --------------- -----------
+             0               0   0.74065446
+            30             1.5     0.919397
+            30            21.5     2.567490
+            10            23.5     2.421840
+    =========== =============== ===========
 
 The Buhlmann coefficients for the first tissue compartment in ZH-L16B-GF
 model are (nitrox dive, therefore we skip trimix extension)
@@ -311,36 +304,36 @@ current gradient factor value
 
     .. math::
 
-        (0.79 - 1.1696 * 0.3) / (0.3 / 0.5578 + 1.0 - 0.3) = 0.3547507
+        (0.74065446 - 1.1696 * 0.3) / (0.3 / 0.5578 + 1.0 - 0.3) = 0.314886
 
-        (0.959478 - 1.1696 * 0.3) / (0.3 / 0.5578 + 1.0 - 0.3) = 0.4916664
+        (0.919397 - 1.1696 * 0.3) / (0.3 / 0.5578 + 1.0 - 0.3) = 0.4592862
 
-        (2.569996 - 1.1696 * 0.3) / (0.3 / 0.5578 + 1.0 - 0.3) = 1.7927511
+        (2.567490 - 1.1696 * 0.3) / (0.3 / 0.5578 + 1.0 - 0.3) = 1.7907266
 
-        (2.423739 - 1.1696 * 0.3) / (0.3 / 0.5578 + 1.0 - 0.3) = 1.6745948
+        (2.421840 - 1.1696 * 0.3) / (0.3 / 0.5578 + 1.0 - 0.3) = 1.6730607
 
 Using :func:`eq_gf_limit` function (we omit helium parameters by
 substituting them with `0` as the example uses nitrox gas mix only) ::
 
-    >>> eq_gf_limit(0.3, 0.79, 0, 1.1696, 0.5578, 0, 0)
-    0.35475065318773
-    >>> eq_gf_limit(0.3, 0.959478, 0, 1.1696, 0.5578, 0, 0)
-    0.49166637372186667
-    >>> eq_gf_limit(0.3, 2.569996, 0, 1.1696, 0.5578, 0, 0)
-    1.7927510714596069
-    >>> eq_gf_limit(0.3, 2.423739, 0, 1.1696, 0.5578, 0, 0)
-    1.6745948356168352
+    >>> eq_gf_limit(0.3, 0.74065446, 0, 1.1696, 0.5578, 0, 0)
+    0.31488600902007363
+    >>> eq_gf_limit(0.3, 0.919397, 0, 1.1696, 0.5578, 0, 0)
+    0.459286247718912
+    >>> eq_gf_limit(0.3, 2.567490, 0, 1.1696, 0.5578, 0, 0)
+    1.790726556208904
+    >>> eq_gf_limit(0.3, 2.421840, 0, 1.1696, 0.5578, 0, 0)
+    1.6730606957680387
 
 Let's put the calculations into the table
 
-    =========== =============== ========== ============= ======
-     Depth [m]   Runtime [min]    P [bar]   Limit [bar]   Note
-    ----------- --------------- ---------- ------------- ------
-             0               0       0.79     0.3547507
-            30             1.5   0.959478     0.4916664
-            30            21.5   2.569996     1.7927511    ~8m
-            10            23.5   2.423739     1.6745948    ~7m
-    =========== =============== ========== ============= ======
+    =========== =============== ============ ============= ======
+     Depth [m]   Runtime [min]    P [bar]     Limit [bar]   Note
+    ----------- --------------- ------------ ------------- ------
+             0               0   0.74065446      0.314886
+            30             1.5     0.919397     0.4592862
+            30            21.5     2.567490     1.7907266    ~8m
+            10            23.5     2.421840     1.6730607    ~7m
+    =========== =============== ============ ============= ======
 
 As we can see, when starting ascent from 30 meters, the Buhlmann equation,
 for the first tissue compartment, gives us ceiling limit  at about 8m. After
