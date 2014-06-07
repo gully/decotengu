@@ -560,11 +560,12 @@ class ZH_L16_GF(object):
 
         time
             Time of exposure [min] at depth (:math:`T_{time}`).
-        half_life
-            Inert gas half-life time for tissue compartment (:math:`T_{hl}`).
         pressure
             Current, initial partial pressure of inert gas in tissue
             compartment [bar] (:math:`P`).
+        tissue_no
+            Number of tissue compartment in the decompression model
+            (starting with zero).
 
         See :ref:`eq-schreiner` section for details.
 
