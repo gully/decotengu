@@ -421,6 +421,8 @@ class ZH_L16_GF(object):
     :var gf_low: Gradient factor low parameter.
     :var gf_high: Gradient factor high parameter.
     :var water_vapour_pressure: Water vapour pressure.
+    :var n2_k_const: Half-life time constant k values for nitrogen.
+    :var he_k_const: Half-life time constant k values for helium.
     """
     NUM_COMPARTMENTS = 16
     N2_A = None
@@ -444,9 +446,6 @@ class ZH_L16_GF(object):
 
         self.water_vapour_pressure = const.WATER_VAPOUR_PRESSURE_DEFAULT
 
-
-    def _k_const(self, half_life):
-        return tuple(const.LOG_2 / v for v in half_life)
 
     def init(self, surface_pressure):
         """
@@ -511,6 +510,16 @@ class ZH_L16_GF(object):
             - :py:meth:`decotengu.model.ZH_L16_GF._tissue_loader`
         """
         return max(self.gf_limit(gf, data))
+
+
+    def _k_const(self, half_life):
+        """
+        Calculate half-life time constant :math:`k` for each half-life
+        value.
+
+        :param half_life: Collection of half-life values.
+        """
+        return tuple(const.LOG_2 / v for v in half_life)
 
 
     def _exp(self, time, k):

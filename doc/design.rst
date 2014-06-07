@@ -8,23 +8,21 @@ The central class of DecoTengu library design is :class:`Engine
 calculations and is responsible to pass data between various classes of
 the library.
 
-The :class:`decotengu.model.ZH_L16_GF` abstract class implements ZH-L16
-Buhlmann decompression model with gradient factors by Erik Baker
-(ZH-L16-GF). It receives pressure of depth and time information to
-calculate tissues gas loading and is used by DecoTengu engine to
-calculate ascent ceiling limits.
+The :class:`decotengu.model.ZH_L16_GF` abstract class implements Buhlmann
+decompression model with gradient factors by Erik Baker (ZH-L16-GF). It
+receives pressure of depth and time information to calculate tissues gas
+loading and is used by DecoTengu engine to calculate ascent ceiling limits. 
+When instance of :class:`decotengu.model.ZH_L16_GF` class is created, then
+half-life time constant :math:`k` values are calculated because they are
+static for a model.
 
 The decompression model calculates tissues gas loading with
-:class:`tissue calculator <decotengu.model.TissueCalculator>`, which uses
-Schreiner equation (see also :ref:`model-equations`). The
-:class:`TissueCalculator <decotengu.model.TissueCalculator>` class is
-designed to be a separate class from decompression model class, so it can
-be replaced with alternative implementations (i.e. which use precomputed
-values of `log` and `exp` functions).
+:py:meth:`decotengu.model.ZH_L16_GF.load` method, which uses
+Schreiner equation (see also :ref:`model-equations`).
 
-The DecoTengu engine sends data to an instance of :class:`DecoTable
-<decotengu.DecoTable>` class, which extracts decompression information
-from received data. It is designed as Python coroutine.
+The DecoTengu engine passes decompression stop depth and time an instance
+of :class:`DecoTable <decotengu.DecoTable>` class, which stores
+decompression information.
 
 The attributes of core calculation classes usually keep various
 configuration aspects of DecoTengu library (i.e. ascent rate, surface
@@ -49,17 +47,19 @@ of calculations is carried by DecoTengu data model, see
                   |                           | gf_low = 0.3                   |
                   |                           | gf_high = 0.85                 |
                   |                           | water_vapour_pressure = 0.0627 |
-                  |                           +--------------------------------+
-                  |                           | init()                         |
-              [1] | deco_table                | load()                         |
-                  v                           | ceiling_limit()                |
+                  |                           | n2_k_const                     |
+                  |                           | he_k_const                     |
+              [1] | deco_table                +--------------------------------+
+                  v                           | init()                         |
+      +---------------------+                 | load()                         |
+      |   DecoTable::list   |                 | ceiling_limit()                |
       +---------------------+                 +--------------------------------+
-      |   DecoTable::list   |                         /_\            /_\
+      | total               |                         /_\            /_\
       +---------------------+                          |              |
-      | total               |                          |              |
+      | append(depth, time) |                          |              |
       +---------------------+                 +------------+      +------------+
-      | append(depth, time) |                 | ZH_L16B_GF |      | ZH_L16C_GF |
-      +---------------------+                 +------------+      +------------+
+                                              | ZH_L16B_GF |      | ZH_L16C_GF |
+                                              +------------+      +------------+
 
 
 .. _design-data-model:
