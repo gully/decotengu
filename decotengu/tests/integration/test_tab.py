@@ -24,7 +24,7 @@ Tabular tissue calculator integration tests.
 from pprint import pformat
 
 from decotengu import create
-from decotengu.alt.tab import tab_engine, linearize
+from decotengu.alt.tab import tab_engine
 
 import unittest
 from . import test_engine as te
@@ -57,8 +57,8 @@ class EngineTestCase(EngineTest):
         for first decompression stop, could crash.
         """
         mix_depth = [21, 22, 24]
-        times = {21: 18, 22: 18, 24: 18}
-        stops = {21: 7, 22: 7, 24: 8}
+        times = {21: 19, 22: 18, 24: 18}
+        stops = {21: 8, 22: 7, 24: 8}
         for depth in mix_depth:
             engine = self._engine()
             engine.model.gf_low = 0.2
@@ -139,7 +139,7 @@ class EngineTestCase(EngineTest):
         data = list(engine.calculate(45, 25))
         self.assertEquals(3, dt[-1].depth)
         t = dt[-1].time + dt[-2].time
-        self.assertEquals(12, t) # or 13 for descent_rate=10
+        self.assertEquals(13, t) # or 13 for descent_rate=10
 
 
 
@@ -147,15 +147,15 @@ class EngineTestCase(EngineTest):
 class NDLTestCase(EngineTest, te.NDLTestCase):
     def setUp(self):
         super().setUp()
-        assert self.engine._step_next_ascent.__name__ == 'wrapper', \
-            self.engine._step_next_ascent.__name__
+        assert self.engine.model._exp.__class__.__name__ == 'TabExp', \
+            self.engine.model._exp.__class__
 
 
 class ProfileTestCase(EngineTest, te.ProfileTestCase):
     def setUp(self):
         super().setUp()
-        assert self.engine._step_next_ascent.__name__ == 'wrapper', \
-            self.engine._step_next_ascent.__name__
+        assert self.engine.model._exp.__class__.__name__ == 'TabExp', \
+            self.engine.model._exp.__class__
 
 
 # vim: sw=4:et:ai

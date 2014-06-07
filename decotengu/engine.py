@@ -505,8 +505,8 @@ class Engine(object):
 
         if __debug__:
             logger.debug(
-                'find fist stop: check ascent from {}bar by {}s (start)'
-                .format(step.abs_p, t)
+                'find fist stop: check ascent from {}bar by {}s to {}bar (start)'
+                .format(step.abs_p, t, limit)
             )
         while step.abs_p > limit and step.abs_p > abs_p:
             step = self._step_next_ascent(step, t, gas)
@@ -516,8 +516,8 @@ class Engine(object):
 
             if __debug__:
                 logger.debug(
-                    'find fist stop: check ascent from {}bar by {}s'
-                    .format(step.abs_p, t)
+                    'find fist stop: check ascent from {}bar by {}s to {}bar'
+                    .format(step.abs_p, t, limit)
                 )
 
         stop = step

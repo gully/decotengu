@@ -203,14 +203,20 @@ and pressure in first tissue compartment is
 
        P = P_{alv} + (-0.68)  * (2 - 1 / k) - (P_{alv} - 2.569995 - (-0.68) / k) * e^{-k * 2} = 2.423739
 
-Using :py:class:`ZH_L16B_GF` class we can calculate pressure of inert gas
-in the first tissue compartment
+Using :py:class:`ZH_L16B_GF` class we can calculate pressure of nitrogen in
+the first tissue compartment
 
+    >>> from decotengu.engine import GasMix
     >>> model = ZH_L16B_GF()
-    >>> n2_load = model._tissue_loader(1, 0.68, 2)
-    >>> P = n2_load(1.5, 5.0, 0.79)
-    >>> round(P, 6)
+    >>> ean32 = GasMix(0, 32, 68, 0)
+    >>> data = model.init(1)
+    >>> data
+    >>> P = model.load(1, 1.5 * 60, ean32, 2, data)
+    >>> round(P.tissues[0][0], 6)
     0.959478
+
+    >>> n2_load = model._tissue_loader(1, 0.68, 2)
+    >>> P = n2_load(1.5, k, 0.79)
     >>> n2_load = model._tissue_loader(4, 0.68, 0)
     >>> P = n2_load(20, 5.0, P)
     >>> round(P, 6)
@@ -438,13 +444,16 @@ class ZH_L16_GF(object):
         Create instance of the model.
         """
         super().__init__()
-        self.n2_half_life = self.N2_HALF_LIFE
-        self.he_half_life = self.HE_HALF_LIFE
+        self.n2_k_const = self._k_const(self.N2_HALF_LIFE)
+        self.he_k_const = self._k_const(self.HE_HALF_LIFE)
         self.gf_low = 0.3
         self.gf_high = 0.85
 
         self.water_vapour_pressure = const.WATER_VAPOUR_PRESSURE_DEFAULT
 
+
+    def _k_const(self, half_life):
+        return tuple(const.LOG_2 / v for v in half_life)
 
     def init(self, surface_pressure):
         """
@@ -478,15 +487,12 @@ class ZH_L16_GF(object):
             - :py:meth:`decotengu.model.ZH_L16_GF._tissue_loaders`
             - :py:meth:`decotengu.model.ZH_L16_GF._tissue_loader`
         """
-        hl_n2 = self.n2_half_life
-        hl_he = self.he_half_life
-
         n2_loader, he_loader = self._tissue_loaders(abs_p, gas, rate)
         time /= 60
 
         tp = tuple(
-            (n2_loader(time, hl_n2[k], p_n2), he_loader(time, hl_he[k], p_he))
-            for k, (p_n2, p_he) in enumerate(data.tissues)
+            (n2_loader(time, p_n2, i), he_loader(time, p_he, i))
+            for i, (p_n2, p_he) in enumerate(data.tissues)
         )
         return Data(tp, data.gf)
 
@@ -518,6 +524,9 @@ class ZH_L16_GF(object):
         """
         Calculate value of exponential function for time and tissue
         compartment half-life time constant :math:`k = ln(2) / T_{hl}`.
+
+        :param time: Time of exposure [min].
+        :param k: Tissue compartment half-life time constant :math:`k`.
         """
         return math.exp(-k * time)
 
@@ -531,12 +540,12 @@ class ZH_L16_GF(object):
         :param gas: Gas mix configuration.
         :param rate: Pressure rate change [bar/min] (:math:`P_{rate}`).
         """
-        n2_loader = self._tissue_loader(abs_p, gas.n2 / 100, rate)
-        he_loader = self._tissue_loader(abs_p, gas.he / 100, rate)
+        n2_loader = self._tissue_loader(abs_p, gas.n2 / 100, rate, self.n2_k_const)
+        he_loader = self._tissue_loader(abs_p, gas.he / 100, rate, self.he_k_const)
         return n2_loader, he_loader
 
 
-    def _tissue_loader(self, abs_p, f_gas, rate):
+    def _tissue_loader(self, abs_p, f_gas, rate, k_const):
         """
         Create function to load tissue compartment with inert gas.
 
@@ -559,10 +568,11 @@ class ZH_L16_GF(object):
         """
         palv = f_gas * (abs_p - self.water_vapour_pressure)
         r = f_gas * rate
-        def f(t, half_life, pressure):
-            assert t > 0
-            k = const.LOG_2 / half_life
-            return palv + r * (t - 1 / k) - (palv - pressure - r / k) * self._exp(k, t)
+        def f(time, pressure, tissue_no):
+            assert time > 0
+            k = k_const[tissue_no]
+            return palv + r * (time - 1 / k) - (palv - pressure - r / k) \
+                * self._exp(time, k)
             #return palv + r * (t - 1 / k) - (palv - pressure - r / k) * math.exp(-k * t)
         return f
 
@@ -616,8 +626,9 @@ class ZH_L16B_GF(ZH_L16_GF): # source: gfdeco.f by Baker
     )
     HE_HALF_LIFE = (
         1.88, 3.02, 4.72, 6.99, 10.21, 14.48, 20.53, 29.11,
-        41.20, 55.19, 70.69, 90.34, 115.29, 147.42, 188.24, 240.03
+        41.20, 55.19, 70.69, 90.34, 115.29, 147.42, 188.24, 240.03,
     )
+
 
 
 class ZH_L16C_GF(ZH_L16_GF): # source: ostc firmware code

@@ -75,19 +75,11 @@ Tabular Tissue Calculator
 .. autosummary::
 
    decotengu.alt.tab.tab_engine
-   decotengu.alt.tab.linearize
-   decotengu.alt.tab.eq_schreiner_t
-   decotengu.alt.tab.TabTissueCalculator
-   decotengu.alt.tab.FirstStopTabFinder
+   decotengu.alt.tab.TabExp
 
 .. autofunction:: decotengu.alt.tab.tab_engine
-.. autofunction:: decotengu.alt.tab.linearize
-.. autofunction:: decotengu.alt.tab.eq_schreiner_t
 
-.. autoclass:: decotengu.alt.tab.TabTissueCalculator
-   :members:
-
-.. autoclass:: decotengu.alt.tab.FirstStopTabFinder
+.. autoclass:: decotengu.alt.tab.TabExp
    :members: __call__
 
 First Decompression Stop Binary Search
