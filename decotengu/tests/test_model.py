@@ -23,8 +23,7 @@ DecoTengu calculator tests.
 
 from decotengu.engine import Engine, Step, Phase
 from decotengu.error import EngineError
-from decotengu.model import eq_gf_limit, ZH_L16_GF, ZH_L16B_GF, Data, \
-    DecoModelValidator
+from decotengu.model import eq_gf_limit, ZH_L16B_GF, Data, DecoModelValidator
 
 from .tools import _engine, AIR
 
@@ -38,6 +37,7 @@ class TissueLoadingTestCase(unittest.TestCase):
     """
     def setUp(self):
         self.model = ZH_L16B_GF()
+        self.k_const = self.model.n2_k_const
 
 
     def test_air_ascent(self):
@@ -45,8 +45,8 @@ class TissueLoadingTestCase(unittest.TestCase):
         Test tissue compartment loading - ascent by 10m on air
         """
         # ascent, so rate == -1 bar/min
-        loader = self.model._tissue_loader(4, 0.79, -1)
-        v = loader(1, 5.0, 3)
+        loader = self.model._tissue_loader(4, 0.79, -1, self.k_const)
+        v = loader(1, 3, 0)
         self.assertAlmostEqual(2.96198, v, 4)
 
 
@@ -55,8 +55,8 @@ class TissueLoadingTestCase(unittest.TestCase):
         Test tissue compartment loading - descent by 10m on air
         """
         # rate == 1 bar/min
-        loader = self.model._tissue_loader(4, 0.79, 1)
-        v = loader(1, 5.0, 3)
+        loader = self.model._tissue_loader(4, 0.79, 1, self.k_const)
+        v = loader(1, 3, 0)
         self.assertAlmostEqual(3.06661, v, 4)
 
 
@@ -65,8 +65,8 @@ class TissueLoadingTestCase(unittest.TestCase):
         Test tissue compartment loading - ascent by 10m on EAN32
         """
         # ascent, so rate == -1 bar/min
-        loader = self.model._tissue_loader(4, 0.68, -1)
-        v = loader(1, 5.0, 3)
+        loader = self.model._tissue_loader(4, 0.68, -1, self.k_const)
+        v = loader(1, 3, 0)
         self.assertAlmostEqual(2.9132, v, 4)
 
 
@@ -75,8 +75,8 @@ class TissueLoadingTestCase(unittest.TestCase):
         Test tissues compartment loading - descent by 10m on EAN32
         """
         # rate == 1 bar/min
-        loader = self.model._tissue_loader(4, 0.68, 1)
-        v = loader(1, 5.0, 3)
+        loader = self.model._tissue_loader(4, 0.68, 1, self.k_const)
+        v = loader(1, 3, 0)
         self.assertAlmostEqual(3.00326, v, 4)
 
 
@@ -126,11 +126,11 @@ class ZH_L16_GFTestCase(unittest.TestCase):
         """
         Test deco model initialization
         """
-        m = ZH_L16_GF()
+        m = ZH_L16B_GF()
         data = m.init(1.013)
         tissues = data.tissues
-        self.assertEquals(ZH_L16_GF.NUM_COMPARTMENTS, len(tissues))
-        expected = tuple([(0.75092706, 0.0)] * ZH_L16_GF.NUM_COMPARTMENTS)
+        self.assertEquals(m.NUM_COMPARTMENTS, len(tissues))
+        expected = tuple([(0.75092706, 0.0)] * m.NUM_COMPARTMENTS)
         self.assertEquals(expected, tissues)
 
 
@@ -199,8 +199,8 @@ class ZH_L16_GFTestCase(unittest.TestCase):
         """
         Test deco model gradient factor limit calculation
 
-        Check if appropriate parameters are passed from ZH_L16_GF.gf_limit
-        to eq_gf_limit function
+        Check if appropriate parameters are passed from ZH_L16B_GF.gf_limit
+        to eq_gf_limit function.
         """
         f.side_effect = list(range(1, 17))
         m = ZH_L16B_GF()
