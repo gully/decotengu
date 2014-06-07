@@ -85,7 +85,7 @@ the surface
 
     >>> max_error = max(abs(v1[0] - float(v2[0]) + v1[1] - float(v2[1])) for v1, v2 in zip(last.data.tissues, last_dec.data.tissues))
     >>> round(max_error, 10)
-    6.2461e-06
+    1.00341e-05
 
 """
 
@@ -139,19 +139,17 @@ class DecimalContext(object):
 
         attrs = (
             'WATER_VAPOUR_PRESSURE_DEFAULT', 'LOG_2', 'SURFACE_PRESSURE',
-            'METER_TO_BAR', 'ROUND_VALUE', 'MINUTE'
+            'METER_TO_BAR', 'ROUND_VALUE', 'MINUTE', 'DECO_STOP_SEARCH_TIME',
         )
         self._override(self.const, attrs, self.const_data)
         self.const_data['SCALE'] = self.const.SCALE
         self.const.SCALE = self.prec - 4
         self.const.EPSILON = 10 ** -self.const.SCALE
 
-        self.tab_data['exposure_t'] = self.tab.exposure_t
-        exp_t = self.tab.exposure_t
-        self.tab.exposure_t = lambda t, hl: \
-            tuple(self.type(v) for v in exp_t(t, hl))
-        attrs = 'MAX_CONST_TIME', 'MAX_CHANGE_TIME'
+        attrs = 'TIME_6S',
         self._override(self.tab, attrs, self.tab_data)
+        self.tab_data['EXP'] = self.tab.EXP
+        self.tab.EXP = Decimal.exp
 
         for cls in (self.model.ZH_L16B_GF, self.model.ZH_L16C_GF):
             self.model_data[cls] = {}
@@ -169,6 +167,7 @@ class DecimalContext(object):
         self.const.SCALE = 10
         self.const.EPSILON = 10 ** -self.const.SCALE
         self._undo(self.tab, self.tab_data)
+        self.tab.EXP = self.tab_data['EXP']
         for cls in (self.model.ZH_L16B_GF, self.model.ZH_L16C_GF):
             self._undo(cls, self.model_data[cls])
         self.ctx.__exit__(*args)

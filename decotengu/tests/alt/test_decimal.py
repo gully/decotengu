@@ -90,15 +90,4 @@ class DecimalContextTestCase(unittest.TestCase):
         self.assertEqual('u2', A.Y)
 
 
-    def test_exposure_f_override(self):
-        """
-        Test decimal context manager exposure_t function override
-        """
-        import decotengu.alt.tab as tab
-        f = tab.exposure_t
-        with DecimalContext() as ctx:
-            self.assertNotEqual(f, tab.exposure_t)
-        self.assertEqual(f, tab.exposure_t)
-
-
 # vim: sw=4:et:ai

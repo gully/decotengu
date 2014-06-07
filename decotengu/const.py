@@ -34,4 +34,12 @@ EPSILON = 10 ** -SCALE
 ROUND_VALUE = 0.499999
 MINUTE = 60
 
+#
+# number based on performance test for dive profile presented in
+# Baker "Deep Stops" paper, see also
+#
+#   decotengu.tests.integration.test_engine.ProfileTestCase.test_deepstop
+#
+DECO_STOP_SEARCH_TIME = 8
+
 # vim: sw=4:et:ai

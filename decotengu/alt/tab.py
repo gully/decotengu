@@ -144,6 +144,8 @@ from .. import const
 
 logger = logging.getLogger(__name__)
 
+TIME_6S = 0.1
+EXP = math.exp
 
 class TabExp(object):
     """
@@ -176,10 +178,10 @@ class TabExp(object):
         """
         kt_exp = {}
         for k in k_const:
-            exp = lambda t: math.exp(-k * t)
+            exp = lambda t: EXP(-k * t)
             kt_exp[k] = {
-                6: exp(0.1),  # 1m at 10m/min
-                60: exp(1),   # 10m at 10m/min
+                6: exp(TIME_6S),  # 1m at 10m/min
+                60: exp(1),       # 10m at 10m/min
             }
 
         return kt_exp

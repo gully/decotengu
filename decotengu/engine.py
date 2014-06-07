@@ -130,13 +130,7 @@ class Engine(object):
         self._gas_list = []
         self._travel_gas_list = []
 
-        #
-        # number based on performance test for dive profile presented in
-        # Baker "Deep Stops" paper, see also
-        #
-        #   decotengu.tests.integration.test_engine.ProfileTestCase.test_deepstop
-        #
-        self._deco_stop_search_time = 8
+        self._deco_stop_search_time = const.DECO_STOP_SEARCH_TIME
 
         self._meter_to_bar = const.METER_TO_BAR
         self._p3m = 3 * const.METER_TO_BAR
