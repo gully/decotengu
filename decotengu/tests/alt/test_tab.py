@@ -18,156 +18,83 @@
 #
 
 """
-Tabular tissue calculator tests.
+Tabular calculator tests.
 """
 
-from decimal import Decimal
-
 from decotengu.alt.tab import TabExp, tab_engine
-from decotengu.model import ZH_L16B_GF
-from decotengu.engine import Phase
 
-from ..tools import _engine, _step, AIR
+from ..tools import _engine
 
 import unittest
-from unittest import mock
 
 
-class ExposureTestCase(unittest.TestCase):
+class TabCalculatorTestCase(unittest.TestCase):
     """
-    Tests for `exp` function calculator.
+    Tabular calculator tests.
     """
     def setUp(self):
         """
-        Override of LOG_2 constant in decotengu.const module.
+        Create tabular calculator.
         """
-        import decotengu.const as const
-        self.const = const
-        self.log_2 = self.const.LOG_2
-        self.const.LOG_2 = Decimal(self.const.LOG_2)
+        self.tab_exp = TabExp([1, 2], [3, 4])
 
 
-    def tearDown(self):
+    def test_init(self):
         """
-        Revert override of LOG_2 constant in decotengu.const module.
+        Test tabular calculator initialization
         """
-        self.const.LOG_2 = self.log_2
+        kt_exp = self.tab_exp._kt_exp
+
+        # both n2 and he values of time constant k are initialized
+        self.assertEqual([1, 2, 3, 4], sorted(kt_exp.keys()))
+
+        # check 1 minute and 6s time intervals
+        self.assertTrue(all(60 in v for v in kt_exp.values()))
+        self.assertTrue(all(6 in v for v in kt_exp.values()))
+
+
+    def test_1min(self):
+        """
+        Test tabular calculation for 1min
+        """
+        v = self.tab_exp(1, 1)
+        self.assertAlmostEqual(0.36787, v, 4)
+
+
+    def test_2min(self):
+        """
+        Test tabular calculation for 2min
+        """
+        v = self.tab_exp(2, 1)
+        self.assertAlmostEqual(0.13533, v, 4)
+
+
+    def test_1min12s(self):
+        """
+        Test tabular calculation for 1min and 12s
+        """
+        v = self.tab_exp(1.2, 1)
+        self.assertAlmostEqual(0.30119, v, 4)
 
 
 
-class TabularTissueCalculatorTestCase(unittest.TestCase):
+class TabOverrideTestCase(unittest.TestCase):
     """
-    Tabular tissue calculator.
+    Tabular calculator override tests.
     """
-    def test_tissue_load_24m(self, f):
+    def test_tab_oveerride(self):
         """
-        Test tabular tissue calculator tissue gas loading (>= 3m)
+        Test tabular calculator override
         """
-        f.side_effect = [2, 0]
-        m = ZH_L16B_GF()
-        c = TabTissueCalculator(m.N2_HALF_LIFE, m.HE_HALF_LIFE)
-        v = c.load_tissue(4, 144, AIR, -1, 3, 0, 1)
+        engine = _engine()
+        engine.descent_rate = 30
+        engine.ascent_rate = 15
 
-        self.assertEquals(2, f.call_count)
-        self.assertEquals((2, 0), v)
+        tab_engine(engine)
 
-        args = f.call_args_list
-        self.assertEquals(
-            (4, 144, 0.79, -1, 3, 8.0, 0.8122523963562355), args[0][0]
-        )
-        self.assertEquals(
-            (4, 144, 0.0, -1, 0, 3.02, 0.5764622392002223), args[1][0]
-        )
-
-
-    def test_tissue_load_6m(self, f):
-        """
-        Test tabular tissue calculator tissue gas loading (1m)
-        """
-        f.side_effect = [2, 0]
-        m = ZH_L16B_GF()
-        c = TabTissueCalculator(m.N2_HALF_LIFE, m.HE_HALF_LIFE)
-        v = c.load_tissue(4, 6, AIR, -1, 3, 1, 1)
-
-        self.assertEquals(2, f.call_count)
-        self.assertEquals((2, 0), v)
-
-        args = f.call_args_list
-        self.assertEquals(
-            (4, 6, 0.79, -1, 3, 8.0, 0.9913730874626621), args[0][0]
-        )
-        self.assertEquals(
-            (4, 6, 0.0, -1, 1, 3.02, 0.9773094976833946), args[1][0]
-        )
-
-
-    def test_tissue_load_2m(self, f):
-        """
-        Test tabular tissue calculator tissue gas loading (2m)
-        """
-        f.side_effect = [2, 0]
-        m = ZH_L16B_GF()
-        c = TabTissueCalculator(m.N2_HALF_LIFE, m.HE_HALF_LIFE)
-        v = c.load_tissue(4, 12, AIR, -1, 3, 1, 1)
-
-        self.assertEquals(2, f.call_count)
-        self.assertEquals((2, 0), v)
-
-        args = f.call_args_list
-        self.assertEquals(
-            (4, 12, 0.79, -1, 3, 8.0, 0.9828205985452511), args[0][0]
-        )
-        self.assertEquals(
-            (4, 12, 0.0, -1, 1, 3.02, 0.9551338542621691), args[1][0]
-        )
-
-
-    def test_tissue_load_10m(self, f):
-        """
-        Test tabular tissue calculator tissue gas loading (10m)
-        """
-        f.side_effect = [2, 0]
-        m = ZH_L16B_GF()
-        c = TabTissueCalculator(m.N2_HALF_LIFE, m.HE_HALF_LIFE)
-        v = c.load_tissue(4, 60, AIR, -1, 3, 1, 1)
-
-        self.assertEquals(2, f.call_count)
-        self.assertEquals((2, 0), v)
-
-        args = f.call_args_list
-        self.assertEquals(
-            (4, 60, 0.79, -1, 3, 8.0, 0.9170040432046712), args[0][0]
-        )
-        self.assertEquals(
-            (4, 60, 0.0, -1, 1, 3.02, 0.7949159175889702), args[1][0]
-        )
-
-
-    def test_tissue_load_invalid(self):
-        """
-        Test tabular tissue calculator tissue gas loading invalid time
-        """
-        m = ZH_L16B_GF()
-        c = TabTissueCalculator(m.N2_HALF_LIFE, m.HE_HALF_LIFE)
-
-        # non-divisible by 18
-        self.assertRaises(ValueError, c.load_tissue, 4, 31, AIR, -1, 3, 1, 1)
-
-        # outside max time range
-        t = c.max_const_time + 1
-        self.assertRaises(ValueError, c.load_tissue, 4, t, AIR, -1, 3, 1, 1)
-
-
-    def test_tissue_load_float(self):
-        """
-        Test tabular tissue calculator tissue gas loading with float time
-        """
-        m = ZH_L16B_GF()
-        c = TabTissueCalculator(m.N2_HALF_LIFE, m.HE_HALF_LIFE)
-
-        v = c.load_tissue(4, 60 + 10e-12, AIR, -1, 3, 1, 1)
-        self.assertEqual((2.975911559744427, 0.7949159175889702), v)
-
+        self.assertEqual(10, engine.descent_rate)
+        self.assertEqual(10, engine.ascent_rate)
+        self.assertTrue(isinstance(engine.model._exp, TabExp))
 
 
 # vim: sw=4:et:ai
