@@ -257,7 +257,7 @@ class Engine(object):
         specified amount of time.
 
         :param step: Current dive step.
-        :param time: Time spent at current depth [s].
+        :param time: Time spent at current depth [min].
         :param gas: Gas mix configuration.
         :param data: Decompression model data.
         :param phase: Dive phase.
@@ -272,7 +272,7 @@ class Engine(object):
         period of time.
 
         :param step: Current dive step.
-        :param time: Time to descent from current dive step [s].
+        :param time: Time to descent from current dive step [min].
         :param gas: Gas mix configuration.
         :param phase: Dive phase.
         """
@@ -290,7 +290,7 @@ class Engine(object):
                this has to be improved
 
         :param step: Current dive step.
-        :param time: Time to ascent from current dive step [s].
+        :param time: Time to ascent from current dive step [min].
         :param gas: Gas mix configuration.
         :param data: Decompression model data.
         :param phase: Dive phase.
@@ -497,7 +497,7 @@ class Engine(object):
 
         if __debug__:
             logger.debug(
-                'find fist stop: check ascent from {}bar by {}s to {}bar (start)'
+                'find fist stop: check ascent from {}bar by {}min to {}bar (start)'
                 .format(step.abs_p, t, limit)
             )
         while step.abs_p > limit and step.abs_p > abs_p:
@@ -508,7 +508,7 @@ class Engine(object):
 
             if __debug__:
                 logger.debug(
-                    'find fist stop: check ascent from {}bar by {}s to {}bar'
+                    'find fist stop: check ascent from {}bar by {}min to {}bar'
                     .format(step.abs_p, t, limit)
                 )
 
@@ -855,7 +855,7 @@ class Engine(object):
         until it is allowed to ascent to next stop.
 
         :param step: Start of current decompression stop.
-        :param next_time: Time required to ascent to next deco stop [s].
+        :param next_time: Time required to ascent to next deco stop [min].
         :param gas: Gas mix configuration.
         :param gf: Gradient factor value of next decompression stop.
         """
@@ -889,7 +889,7 @@ class Engine(object):
 
         if __debug__:
             logger.debug(
-                'deco stop: linear find finished after {}s'.format(time)
+                'deco stop: linear find finished after {}min'.format(time)
             )
             logger.debug('deco stop: deco data {}'.format(data))
 
@@ -912,10 +912,10 @@ class Engine(object):
 
         if __debug__:
             logger.debug(
-                'deco stop: search completed {}bar, {}s, n2={.n2}%, gf={:.4}' \
-                ', next gf={:.4}'
-                .format(step.abs_p, time, gas, step.data.gf, gf)
-            )
+                'deco stop: search completed {}bar, {}min, n2={.n2}%,'
+                ' gf={:.4}, next gf={:.4}'.format(
+                    step.abs_p, time, gas, step.data.gf, gf
+                ))
             assert time % 1 == 0 and time > 0, time
 
         step = self._step_next(step, time, gas, phase=Phase.DECO_STOP)
@@ -988,7 +988,11 @@ class Engine(object):
         t = time - step.time
         if t <= 0:
             raise EngineError('Bottom time shorter than descent time')
-        logger.debug('bottom time {}s (descent is {}s)'.format(t, step.time))
+
+        if __debug__:
+            logger.debug(
+                'bottom time {}min (descent is {}min)'.format(t, step.time)
+            )
         assert t > 0
         step = self._step_next(step, t, bottom_gas)
         yield step
@@ -1020,11 +1024,12 @@ class DecoTable(list):
         Add decompression stop.
 
         :param depth: Depth of decompression stop [m].
-        :param time: Time of decompression stop [s].
+        :param time: Time of decompression stop [min].
         """
         if __debug__:
-            logger.debug('deco table: adding {}m {}min stop' \
-                .format(depth, time))
+            logger.debug(
+                'deco table: adding {}m {}min stop'.format(depth, time)
+            )
 
         time = math.ceil(round(time, const.SCALE))
         stop = DecoStop(depth, time)
