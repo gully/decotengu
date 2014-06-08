@@ -65,10 +65,10 @@ class EngineTestCase(unittest.TestCase):
         Test deco engine pressure to time conversion
         """
         v = self.engine._pressure_to_time(.3, 10)
-        self.assertEquals(v, 18) # 3m at 10m/min -> 18s
+        self.assertEqual(v, 0.3) # 3m at 10m/min -> 0.3min (18s)
 
         v = self.engine._pressure_to_time(.3, 5)
-        self.assertAlmostEquals(v, 36) # 3m at 5m/min -> 36s
+        self.assertAlmostEqual(v, 0.6) # 3m at 5m/min -> 0.6min
 
 
     def test_pressure_to_time_default(self):
@@ -77,7 +77,7 @@ class EngineTestCase(unittest.TestCase):
         """
         engine = Engine()
         v = engine._pressure_to_time(engine._p3m, 10)
-        self.assertEquals(v, 18) # 3m at 10m/min -> 18s
+        self.assertEqual(v, 0.3) # 3m at 10m/min -> 0.3min (18s)
 
 
     def test_ceil_pressure_3m(self):
@@ -173,18 +173,18 @@ class EngineTestCase(unittest.TestCase):
         Test creation of next dive step record (descent)
         """
         self.engine.descent_rate = 10
-        start = _step(Phase.CONST, 3.0, 120, data=mock.MagicMock())
+        start = _step(Phase.CONST, 3.0, 2, data=mock.MagicMock())
 
         data = mock.MagicMock()
         self.engine._tissue_pressure_descent = mock.MagicMock(return_value=data)
-        step = self.engine._step_next_descent(start, 30, AIR)
+        step = self.engine._step_next_descent(start, 0.5, AIR)
         self.assertEquals('descent', step.phase)
         self.assertEquals(3.5, step.abs_p)
-        self.assertEquals(150, step.time)
+        self.assertEquals(2.5, step.time)
         self.assertEquals(AIR, step.gas)
         self.assertEquals(data, step.data)
         self.engine._tissue_pressure_descent.assert_called_once_with(
-            3.0, 30, AIR, start.data
+            3.0, 0.5, AIR, start.data
         )
 
 
@@ -193,19 +193,19 @@ class EngineTestCase(unittest.TestCase):
         Test creation of next dive step record (ascent)
         """
         self.engine.descent_rate = 10
-        start = _step(Phase.ASCENT, 3.0, 120, data=mock.MagicMock())
+        start = _step(Phase.ASCENT, 3.0, 2, data=mock.MagicMock())
 
         data = mock.MagicMock()
         self.engine._tissue_pressure_ascent = mock.MagicMock(return_value=data)
-        step = self.engine._step_next_ascent(start, 30, AIR)
+        step = self.engine._step_next_ascent(start, 0.5, AIR)
         self.assertEquals('ascent', step.phase)
         self.assertEquals(2.5, step.abs_p)
-        self.assertEquals(150, step.time)
+        self.assertEquals(2.5, step.time)
         self.assertEquals(AIR, step.gas)
         self.assertEquals(data, step.data)
 
         self.engine._tissue_pressure_ascent.assert_called_once_with(
-            3.0, 30, AIR, start.data
+            3.0, 0.5, AIR, start.data
         )
 
 
@@ -258,7 +258,7 @@ class EngineTestCase(unittest.TestCase):
         data = [1.1, 2.1]
         self.engine._tissue_pressure_ascent = mock.MagicMock()
         self.engine.model.ceiling_limit = mock.MagicMock(return_value=3.0)
-        v = self.engine._can_ascend(3.2, 12, AIR, data)
+        v = self.engine._can_ascend(3.2, 0.2, AIR, data)
         self.assertTrue(v)
 
 
@@ -286,13 +286,14 @@ class EngineTestCase(unittest.TestCase):
         """
         Test deco engine bottom time calculation
         """
-        step = _step(Phase.ASCENT, 11, 60 * 5)
+        step = _step(Phase.ASCENT, 11, 5)
         self.engine._dive_descent = mock.MagicMock(side_effect=[[step]])
         self.engine._dive_ascent = mock.MagicMock()
         self.engine._step_next = mock.MagicMock()
-        p = self.engine.calculate(100, 30) # 5min to descent at 20m/min
+        p = self.engine.calculate(100, 30) # 5min to descent at 20m/min...
         list(p)
-        self.engine._step_next.assert_called_once_with(step, 25 * 60, AIR)
+        # ... so 25 minutes of bottom time
+        self.engine._step_next.assert_called_once_with(step, 25, AIR)
 
 
     def test_bottom_time_error(self):
@@ -362,7 +363,7 @@ class FirstStopFinderTestCase(unittest.TestCase):
         Test first deco stop finder when starting depth is deco stop
         """
         engine = self.engine
-        start = _step(Phase.ASCENT, 2.2, 1200)
+        start = _step(Phase.ASCENT, 2.2, 20)
 
         engine.model.ceiling_limit = mock.MagicMock()
         # ceiling at 12m - do not ascend
@@ -380,13 +381,13 @@ class FirstStopFinderTestCase(unittest.TestCase):
         """
         engine = self.engine
 
-        start = _step(Phase.ASCENT, 2.3, 1200)
+        start = _step(Phase.ASCENT, 2.3, 20)
 
         engine.model.ceiling_limit = mock.MagicMock()
         engine._ceil_pressure_3m = mock.MagicMock(return_value=2.2)
 
         step = engine._find_first_stop(start, 2.2, AIR)
-        self.assertAlmostEqual(1206, step.time)
+        self.assertAlmostEqual(20.1, step.time)
         self.assertAlmostEqual(2.2, step.abs_p)
 
 
@@ -398,9 +399,9 @@ class FirstStopFinderTestCase(unittest.TestCase):
         """
         engine = self.engine
 
-        start = _step(Phase.ASCENT, 4.1, 1200)
-        s1 = _step(Phase.ASCENT, 1.6, 1350) # first ceiling limit at 6m
-        s2 = _step(Phase.ASCENT, 1.0, 1386) # next ceiling limit at surface
+        start = _step(Phase.ASCENT, 4.1, 20)
+        s1 = _step(Phase.ASCENT, 1.6, 22.5) # first ceiling limit at 6m
+        s2 = _step(Phase.ASCENT, 1.0, 23.1) # next ceiling limit at surface
 
         engine.model.ceiling_limit = mock.MagicMock()
         # last ceiling above surface
@@ -408,7 +409,7 @@ class FirstStopFinderTestCase(unittest.TestCase):
         engine._step_next_ascent = mock.MagicMock(side_effect=[s1, s2])
 
         step = engine._find_first_stop(start, 1.0, AIR)
-        self.assertAlmostEqual(1386, step.time)
+        self.assertAlmostEqual(23.1, step.time)
         self.assertAlmostEqual(1.0, step.abs_p)
 
 
@@ -472,8 +473,8 @@ class EngineDiveDescentTestCase(unittest.TestCase):
         s1, s2 = steps
         self.assertEquals(1.0, s1.abs_p)
         self.assertEquals(0, s1.time)
-        self.assertEquals(3.1, s2.abs_p)
-        self.assertEquals(126, s2.time) # 1m is 6s at 10m/min
+        self.assertAlmostEqual(3.1, s2.abs_p)
+        self.assertAlmostEqual(2.1, s2.time) # 1m is 6s at 10m/min
         self.assertEquals(AIR, s2.gas)
 
 
@@ -495,16 +496,16 @@ class EngineDiveDescentTestCase(unittest.TestCase):
         self.assertEquals(ean30, s1.gas)
 
         self.assertEquals(4.6, s2.abs_p)
-        self.assertAlmostEquals(216, s2.time) # 1m is 6s at 10m/min
+        self.assertAlmostEqual(3.6, s2.time) # 1m is 6s at 10m/min
         self.assertEquals(ean30, s2.gas)
 
         # test gas switch
         self.assertEquals(4.6, s3.abs_p)
-        self.assertAlmostEquals(216, s3.time)
+        self.assertAlmostEqual(3.6, s3.time)
         self.assertEquals(air, s3.gas)
 
         self.assertEquals(6.6, s4.abs_p)
-        self.assertAlmostEquals(336, s4.time) # 1m is 6s at 10m/min
+        self.assertAlmostEqual(5.6, s4.time) # 1m is 6s at 10m/min
         self.assertEquals(air, s4.gas)
 
 
@@ -526,12 +527,12 @@ class EngineDiveDescentTestCase(unittest.TestCase):
         self.assertEquals(ean30, s1.gas)
 
         self.assertEquals(4.6, s2.abs_p)
-        self.assertAlmostEquals(216, s2.time) # 1m is 6s at 10m/min
+        self.assertAlmostEqual(3.6, s2.time) # 1m is 6s at 10m/min
         self.assertEquals(ean30, s2.gas)
 
         # test gas switch
         self.assertEquals(4.6, s3.abs_p)
-        self.assertAlmostEquals(216, s3.time)
+        self.assertAlmostEquals(3.6, s3.time)
         self.assertEquals(air, s3.gas)
 
 
@@ -577,7 +578,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         args, kwargs = self.engine._step_next_ascent.call_args_list[0]
         self.assertEqual(1, self.engine._step_next_ascent.call_count)
         self.assertEqual(start, args[0])
-        self.assertAlmostEqual(180, args[1])
+        self.assertAlmostEqual(3, args[1])
         self.assertEqual(AIR, args[2])
         self.assertEqual({'gf': 0.85}, kwargs)
 
@@ -586,8 +587,8 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         """
         Test deco engine ndl ascent (not ndl dive)
         """
-        start = _step(Phase.ASCENT, 4.0, 1000)
-        step = _step(Phase.ASCENT, 1.0, 1200)
+        start = _step(Phase.ASCENT, 4.0, 20)
+        step = _step(Phase.ASCENT, 1.0, 21)
         self.engine._step_next_ascent = mock.MagicMock(return_value=step)
         self.engine.model.ceiling_limit = mock.MagicMock(return_value=1.5)
 
@@ -682,30 +683,30 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         """
         Test gas mix switch
         """
-        start = _step(Phase.ASCENT, 3.4, 1200, AIR)
+        start = _step(Phase.ASCENT, 3.4, 2, AIR)
 
         steps = self.engine._ascent_switch_gas(start, EAN50)
-        self.assertEquals(3, len(steps))
-        self.assertEquals(3.2, steps[0].abs_p)
-        self.assertEquals(1212, steps[0].time)
-        self.assertEquals(3.2, steps[1].abs_p)
-        self.assertEquals(1212, steps[1].time)
-        self.assertEquals(3.1, steps[2].abs_p)
-        self.assertEquals(1218, steps[2].time)
+        self.assertAlmostEqual(3, len(steps))
+        self.assertAlmostEqual(3.2, steps[0].abs_p)
+        self.assertAlmostEqual(2.2, steps[0].time)
+        self.assertAlmostEqual(3.2, steps[1].abs_p)
+        self.assertAlmostEqual(2.2, steps[1].time)
+        self.assertAlmostEqual(3.1, steps[2].abs_p)
+        self.assertAlmostEqual(2.3, steps[2].time)
 
-        start = _step(Phase.ASCENT, 3.4, 1200, AIR)
+        start = _step(Phase.ASCENT, 3.4, 20, AIR)
         gas = EAN50._replace(depth=23)
 
         steps = self.engine._ascent_switch_gas(start, gas)
 
-        self.assertAlmostEquals(3.3, steps[0].abs_p)
-        self.assertEquals(1206, steps[0].time)
+        self.assertAlmostEqual(3.3, steps[0].abs_p)
+        self.assertAlmostEqual(20.1, steps[0].time)
 
-        self.assertAlmostEquals(3.3, steps[1].abs_p)
-        self.assertEquals(1206, steps[1].time)
+        self.assertAlmostEqual(3.3, steps[1].abs_p)
+        self.assertAlmostEqual(20.1, steps[1].time)
 
-        self.assertEquals(3.1, steps[2].abs_p)
-        self.assertEquals(1218, steps[2].time)
+        self.assertAlmostEqual(3.1, steps[2].abs_p)
+        self.assertAlmostEqual(20.3, steps[2].time)
 
 
     def test_free_staged_ascent(self):
@@ -715,9 +716,9 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         Verify ascent to surface with no deco and no gas mix switch.
         """
         s1 = _step(Phase.START, 1.0, 0)
-        s2 = _step(Phase.DESCENT, 3.5, 150)
+        s2 = _step(Phase.DESCENT, 3.5, 2.5)
         s3 = _step(Phase.CONST, 3.5, 1050)
-        s4 = _step(Phase.ASCENT, 1.0, 1200)
+        s4 = _step(Phase.ASCENT, 1.0, 20)
 
         # s3 -> s4
         self.engine._find_first_stop = mock.MagicMock(return_value=s4)
@@ -886,7 +887,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         ]
 
         data = _data(0.3, 2.5, 2.5, 2.5)
-        step = _step(Phase.ASCENT, 2.8, 1200, data=data)
+        step = _step(Phase.ASCENT, 2.8, 2, data=data)
 
         stops = list(self.engine._deco_stops(step, stages))
         self.assertEquals(6, len(stops))
@@ -894,7 +895,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         stops = list(zip(*stops))
         self.assertEquals((2.2,) * 2 + (1.0,) * 4, stops[0])
         self.assertEquals((AIR,) * 2 + (gas_mix,) * 4, stops[1])
-        self.assertEquals((18,) * 6, stops[2])
+        self.assertEquals((0.3,) * 6, stops[2])
 
         gfv = stops[3]
         diff = [round(v2 - v1, 2) for v1, v2 in zip(gfv[:-1], gfv[1:])]
@@ -916,7 +917,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         ]
 
         data = _data(0.3, 2.5, 2.5, 2.5)
-        step = _step(Phase.ASCENT, 2.8, 1200, data=data)
+        step = _step(Phase.ASCENT, 2.8, 2, data=data)
 
         stops = list(self.engine._deco_stops(step, stages))
         self.assertEquals(5, len(stops))
@@ -924,7 +925,7 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         stops = list(zip(*stops))
         self.assertEquals((2.2,) * 2 + (1.0,) * 3, stops[0])
         self.assertEquals((AIR,) * 2 + (gas_mix,) * 3, stops[1])
-        self.assertEquals((18,) * 4 + (36,), stops[2])
+        self.assertEquals((0.3,) * 4 + (0.6,), stops[2])
 
         gfv = stops[3]
         diff = [round(v2 - v1, 2) for v1, v2 in zip(gfv[:-1], gfv[1:])]
@@ -941,14 +942,14 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         self.engine.model.gf_high = 0.90
 
         data = _data(0.3, 2.5, 2.5, 2.5)
-        step = _step(Phase.ASCENT, 2.5, 1200, data=data)
+        step = _step(Phase.ASCENT, 2.5, 2, data=data)
 
         self.engine._can_ascend = mock.MagicMock(return_value=False)
         f_r.return_value = (0, data)
         f_bf.return_value = 2 # expect 3min deco stop
 
-        step = self.engine._deco_stop(step, 18, AIR, 0.42)
-        self.assertEquals(1380, step.time)
+        step = self.engine._deco_stop(step, 0.3, AIR, 0.42)
+        self.assertEquals(5, step.time)
 
 
     @mock.patch('decotengu.engine.recurse_while')
@@ -961,14 +962,14 @@ class EngineDiveAscentTestCase(unittest.TestCase):
         self.engine.model.gf_high = 0.90
 
         data = _data(0.3, 2.5, 2.5, 2.5)
-        step = _step(Phase.ASCENT, 2.5, 1200, data=data)
+        step = _step(Phase.ASCENT, 2.5, 2, data=data)
 
         self.engine._can_ascend = mock.MagicMock(return_value=True)
         f_r.return_value = None
         f_bf.return_value = None
 
-        step = self.engine._deco_stop(step, 18, AIR, 0.42)
-        self.assertEquals(1260, step.time)
+        step = self.engine._deco_stop(step, 0.3, AIR, 0.42)
+        self.assertEquals(3, step.time)
 
 
 
@@ -1104,8 +1105,8 @@ class DecoTableTestCase(unittest.TestCase):
         Test adding deco stop to deco table
         """
         dt = DecoTable()
-        dt.append(15, 210) # 4min
-        dt.append(12, 58) # 1min
+        dt.append(15, 3.5) # 4min
+        dt.append(12, 0.97) # 1min
 
         self.assertEquals(2, len(dt))
         self.assertEquals(15, dt[0].depth)

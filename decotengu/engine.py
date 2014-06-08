@@ -159,22 +159,22 @@ class Engine(object):
         """
         Convert time into pressure change using depth change rate.
 
-        :param time: Time in seconds.
+        :param time: Time [min].
         :param rate: Rate of depth change [m/min].
         """
-        return time * rate * self._meter_to_bar / 60
+        return time * rate * self._meter_to_bar
 
 
     def _pressure_to_time(self, pressure, rate):
         """
         Convert pressure change into time using depth change rate.
 
-        The time is returned in seconds.
+        The returned time is in minutes.
 
         :param pressure: Pressure change [bar].
         :param rate: Rate of depth change [m/min].
         """
-        return pressure / rate / self._meter_to_bar * 60
+        return pressure / rate / self._meter_to_bar
 
 
     def _ceil_pressure_3m(self, abs_p):
@@ -225,7 +225,7 @@ class Engine(object):
         time.
 
         :param abs_p: Starting pressure indicating the depth [bar].
-        :param time: Time of ascent in seconds.
+        :param time: Time of ascent [min].
         :param gas: Gas mix configuration.
         :param data: Decompression model data.
         :param gf: Gradient factor to be used for ceiling check.
@@ -311,7 +311,7 @@ class Engine(object):
         of time at depth.
 
         :param abs_p: Absolute pressure indicating the depth [bar].
-        :param time: Time at depth in seconds.
+        :param time: Time at depth [min].
         :param gas: Gas mix configuration.
         :param data: Decompression model data.
         """
@@ -323,7 +323,7 @@ class Engine(object):
         Calculate tissues gas loading after descent.
 
         :param abs_p: Starting pressure indicating the depth [bar].
-        :param time: Time of descent in seconds.
+        :param time: Time of descent [min].
         :param gas: Gas mix configuration.
         :param data: Decompression model data.
         """
@@ -337,7 +337,7 @@ class Engine(object):
         Calculate tissues gas loading after ascent.
 
         :param abs_p: Starting pressure indicating the depth [bar].
-        :param time: Time of ascent in seconds.
+        :param time: Time of ascent [min].
         :param gas: Gas mix configuration.
         :param data: Decompression model data.
         """
@@ -877,7 +877,7 @@ class Engine(object):
                 Phase.DECO_STOP, step.abs_p, step.time + const.MINUTE, gas, data
             )
 
-        max_time = self._deco_stop_search_time * 60
+        max_time = self._deco_stop_search_time
         # next_f(arg=(time, data)): (time, data) <- track both time and deco
         # data
         next_f = lambda time, data: (
@@ -897,22 +897,20 @@ class Engine(object):
 
         # start with `data` returned by `recurse_while`, so no need to add
         # `time`
-        next_f = lambda k: self._tissue_pressure_const(
-            step.abs_p, k * 60, gas, data
-        )
+        next_f = lambda k: self._tissue_pressure_const(step.abs_p, k, gas, data)
         # should we stay at deco stop?
         exec_deco_stop = lambda k: \
             not self._can_ascend(step.abs_p, next_time, gas, next_f(k), gf)
 
-        # ascent is possible after self._deco_stop_search_time * 60, so
+        # ascent is possible after self._deco_stop_search_time, so
         # check for self._deco_stop_search_time - 1
         n = self._deco_stop_search_time - 1
         k = bisect_find(n, exec_deco_stop)
-        k += 1 # at k * 60 diver should still stay at deco stop as
+        k += 1 # at k diver should still stay at deco stop as
                # exec_deco_stop is true - ascent minute later
 
         # final time of a deco stop
-        time = time + k * 60
+        time = time + k
 
         if __debug__:
             logger.debug(
@@ -920,7 +918,7 @@ class Engine(object):
                 ', next gf={:.4}'
                 .format(step.abs_p, time, gas, step.data.gf, gf)
             )
-            assert time % 60 == 0 and time > 0, time
+            assert time % 1 == 0 and time > 0, time
 
         step = self._step_next(step, time, gas, phase=Phase.DECO_STOP)
         return step
@@ -989,7 +987,7 @@ class Engine(object):
         gas_list = sorted(self._gas_list[1:], key=depth_key, reverse=True)
         gas_list.insert(0, bottom_gas)
 
-        t = time * 60 - step.time
+        t = time - step.time
         if t <= 0:
             raise EngineError('Bottom time shorter than descent time')
         logger.debug('bottom time {}s (descent is {}s)'.format(t, step.time))
@@ -1026,7 +1024,7 @@ class DecoTable(list):
         :param depth: Depth of decompression stop [m].
         :param time: Time of decompression stop [s].
         """
-        time = math.ceil(time / 60)
+        time = math.ceil(time)
         stop = DecoStop(depth, time)
 
         assert stop.time > 0

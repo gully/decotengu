@@ -44,8 +44,8 @@ inert gas exposure with exponential function
 
         e^{-k * t}
 
-We can precompute the values for above function for 1 minute and for 6
-seconds intervals and store them in a table for each time constant
+We can precompute the values for above function for 1 minute and for
+6 seconds intervals and store them in a table for each time constant
 :math:`k`. Then, exponential function results can be calculated with
 formula
 

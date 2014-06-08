@@ -79,7 +79,7 @@ class Conveyor(object):
         Return count of trays and time rest.
 
         The count of trays is amount of time delta values existing between
-        start and end time (exclusive). The time rest is amount of seconds
+        start and end time (exclusive). The time rest is amount of minutes
         between last tray and end of time.
 
         The information calculated by the method enables us to increase
@@ -87,7 +87,7 @@ class Conveyor(object):
 
             >>> import decotengu
             >>> engine = decotengu.Engine()
-            >>> conveyor = Conveyor(engine, 60)
+            >>> conveyor = Conveyor(engine, 1)
             >>> conveyor.trays(100, 240)
             (2, 20)
 
@@ -95,8 +95,8 @@ class Conveyor(object):
         remaining time between last inserted dive step and ending step is
         20s.
 
-        :param start_time: Starting time [s].
-        :param end_time: Ending time [s].
+        :param start_time: Starting time [min].
+        :param end_time: Ending time [min].
         """
         dt = end_time - start_time
         k = math.ceil(dt / self.time_delta) - 1

@@ -135,7 +135,7 @@ class BisectFindFirstStop(object):
         assert t >= 0
         assert 0 <= dt < ts_3m, dt
 
-        # for each k ascent for k * t(3m) + dt seconds and check if ceiling
+        # for each k ascent for k * t(3m) + dt minutes and check if ceiling
         # limit invariant is not violated; k * t(3m) + dt formula gives
         # first stop candidates as multiples of 3m
         f = lambda k, data: \

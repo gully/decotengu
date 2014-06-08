@@ -467,7 +467,7 @@ class ZH_L16_GF(object):
         The method returns decompression data model information.
 
         :param abs_p: Absolute pressure [bar] (current depth).
-        :param time: Time of exposure [second] (i.e. time of ascent).
+        :param time: Time of exposure [min] (i.e. time of ascent).
         :param gas: Gas mix configuration.
         :param rate: Pressure rate change [bar/min].
         :param data: Decompression model data.
@@ -478,7 +478,6 @@ class ZH_L16_GF(object):
             - :py:meth:`decotengu.model.ZH_L16_GF._tissue_loader`
         """
         n2_loader, he_loader = self._tissue_loaders(abs_p, gas, rate)
-        time /= 60
 
         tp = tuple(
             (n2_loader(time, p_n2, i), he_loader(time, p_he, i))
