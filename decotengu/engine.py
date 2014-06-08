@@ -68,16 +68,14 @@ class Phase(object):
 
 
 Step = namedtuple('Step', 'phase abs_p time gas data')
-Step.__repr__ = lambda s: 'Step(phase="{}", abs_p={:.4f}, time={},' \
-    ' gf={:.4f})'.format(
-        s.phase, s.abs_p, s.time, s.data.gf
-    )
+Step.__repr__ = lambda s: 'Step(phase="{}", abs_p={:.4f}, time={:.4f},' \
+    ' gf={:.4f})'.format(s.phase, s.abs_p, s.time, s.data.gf)
 Step.__doc__ = """
 Dive step information.
 
 :var phase: Dive phase.
 :var abs_p: Absolute pressure at depth [bar].
-:var time: Time of dive [s].
+:var time: Time of dive [min].
 :var gas: Gas mix configuration.
 :var data: Decompression model data.
 """

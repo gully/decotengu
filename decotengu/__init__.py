@@ -42,13 +42,13 @@ an iterator with dive profile steps::
 
     >>> for step in profile:
     ...     print(step)     # doctest:+ELLIPSIS
-    Step(phase="start", abs_p=1.0132, time=0, gf=0.3000)
-    Step(phase="descent", abs_p=4.5080, time=105.0, gf=0.3000)
-    Step(phase="const", abs_p=4.5080, time=2400.0, gf=0.3000)
+    Step(phase="start", abs_p=1.0132, time=0.0000, gf=0.3000)
+    Step(phase="descent", abs_p=4.5080, time=1.7500, gf=0.3000)
+    Step(phase="const", abs_p=4.5080, time=40.0000, gf=0.3000)
     ...
-    Step(phase="ascent", abs_p=1.9119, time=2916.0, gf=0.5750)
+    Step(phase="ascent", abs_p=1.9119, time=48.6000, gf=0.5750)
     ...
-    Step(phase="ascent", abs_p=1.0133, time=5250.0, gf=0.8500)
+    Step(phase="ascent", abs_p=1.0133, time=87.5000, gf=0.8500)
 
 After dive profile iterator is fully exhausted, the dive table can be used
 to obtain all information about decompression stops::
