@@ -335,13 +335,11 @@ Let's put the calculations into the table
             10            23.5     2.421840     1.6730607    ~7m
     =========== =============== ============ ============= ======
 
-As we can see, when starting ascent from 30 meters, the Buhlmann equation,
-for the first tissue compartment, gives us ceiling limit  at about 8m. After
-ascent to 10m, the ceiling limit changes to about 7m - the first tissue
-compartment desaturates during ascent. This suggests, that a non-trivial
-algorithm will be required to find exact depth of first decompression stop,
-which has to be calculated for each tissue compartment (see :ref:`algo`
-section).
+When starting ascent from 30 meters, the ceiling limit is at about 8m.
+After ascent to 10m, the ceiling limit changes to about 7m - the first (and
+any other) tissue compartment desaturates during ascent. This suggests,
+that to find exact depth of first decompression stop an algorithm will be
+required (see :ref:`algo` section).
 
 Calculations
 ------------
