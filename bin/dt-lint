@@ -115,8 +115,9 @@ from decotengu.output import DiveStepInfoGenerator, csv_writer
 from decotengu.flow import sender
 
 time_delta = args.time_delta
-time_delta = float(time_delta[:-1]) / 60 if time_delta[-1] == 's' \
-    else float(time_delta)
+if time_delta:
+    time_delta = float(time_delta[:-1]) / 60 if time_delta[-1] == 's' \
+        else float(time_delta)
 
 engine = decotengu.create(time_delta=time_delta)
 engine.last_stop_6m = args.last_stop_6m
