@@ -50,7 +50,7 @@ class Conveyor(object):
         ...
 
     :var engine: DecoTengu decompression engine.
-    :var time_delta: Time delta to increase dive steps granulity [s].
+    :var time_delta: Time delta to increase dive steps granulity [min].
     :var f_calc: Orignal DecoTengu decompression engine calculation method.
     """
     def __init__(self, engine, time_delta):
@@ -58,7 +58,7 @@ class Conveyor(object):
         Create conveyor.
 
         :param engine: DecoTengu decompression engine.
-        :param time_delta: Time delta to increase dive steps granulity [s].
+        :param time_delta: Time delta to increase dive steps granulity [min].
         """
         if time_delta < 0.1:
             logger.warn('possible calculation problems: time delta below' \
@@ -88,12 +88,12 @@ class Conveyor(object):
             >>> import decotengu
             >>> engine = decotengu.Engine()
             >>> conveyor = Conveyor(engine, 1)
-            >>> conveyor.trays(100, 240)
-            (2, 20)
+            >>> conveyor.trays(1.7, 4)
+            (2, 0.2999999999999998)
 
-        For time delta 60s, there are two dive steps to be inserted. The
+        For time delta 1 minute, there are two dive steps to be inserted. The
         remaining time between last inserted dive step and ending step is
-        20s.
+        0.3 minute (20s).
 
         :param start_time: Starting time [min].
         :param end_time: Ending time [min].
@@ -134,10 +134,10 @@ class Conveyor(object):
 
             k, tr = self.trays(prev.time, end.time)
             logger.debug(
-                'conveyor time {}s -> {}s, {}bar -> {}bar, steps {}, rest {}' \
-                .format(prev.time, end.time, prev.abs_p, end.abs_p, k, tr)
-            )
-
+                'conveyor time {}min -> {}min, {}bar -> {}bar, steps {},' \
+                'rest {}'.format(
+                    prev.time, end.time, prev.abs_p, end.abs_p, k, tr
+                ))
             step = prev
             for i in range(k):
                 step = f_step(step, self.time_delta, end.gas)
@@ -147,7 +147,7 @@ class Conveyor(object):
                 # validate steps expansion: (step + time(tr) = stop) == end?
                 stop = f_step(step, tr, end.gas)
                 assert abs(end.abs_p - stop.abs_p) < EPSILON, \
-                    '{} bar ({}s) vs. {} bar ({}s)'.format(
+                    '{} bar ({}min) vs. {} bar ({}min)'.format(
                         end.abs_p, end.time, stop.abs_p, stop.time
                     )
 

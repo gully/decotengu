@@ -38,40 +38,40 @@ class ConveyorTestCase(unittest.TestCase):
         """
         Test conveyor trays method, equal rest
         """
-        t = Conveyor(mock.MagicMock(), 60)
-        k, r = t.trays(100, 160)
-        self.assertEquals(0, k)
-        self.assertEquals(60, r)
+        t = Conveyor(mock.MagicMock(), 1)
+        k, r = t.trays(100 / 60, 160 / 60)
+        self.assertEqual(0, k)
+        self.assertAlmostEqual(1, r)
 
 
     def test_trays_neq(self):
         """
         Test conveyor trays method, non-equal rest
         """
-        t = Conveyor(mock.MagicMock(), 60)
-        k, r = t.trays(100, 180)
-        self.assertEquals(1, k)
-        self.assertEquals(20, r)
+        t = Conveyor(mock.MagicMock(), 1)
+        k, r = t.trays(1.7, 3)
+        self.assertEqual(1, k)
+        self.assertAlmostEqual(0.3, r)
 
 
     def test_tray_frac_eq(self):
         """
         Test conveyor with fractional time delta, equal rest
         """
-        t = Conveyor(mock.MagicMock(), 0.1)
-        k, r = t.trays(100, 160)
-        self.assertEquals(599, k)
-        self.assertEquals(0.1, round(r, 10))
+        t = Conveyor(mock.MagicMock(), 0.1 / 60) # 0.1s
+        k, r = t.trays(100 / 60, 160 / 60)
+        self.assertEqual(599, k)
+        self.assertAlmostEqual(0.1 / 60, r)
 
 
     def test_tray_frac_neq(self):
         """
         Test conveyor with fractional time delta, non-equal rest
         """
-        t = Conveyor(mock.MagicMock(), 0.12)
-        k, r = t.trays(100, 160)
-        self.assertEquals(499, k)
-        self.assertEquals(0.12, round(r, 10))
+        t = Conveyor(mock.MagicMock(), 0.12 / 60)
+        k, r = t.trays(100 / 60, 160 / 60)
+        self.assertEqual(499, k)
+        self.assertAlmostEqual(0.12 / 60, r)
 
 
     def test_gas_switch(self):
@@ -80,9 +80,9 @@ class ConveyorTestCase(unittest.TestCase):
 
         Conveyor simply forwards dive steps on gas switch
         """
-        s1 = _step(Phase.ASCENT, 3.1, 1000)
-        s2 = _step(Phase.GAS_SWITCH, 3.1, 1000)
-        conveyor = Conveyor(mock.MagicMock(), 0.12)
+        s1 = _step(Phase.ASCENT, 3.1, 1000 / 60)
+        s2 = _step(Phase.GAS_SWITCH, 3.1, 1000 / 60)
+        conveyor = Conveyor(mock.MagicMock(), 0.12 / 60)
         conveyor.f_calc = lambda *args: iter((s1, s2))
         t = conveyor()
         v1 = next(t)
