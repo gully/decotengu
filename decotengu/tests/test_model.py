@@ -142,7 +142,7 @@ class ZH_L16_GFTestCase(unittest.TestCase):
         n = m.NUM_COMPARTMENTS
 
         data = Data([(0.79, 0.0)] * n, None)
-        result = m.load(4, 60, AIR, -1, data)
+        result = m.load(4, 1, AIR, -1, data)
 
         tissues = result.tissues
         self.assertTrue(all(v[0] > 0.79 for v in tissues), tissues)
