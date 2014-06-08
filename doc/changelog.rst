@@ -19,6 +19,9 @@ DecoTengu 0.11.0
   - boosts performance of basic decompression engine by 20% and tabular
     based decompression engine by almost 300%
 
+- changed all methods and functions to accept time in minutes instead of
+  seconds
+
 DecoTengu 0.10.0
 ----------------
 - implemented new, faster and simpler algorithm finding first decompression
