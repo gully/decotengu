@@ -1115,9 +1115,24 @@ class DecoTableTestCase(unittest.TestCase):
         self.assertEquals(1, dt[1].time)
 
 
+    def test_adding_stop_frac(self):
+        """
+        Test adding deco stop having fractional time to deco table
+        """
+        dt = DecoTable()
+        dt.append(15, 3.5) # 4min
+        dt.append(12, 1 + 10e-12) # 1min
+
+        self.assertEquals(2, len(dt))
+        self.assertEquals(15, dt[0].depth)
+        self.assertEquals(4, dt[0].time)
+        self.assertEquals(12, dt[1].depth)
+        self.assertEquals(1, dt[1].time)
+
+
     def test_total(self):
         """
-        Test deco table mod total time summary
+        Test deco table total time summary
         """
         stops = (
             DecoStop(15, 3),
@@ -1126,6 +1141,14 @@ class DecoTableTestCase(unittest.TestCase):
         dt = DecoTable()
         dt.extend(stops)
         self.assertEquals(4, dt.total)
+
+
+    def test_total_no_deco(self):
+        """
+        Test deco table total time summary with no deco stops
+        """
+        dt = DecoTable()
+        self.assertEquals(0, dt.total)
 
 
 # vim: sw=4:et:ai

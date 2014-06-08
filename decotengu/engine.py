@@ -1022,13 +1022,19 @@ class DecoTable(list):
         :param depth: Depth of decompression stop [m].
         :param time: Time of decompression stop [s].
         """
-        time = math.ceil(time)
+        if __debug__:
+            logger.debug('deco table: adding {}m {}min stop' \
+                .format(depth, time))
+
+        time = math.ceil(round(time, const.SCALE))
         stop = DecoStop(depth, time)
 
         assert stop.time > 0
         assert stop.depth > 0
 
         super().append(stop)
+        if __debug__:
+            logger.debug('deco table: added {}'.format(stop))
 
 
 # vim: sw=4:et:ai
