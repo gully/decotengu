@@ -129,7 +129,7 @@ class BisectFindFirstStop(object):
         n = t // ts_3m
         if __debug__:
             logger.debug(
-                'find first stop: {}bar -> {}bar, {}s, n={}, dt={}s'
+                'find first stop: {}bar -> {}bar, {}min, n={}, dt={}min'
                 .format(start.abs_p, abs_p, start.time, n, dt)
             )
         assert t >= 0
