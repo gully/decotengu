@@ -88,21 +88,20 @@ class AscentJumper(object):
                 'Ascent jumper requires ascent rate lower than 10m/min'
             )
 
-        end_time = int(
-            start.time
-            + engine._pressure_to_time(start.abs_p - abs_p, ascent_rate)
-        ) // 60 * 60
+        t = engine._pressure_to_time(start.abs_p - abs_p, ascent_rate)
+        end_time = int(start.time + t)
         logger.debug(
-            'ascent from {0.abs_p}bar ({0.time}s) to {1}bar ({2})s)'
+            'ascent from {0.abs_p}bar ({0.time}min) to {1}bar ({2}min))'
             .format(start, abs_p, end_time)
         )
 
         step = start
-        dp = engine._time_to_pressure(60, ascent_rate)
-        for i in range(start.time, end_time, 60):
+        minute = const.MINUTE
+        dp = engine._time_to_pressure(minute, ascent_rate)
+        for i in range(start.time, end_time, minute):
             abs_p = step.abs_p - dp # jump
-            data = model.load(abs_p, 60, gas, 0, step.data)
-            step = Step(Phase.DECO_STOP, abs_p, step.time + 60, gas, data)
+            data = model.load(abs_p, minute, gas, 0, step.data)
+            step = Step(Phase.DECO_STOP, abs_p, step.time + minute, gas, data)
             yield step
 
 
@@ -142,14 +141,14 @@ class DecoStopStepper(object):
             assert depth % 3 == 0
             logger.debug('deco stepper: deco stop at {}m'.format(depth))
 
-        MINUTE = const.MINUTE
-        data = engine._tissue_pressure_const(abs_p, MINUTE, gas, start.data)
-        deco_time = MINUTE
+        minute = const.MINUTE
+        data = engine._tissue_pressure_const(abs_p, minute, gas, start.data)
+        deco_time = minute
         while not engine._can_ascend(abs_p, time, gas, data, gf):
-            data = engine._tissue_pressure_const(abs_p, MINUTE, gas, data)
-            deco_time += MINUTE
+            data = engine._tissue_pressure_const(abs_p, minute, gas, data)
+            deco_time += minute
             if __debug__:
-                logger.debug('deco stepper: time {}s'.format(deco_time))
+                logger.debug('deco stepper: time {}min'.format(deco_time))
 
         step = start._replace(
             phase=Phase.DECO_STOP,

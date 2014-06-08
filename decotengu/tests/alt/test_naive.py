@@ -42,11 +42,11 @@ class AscentJumperTestCase(unittest.TestCase):
         engine._free_ascent = AscentJumper(engine)
 
         data = None
-        start = _step(Phase.ASCENT, 4.0, 1200, data=data)
+        start = _step(Phase.ASCENT, 4.0, 20, data=data)
         steps = list(engine._free_ascent(start, 1.5, AIR))
         self.assertEquals(2, len(steps))
         self.assertEquals([3.0, 2.0], [s.abs_p for s in steps])
-        self.assertEquals([1200 + 60, 1200 + 120], [s.time for s in steps])
+        self.assertEquals([21, 22], [s.time for s in steps])
 
 
 
@@ -64,11 +64,11 @@ class DecoStopStepperTestCase(unittest.TestCase):
         _deco_stop = DecoStopStepper(engine)
 
         data = _data(0.3, 2.8, 2.8)
-        start = _step(Phase.ASCENT, 1.9, 1200, data=data)
-        step = _deco_stop(start, 18, AIR, 0.4)
+        start = _step(Phase.ASCENT, 1.9, 20, data=data)
+        step = _deco_stop(start, 0.3, AIR, 0.4)
 
         # 5min of deco
-        self.assertEquals(1500, step.time)
+        self.assertEquals(25, step.time)
 
 
 # vim: sw=4:et:ai
