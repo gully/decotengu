@@ -51,11 +51,11 @@ class BisectFindFirstStopTestCase(unittest.TestCase):
         Call Engine._find_first_stop method and check if appropriate
         ascent time is calculated.
         """
-        start = _step(Phase.ASCENT, 4.1, 1200)
+        start = _step(Phase.ASCENT, 4.1, 20)
         f_bf.return_value = 6 # 31m -> 30m - k * 3m == 12m,
                               # so ascent for 19m or 114s
         step = self.engine._find_first_stop(start, 1.0, AIR)
-        self.assertAlmostEqual(1314, step.time)
+        self.assertAlmostEqual(21.9, step.time)
         self.assertAlmostEqual(2.2, step.abs_p)
 
 
@@ -64,7 +64,7 @@ class BisectFindFirstStopTestCase(unittest.TestCase):
         """
         Test bisect first deco stop finder when starting depth is deco stop
         """
-        start = _step(Phase.ASCENT, 2.2, 1200)
+        start = _step(Phase.ASCENT, 2.2, 20)
         f_bf.return_value = 0 # the 12m is depth of deco stop
         step = self.engine._find_first_stop(start, 1.0, AIR)
         self.assertEqual(step, start)
@@ -97,7 +97,7 @@ class BisectFindFirstStopTestCase(unittest.TestCase):
         self.engine._find_first_stop(start, 1.0, AIR)
 
         assert f_bf.called # test precondition
-        self.assertEquals(10, f_bf.call_args_list[0][0][0])
+        self.assertEqual(10, f_bf.call_args_list[0][0][0])
 
 
     @mock.patch('decotengu.alt.bisect.bisect_find')
@@ -105,12 +105,12 @@ class BisectFindFirstStopTestCase(unittest.TestCase):
         """
         Test bisect first deco stop finder when no deco required
         """
-        start = _step(Phase.ASCENT, 4.1, 1200)
+        start = _step(Phase.ASCENT, 4.1, 20)
 
         f_bf.return_value = 10 # 31m -> 30m - k * 3m == 0m,
                                # so 31m ascent or 186s
         step = self.engine._find_first_stop(start, 1.0, AIR)
-        self.assertAlmostEqual(1386, step.time)
+        self.assertAlmostEqual(23.1, step.time)
         self.assertAlmostEqual(1.0, step.abs_p)
 
 
