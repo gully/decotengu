@@ -51,7 +51,7 @@ class EngineTestCase(EngineTest):
         """
         Test deco engine time delta stability
         """
-        time_delta = [None, 60, 0.1]
+        time_delta = [None, 1, 0.1 / 60]
         for t in time_delta:
             engine = self._engine(time_delta=t)
             engine.model.gf_low = 0.2
