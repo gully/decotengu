@@ -81,7 +81,7 @@ parser.add_argument(
 parser.add_argument(
     '--time-delta', '-t', dest='time_delta', default=None, type=float,
     help='slice dive time into chunks to create dive steps every time delta' \
-        ' value, i.e. 60, 0.5 [s]; no slicing by default'
+        ' value, i.e. 1, 0.5 [min]; no slicing by default'
 )
 parser.add_argument(
     '--no-descent', '-nd', dest='descent', action='store_false',
