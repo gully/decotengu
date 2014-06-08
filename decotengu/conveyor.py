@@ -43,10 +43,10 @@ class Conveyor(object):
         >>> profile = engine.calculate(50, 20)
         >>> for step in profile:
         ...     print(step)     # doctest:+ELLIPSIS
-        Step(phase="start", abs_p=1.0132, time=0, ...)
-        Step(phase="descent", abs_p=3.0103, time=1, ...)
-        Step(phase="descent", abs_p=5.0072, time=2, ...)
-        Step(phase="descent", abs_p=6.0057, time=2.5, ...)
+        Step(phase="start", abs_p=1.0132, time=0.0000, ...)
+        Step(phase="descent", abs_p=3.0103, time=1.0000, ...)
+        Step(phase="descent", abs_p=5.0072, time=2.0000, ...)
+        Step(phase="descent", abs_p=6.0057, time=2.5000, ...)
         ...
 
     :var engine: DecoTengu decompression engine.
