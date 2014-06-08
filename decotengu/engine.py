@@ -1031,7 +1031,7 @@ class DecoTable(list):
                 'deco table: adding {}m {}min stop'.format(depth, time)
             )
 
-        time = math.ceil(round(time, const.SCALE))
+        time = round(time, const.SCALE)
         stop = DecoStop(depth, time)
 
         assert stop.time > 0

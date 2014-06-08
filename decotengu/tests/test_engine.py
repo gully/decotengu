@@ -1105,8 +1105,8 @@ class DecoTableTestCase(unittest.TestCase):
         Test adding deco stop to deco table
         """
         dt = DecoTable()
-        dt.append(15, 3.5) # 4min
-        dt.append(12, 0.97) # 1min
+        dt.append(15, 4)
+        dt.append(12, 1 - 10e-12) # 1min
 
         self.assertEquals(2, len(dt))
         self.assertEquals(15, dt[0].depth)
@@ -1120,7 +1120,7 @@ class DecoTableTestCase(unittest.TestCase):
         Test adding deco stop having fractional time to deco table
         """
         dt = DecoTable()
-        dt.append(15, 3.5) # 4min
+        dt.append(15, 4)
         dt.append(12, 1 + 10e-12) # 1min
 
         self.assertEquals(2, len(dt))

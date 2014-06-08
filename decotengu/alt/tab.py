@@ -129,12 +129,12 @@ Perform calculations
     >>> profile = list(engine.calculate(35, 40))
     >>> for stop in engine.deco_table:
     ...     print(stop)
-    DecoStop(depth=18.0, time=1)
-    DecoStop(depth=15.0, time=1)
-    DecoStop(depth=12.0, time=3)
-    DecoStop(depth=9.0, time=6)
-    DecoStop(depth=6.0, time=9)
-    DecoStop(depth=3.0, time=21)
+    DecoStop(depth=18.0, time=1.0)
+    DecoStop(depth=15.0, time=1.0)
+    DecoStop(depth=12.0, time=3.0)
+    DecoStop(depth=9.0, time=6.0)
+    DecoStop(depth=6.0, time=9.0)
+    DecoStop(depth=3.0, time=21.0)
 """
 
 import math

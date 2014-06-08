@@ -55,17 +55,17 @@ to obtain all information about decompression stops::
 
     >>> for stop in engine.deco_table:
     ...     print(stop)
-    DecoStop(depth=18.0, time=1)
-    DecoStop(depth=15.0, time=1)
-    DecoStop(depth=12.0, time=4)
-    DecoStop(depth=9.0, time=6)
-    DecoStop(depth=6.0, time=10)
-    DecoStop(depth=3.0, time=22)
+    DecoStop(depth=18.0, time=1.0)
+    DecoStop(depth=15.0, time=1.0)
+    DecoStop(depth=12.0, time=4.0)
+    DecoStop(depth=9.0, time=6.0)
+    DecoStop(depth=6.0, time=10.0)
+    DecoStop(depth=3.0, time=22.0)
 
 and total time of dive decompression obligations::
 
     >>> engine.deco_table.total
-    44
+    44.0
 
 Configuring Decompression Model
 -------------------------------
@@ -89,11 +89,11 @@ We can switch to ZH-L16C-GF decompression model easily::
     >>> list(profile)            # doctest:+ELLIPSIS
     [Step...]
     >>> engine.deco_table.total
-    51
+    51.0
     >>> engine.deco_table[0]
-    DecoStop(depth=18.0, time=1)
+    DecoStop(depth=18.0, time=1.0)
     >>> engine.deco_table[-1]
-    DecoStop(depth=3.0, time=26)
+    DecoStop(depth=3.0, time=26.0)
 
 Above, the total dive decompression time is longer due to ZH-L16C-GF being
 more conservative comparing to ZH-L16B-GF.
@@ -109,11 +109,11 @@ attributes::
     >>> list(profile)            # doctest:+ELLIPSIS
     [Step...]
     >>> engine.deco_table.total
-    47
+    47.0
     >>> engine.deco_table[0]
-    DecoStop(depth=21.0, time=1)
+    DecoStop(depth=21.0, time=1.0)
     >>> engine.deco_table[-1]
-    DecoStop(depth=3.0, time=24)
+    DecoStop(depth=3.0, time=24.0)
 
 """
 
@@ -138,7 +138,7 @@ def create(time_delta=None, validate=True):
     >>> engine.add_gas(0, 21)
     >>> data = list(engine.calculate(35, 40))
     >>> engine.deco_table.total
-    44
+    44.0
 
     :param time_delta: Time between dive steps.
     :param validate: Validate decompression data with decompression model
