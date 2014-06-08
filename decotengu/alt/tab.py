@@ -200,7 +200,9 @@ class TabExp(object):
         :param k: Tissue compartment half-life time constant :math:`k`.
         """
         if __debug__:
-            logger.debug('tab exp: time to split {}s'.format(time * 60))
+            logger.debug(
+                'tab exp: time to split {}min ({}s)'.format(time, time * 60)
+            )
 
         kt_exp = self._kt_exp[k]
         n1 = round(time // 1)
