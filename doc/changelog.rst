@@ -20,7 +20,7 @@ DecoTengu 0.11.0
     based decompression engine by almost 300%
 
 - changed all methods and functions to accept time in minutes instead of
-  seconds
+  time in seconds
 
 DecoTengu 0.10.0
 ----------------
