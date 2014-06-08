@@ -39,14 +39,14 @@ class Conveyor(object):
         >>> import decotengu
         >>> engine = decotengu.Engine()
         >>> engine.add_gas(0, 21)
-        >>> engine.calculate = Conveyor(engine, 60) # dive step every 60s
+        >>> engine.calculate = Conveyor(engine, 1) # dive step every 1min
         >>> profile = engine.calculate(50, 20)
         >>> for step in profile:
         ...     print(step)     # doctest:+ELLIPSIS
         Step(phase="start", abs_p=1.0132, time=0, ...)
-        Step(phase="descent", abs_p=3.0103, time=60, ...)
-        Step(phase="descent", abs_p=5.0072, time=120, ...)
-        Step(phase="descent", abs_p=6.0057, time=150.0, ...)
+        Step(phase="descent", abs_p=3.0103, time=1, ...)
+        Step(phase="descent", abs_p=5.0072, time=2, ...)
+        Step(phase="descent", abs_p=6.0057, time=2.5, ...)
         ...
 
     :var engine: DecoTengu decompression engine.
@@ -60,15 +60,21 @@ class Conveyor(object):
         :param engine: DecoTengu decompression engine.
         :param time_delta: Time delta to increase dive steps granulity [min].
         """
-        if time_delta < 0.1:
-            logger.warn('possible calculation problems: time delta below' \
-                    ' 0.1 not supported')
-        elif time_delta < 60 and math.modf(60 / time_delta)[0] != 0:
-            logger.warn('possible calculation problems: time delta does' \
-                    ' not divide 60 evenly without a reminder')
-        elif time_delta >= 60 and time_delta % 60 != 0:
-            logger.warn('possible calculation problems: time delta modulo' \
-                ' 60 not zero')
+        if time_delta < 0.1 / 60:
+            logger.warn(
+                'possible calculation problems: time delta below 0.1s not'
+                ' supported'
+            )
+        elif time_delta < 1 and math.modf(1 / time_delta)[0] != 0:
+            logger.warn(
+                'possible calculation problems: time delta does not divide 1'
+                ' evenly without a reminder'
+            )
+        elif time_delta >= 1 and time_delta % 1 != 0:
+            logger.warn(
+                'possible calculation problems: time delta modulo 1 minute'
+                ' is not zero'
+            )
         self.time_delta = time_delta
         self.engine = engine
         self.f_calc = engine.calculate
