@@ -79,9 +79,10 @@ parser.add_argument(
     help='descent rate, i.e. 20 [m/min]'
 )
 parser.add_argument(
-    '--time-delta', '-t', dest='time_delta', default=None, type=float,
-    help='slice dive time into chunks to create dive steps every time delta' \
-        ' value, i.e. 1, 0.5 [min]; no slicing by default'
+    '--time-delta', '-t', dest='time_delta', default=None,
+    help='create dive steps every time delta, i.e. 1 [min], 1s, 0.1s;'
+        ' time in minutes; use \'s\' suffix to specify in seconds, i.e. 1s;'
+        ' none by default'
 )
 parser.add_argument(
     '--no-descent', '-nd', dest='descent', action='store_false',
@@ -113,7 +114,11 @@ import decotengu
 from decotengu.output import DiveStepInfoGenerator, csv_writer
 from decotengu.flow import sender
 
-engine = decotengu.create(time_delta=args.time_delta)
+time_delta = args.time_delta
+time_delta = float(time_delta[:-1]) / 60 if time_delta[-1] == 's' \
+    else float(time_delta)
+
+engine = decotengu.create(time_delta=time_delta)
 engine.last_stop_6m = args.last_stop_6m
 pipeline = []
 
