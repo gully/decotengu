@@ -40,9 +40,10 @@ air use the following command::
 
 
 The dive profile steps data can be saved using ``-f`` option. An example
-of saving the data into ``dive.csv`` file::
+of saving the data into ``dive.csv`` file with dive steps calculated every
+minute::
 
-    $ dt-lint -f dive.csv -t 60 -gl 20 -gh 90 -l '21,0@0 50,0@21 100,0@6' 40 35
+    $ dt-lint -f dive.csv -t 1 -gl 20 -gh 90 -l '21,0@0 50,0@21 100,0@6' 40 35
     Dive profile:  40m for 35min
     Descent rate: 20.0m/min
     Ascent rate: 10.0m/min
