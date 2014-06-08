@@ -209,13 +209,13 @@ the first tissue compartment
     >>> model = ZH_L16B_GF()
     >>> ean32 = GasMix(0, 32, 68, 0)
     >>> data = model.init(1)
-    >>> data = model.load(1, 1.5 * 60, ean32, 2, data)
+    >>> data = model.load(1, 1.5, ean32, 2, data)
     >>> round(data.tissues[0][0], 6)
     0.919397
-    >>> data = model.load(4, 20 * 60, ean32, 0, data)
+    >>> data = model.load(4, 20, ean32, 0, data)
     >>> round(data.tissues[0][0], 6)
     2.567491
-    >>> data  = model.load(4, 2 * 60, ean32, -1, data)
+    >>> data  = model.load(4, 2, ean32, -1, data)
     >>> round(data.tissues[0][0], 6)
     2.42184
 
