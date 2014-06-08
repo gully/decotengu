@@ -185,9 +185,9 @@ print()
 if engine.deco_table:
     print('Decompression stops ({}):'.format(args.model.upper()))
     for stop in engine.deco_table:
-        print(' {:4.0f}m {:3}min'.format(stop.depth, stop.time))
+        print(' {:4.0f}m {:3.0f}min'.format(stop.depth, stop.time))
     print('-' * 13)
-    print('Sum: {:5}min'.format(engine.deco_table.total))
+    print('Sum: {:5.0f}min'.format(engine.deco_table.total))
 else:
     print('No decompression dive ({}).'.format(args.model.upper()))
 
