@@ -2,6 +2,22 @@ Changelog
 =========
 DecoTengu 0.11.0
 ----------------
+- use exponential function group homomorphism ``exp(x + y) = exp(x) * exp(y)``
+  to reimplement tabular calculator
+- above forced redesign of decompression model code with API changes
+
+  - ``TissueCalculator`` class is removed
+  - ``eq_schreiner`` function is removed
+  - ``TabTissueCalculator`` class is replaced with ``TabExp`` class and all
+    other classes and functions related to tabular calculations are
+    removed including tabular first decompression stop finder
+
+- the overall redesign of decompression model and tabular calculations code
+
+  - is much simpler with 10% lines of overall codebase removed
+  - uses less memory for tabular calculations
+  - boosts performance of basic decompression engine by 20% and tabular
+    based decompression engine by almost 300%
 
 DecoTengu 0.10.0
 ----------------
