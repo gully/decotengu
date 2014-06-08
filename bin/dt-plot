@@ -39,7 +39,7 @@ plot_start <- function(dive, xmax, ymax, labels=T) {
 }
 
 plot_dive_panel <- function(dive, lty='solid', pch=20, alpha=1, lwd=2, ps=0.75, pt=T) {
-    time = dive$time / 60
+    time = dive$time
     lines(time, dive$tissue_pressure, col=col2alpha('black', alpha), lty=lty, lwd=lwd)
     lines(time, dive$tissue_gf_limit, col=col2alpha('orange', alpha), lty=lty, lwd=lwd)
     lines(time, dive$tissue_limit, col=col2alpha('red', alpha), lty=lty, lwd=lwd)
@@ -50,7 +50,7 @@ plot_dive_panel <- function(dive, lty='solid', pch=20, alpha=1, lwd=2, ps=0.75, 
 }
 
 plot_dive_basic <- function(dive, pt=T, labels=T) {
-    plot_start(dive, max(dive$time / 60), max(dive$pressure), labels=labels)
+    plot_start(dive, max(dive$time), max(dive$pressure), labels=labels)
     plot_dive_panel(dive, pt=pt)
 }
 
@@ -100,7 +100,7 @@ aggregate_leading_tissue <- function(dive) {
 }
 
 plot_cmp_dives_basic <- function(ref_dive, dive, lab1, lab2, pt=T, lwd=10, labels=T) {
-    xmax = max(ref_dive$time,  dive$time) / 60
+    xmax = max(ref_dive$time,  dive$time)
     ymax = max(ref_dive$pressure, dive$pressure)
     plot_start(dive, xmax, ymax, labels=labels)
     plot_dive_panel(ref_dive, pch=18, alpha=0.3, lwd=lwd, ps=1.2, pt=pt)
