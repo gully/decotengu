@@ -81,8 +81,8 @@ The Schreiner equation is
 
 Pressure of inert gas in tissue compartment :math:`P` (on the right of the
 equation) is initial pressure of inert gas in tissue compartment, i.e.
-pressure of nitrogen in tissues on the surface. The result of equation is
-pressure in tissue compartment :math:`P` (on the left of the equation)
+pressure of nitrogen in human body at the surface. The result of equation
+is pressure in tissue compartment :math:`P` (on the left of the equation)
 after time of exposure :math:`t`. The inert gas pressure value is fed
 recursively to the equation from start till end of a dive.
 
@@ -202,8 +202,8 @@ and pressure in first tissue compartment is
 
        P = P_{alv} + (-0.68)  * (2 - 1 / k) - (P_{alv} - 2.567490 - (-0.68) / k) * e^{-k * 2} = 2.421840
 
-Using :py:class:`ZH_L16B_GF` class we can calculate pressure of nitrogen in
-the first tissue compartment
+With DecoTengu, we can calculate pressure of nitrogen in the first tissue
+compartment for above dive profile using :py:class:`ZH_L16B_GF` class
 
     >>> from decotengu.engine import GasMix
     >>> model = ZH_L16B_GF()
@@ -239,9 +239,10 @@ Buhlmann equation extended with gradient factors by Erik Baker is
         P_l = (P - A * gf) / (gf / B + 1.0 - gf)
 
 Tissue absolute pressure limit :math:`P_l` determines depth of ascent
-ceiling, which is calculated using inert gas pressure :math:`P` in the
-tissue (result of Schreiner equation), Buhlmann coefficients :math:`A` and
-:math:`B` (for given tissue) and current gradient factor value :math:`gf`.
+ceiling, which is calculated using inert gas pressure :math:`P` in tissue
+compartment (result of Schreiner equation), Buhlmann coefficients :math:`A`
+and :math:`B` (for given tissue) and current gradient factor value
+:math:`gf`.
 
 Current gradient factor is a value, which changes evenly between values of
 *gf low* and *gf high* decompression model parameters. It has *gf low*

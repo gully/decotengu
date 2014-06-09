@@ -65,8 +65,8 @@ The algorithm finding first decompression stop is
    :math:`k * t_{3m} + dt`.
 
 The complexity of the algorithm is :math:`O(log(n))`, where :math:`n` is
-current depth minus ceiling of current depth divided by 3 number. It
-depends on complexity of binary search algorithm.
+current depth divided by number 3. It depends on complexity of binary
+search algorithm.
 
 The algorithm is implemented by
 :py:class:`decotengu.alt.bisect.BisectFindFirstStop` class.

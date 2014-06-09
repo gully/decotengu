@@ -3,10 +3,9 @@ Design
 
 Core Calculations
 -----------------
-The central class of DecoTengu library design is :class:`Engine
-<decotengu.Engine>` class (DecoTengu engine). It is used to start
-calculations and is responsible to pass data between various classes of
-the library.
+The central class of DecoTengu library design is DecoTengu engine class
+:class:`Engine <decotengu.Engine>`. It is used to start calculations and is
+responsible to pass data between various classes of the library.
 
 The :class:`decotengu.model.ZH_L16_GF` abstract class implements Buhlmann
 decompression model with gradient factors by Erik Baker (ZH-L16-GF). It
@@ -22,7 +21,7 @@ Schreiner equation (see also :ref:`model-equations`).
 
 The DecoTengu engine passes decompression stop depth and time an instance
 of :class:`DecoTable <decotengu.DecoTable>` class, which stores
-decompression information.
+decompression stops information.
 
 The attributes of core calculation classes usually keep various
 configuration aspects of DecoTengu library (i.e. ascent rate, surface
@@ -69,11 +68,11 @@ Data Model
 The DecoTengu data model is responsible for keeping results of DecoTengu
 calculations.
 
-The :class:`DecoTengu engine <decotengu.Engine>` class creates dive steps
-(:class:`Step class <decotengu.engine.Step>`) i.e. descent step or ascent
-step (see :ref:`design-dive-phase`). The dive steps provide information
-about time of a dive, absolute pressure of dive depth, gas mix used or
-decompression model data.
+The :class:`DecoTengu engine <decotengu.Engine>` class creates dive steps,
+instances of :class:`Step class <decotengu.engine.Step>`, for example
+descent step or ascent step (see also :ref:`design-dive-phase`). The dive
+steps provide information about time of a dive, absolute pressure of dive
+depth, gas mix used or decompression model data.
 
 The decompression model data (:class:`Data class <decotengu.model.Data>`)
 is created by decompression model implementation and it carries information
@@ -81,10 +80,10 @@ specific to that decompression model, i.e.  pressure of inert gas in
 tissues or current gradient factor value in case
 of ZH-L16-GF decompression model.
 
-The gas mix information is modeled as :class:`GasMix
-<decotengu.engine.GasMix>` class and beside gas components percentage,
-which should sum to `100%`, it has switch depth attribute, which indicates
-the deepest depth at which gas mix can be used.
+The gas mix information is modeled as :class:`GasMix <decotengu.engine.GasMix>`
+class and beside gas components percentage, which should sum to `100%`, it
+has switch depth attribute to indicate the depth at which gas mix can be
+used.
 
 The decompression stops information is stored by :class:`decompression
 table <decotengu.DecoTable>` as list of :class:`DecoStop objects
