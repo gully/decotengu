@@ -737,9 +737,7 @@ class DecoModelValidator(object):
             stop = self.engine._step_next_ascent(
                 first_stop, ts_3m, first_stop.gas, gf=first_stop.data.gf
             )
-            limit = self.engine.model.ceiling_limit(
-                first_stop.data, first_stop.data.gf
-            )
+            limit = self.engine.model.ceiling_limit(stop.data)
             # if further ascent was possible, then first deco stop is at
             # wrong depth
             if stop.abs_p >= limit:

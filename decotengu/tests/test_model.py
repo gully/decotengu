@@ -269,12 +269,16 @@ class DecoModelValidatorTestCase(unittest.TestCase):
         data = Data([(1.263320, 0), (2.157535, 0)], 0.3)
         s1 = Step(Phase.ASCENT, 3.1, 1500, AIR, data)
         s2 = Step(Phase.DECO_STOP, 3.1, 1560, AIR, data)
+        s3 = Step(Phase.DECO_STOP, 2.8, 26, AIR, [])
+
+        engine._step_next_ascent = mock.MagicMock(return_value=s3)
+        engine.model.ceiling_limit = mock.MagicMock(return_value=2.81)
 
         validator = DecoModelValidator(engine)
         # ascent to 18m should not be possible
-        engine.model.ceiling_limit = mock.MagicMock(return_value=2.81)
         validator._first_stop_at_ceiling(s1, s2) # no exception expected
         self.assertTrue(validator._first_stop_checked)
+        engine.model.ceiling_limit.assert_called_once_with([])
 
 
     def test_first_stop_at_ceiling_error(self):
@@ -284,14 +288,20 @@ class DecoModelValidatorTestCase(unittest.TestCase):
         engine = _engine()
 
         data = Data([(1.263320, 0), (2.157535, 0)], 0.3)
-        s1 = Step(Phase.ASCENT, 3.1, 1500, AIR, data)
-        s2 = Step(Phase.DECO_STOP, 3.1, 1560, AIR, data)
+        data_stop = Data([], 0.3)
+        s1 = Step(Phase.ASCENT, 3.1, 25, AIR, data)
+        s2 = Step(Phase.DECO_STOP, 3.1, 26, AIR, data)
+        s3 = Step(Phase.DECO_STOP, 2.8, 26, AIR, data_stop)
+
+        engine._step_next_ascent = mock.MagicMock(return_value=s3)
+        engine.model.ceiling_limit = mock.MagicMock(return_value=2.79)
 
         validator = DecoModelValidator(engine)
+
         # ascent to 18m should not be possible, so error expected
-        engine.model.ceiling_limit = mock.MagicMock(return_value=2.79)
         self.assertRaises(EngineError, validator._first_stop_at_ceiling, s1, s2)
         self.assertFalse(validator._first_stop_checked)
+        engine.model.ceiling_limit.assert_called_once_with(data_stop)
 
 
 # vim: sw=4:et:ai
