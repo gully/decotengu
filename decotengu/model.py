@@ -95,7 +95,7 @@ The variables of the equation are
     Time of exposure in minutes.
 
 :math:`k`
-    Tissue compartment half-life time constant: :math:`k = ln(2) / T_{hl}`
+    Gas decay constant for a tissue compartment: :math:`k = ln(2) / T_{hl}`
 
 :math:`R`
     Rate of change of inert gas pressure: :math:`R = F_{gas} * P_{rate}`
@@ -420,8 +420,10 @@ class ZH_L16_GF(object):
     :var gf_low: Gradient factor low parameter.
     :var gf_high: Gradient factor high parameter.
     :var water_vapour_pressure: Water vapour pressure.
-    :var n2_k_const: Half-life time constant k values for nitrogen.
-    :var he_k_const: Half-life time constant k values for helium.
+    :var n2_k_const: Gas decay constants :math:`k` for nitrogen for each
+        tissue compartment.
+    :var he_k_const: Gas decay constants :math:`k` for helium for each
+        tissues compartment.
     """
     NUM_COMPARTMENTS = 16
     N2_A = None
@@ -512,21 +514,22 @@ class ZH_L16_GF(object):
 
     def _k_const(self, half_life):
         """
-        Calculate half-life time constant :math:`k` for each half-life
-        value.
+        Calculate gas decay constant :math:`k` for each tissue compartment
+        half-life value.
 
-        :param half_life: Collection of half-life values.
+        :param half_life: Collection of half-life values for each tissue
+            compartment.
         """
         return tuple(const.LOG_2 / v for v in half_life)
 
 
     def _exp(self, time, k):
         """
-        Calculate value of exponential function for time and tissue
-        compartment half-life time constant :math:`k = ln(2) / T_{hl}`.
+        Calculate value of exponential function for time and gas decay
+        constant :math:`k`.
 
         :param time: Time of exposure [min].
-        :param k: Tissue compartment half-life time constant :math:`k`.
+        :param k: Gas decay constant :math:`k` for a tissue compartment.
         """
         return math.exp(-k * time)
 
@@ -570,6 +573,8 @@ class ZH_L16_GF(object):
         :param abs_p: Absolute pressure of current depth [bar] (:math:`P_{abs}`).
         :param f_gas: Inert gas fraction, i.e. for air it is 0.79 (:math:`F_{gas}`).
         :param rate: Pressure rate change [bar/min] (:math:`P_{rate}`).
+        :param k_const: Collection of gas decay constants for each tissue
+            compartment (:math:`k`).
         """
         palv = f_gas * (abs_p - self.water_vapour_pressure)
         r = f_gas * rate

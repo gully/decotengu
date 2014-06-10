@@ -12,15 +12,16 @@ decompression model with gradient factors by Erik Baker (ZH-L16-GF). It
 receives pressure of depth and time information to calculate tissues gas
 loading and is used by DecoTengu engine to calculate ascent ceiling limits. 
 When instance of :class:`decotengu.model.ZH_L16_GF` class is created, then
-half-life time constant :math:`k` values are calculated because they are
-static for a model.
+values of gas decay constants :math:`k` are calculated for each inert gas
+and tissue compartment and stored as ``n2_k_const`` and ``he_k_const``
+attributes.
 
 The decompression model calculates tissues gas loading with
 :py:meth:`decotengu.model.ZH_L16_GF.load` method, which uses
 Schreiner equation (see also :ref:`model-equations`).
 
-The DecoTengu engine passes decompression stop depth and time an instance
-of :class:`DecoTable <decotengu.DecoTable>` class, which stores
+The DecoTengu engine passes decompression stop depth and time to an
+instance of :class:`DecoTable <decotengu.DecoTable>` class, which stores
 decompression stops information.
 
 The attributes of core calculation classes usually keep various
@@ -170,7 +171,7 @@ Tabular Calculator
 ------------------
 The :py:class:`decotengu.alt.tab.TabExp` class implements tabular
 calculator. It precomputes exponential function values and stores them as
-`_kt_exp` dictionary. The class is a callable, which is used to override
+``_kt_exp`` dictionary. The class is a callable, which is used to override
 :py:meth:`decotengu.model.ZH_L16_GF._exp` method.
 
 .. code::

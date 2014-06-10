@@ -45,7 +45,7 @@ inert gas exposure with exponential function
         e^{-k * t}
 
 We can precompute the values for above function for 1 minute and for
-6 seconds intervals and store them in a table for each time constant
+6 seconds intervals and store them in a table for each gas decay constant
 :math:`k`. Then, exponential function results can be calculated with
 formula
 
@@ -155,7 +155,7 @@ class TabExp(object):
     `exp` function.
 
     :var _kt_exp: Collection of precomputed values of exp function for
-        nitrogen and helium half-life time constants :math:`k`.
+        nitrogen and helium decay constants :math:`k`.
     """
     def __init__(self, n2_k_const, he_k_const):
         """
@@ -171,10 +171,10 @@ class TabExp(object):
 
     def _calc_exp(self, k_const):
         """
-        For each half-life time constant calculate value of exponential
-        function for 1min and 6s.
+        For each gas decay constant :math:`k` calculate value of
+        exponential function for 1min and 6s.
 
-        :param k_const: Collection of half-lime time constants.
+        :param k_const: Collection of gas decay constants :math:`k`.
         """
         kt_exp = {}
         for k in k_const:
@@ -197,7 +197,7 @@ class TabExp(object):
                 e^{x + y} = e^x * e^y
 
         :param time: Time of exposure [min].
-        :param k: Tissue compartment half-life time constant :math:`k`.
+        :param k: Gas decay constant :math:`k` for a tissue compartment.
         """
         if __debug__:
             logger.debug(
