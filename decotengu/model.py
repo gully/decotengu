@@ -77,16 +77,19 @@ The Schreiner equation is
 
     .. math::
 
-        P = P_{alv} + R * (t - 1 / k) - (P_{alv} - P - R / k) * e^{-k * t}
+        P = P_{alv} + R * (t - 1 / k) - (P_{alv} - P_{i} - R / k) * e^{-k * t}
 
-Pressure of inert gas in tissue compartment :math:`P` (on the right of the
-equation) is initial pressure of inert gas in tissue compartment, i.e.
-pressure of nitrogen in human body at the surface. The result of equation
-is pressure in tissue compartment :math:`P` (on the left of the equation)
-after time of exposure :math:`t`. The inert gas pressure value is fed
-recursively to the equation from start till end of a dive.
+Pressure :math:`P_{i}` is initial pressure of inert gas in tissue
+compartment, i.e.  pressure of nitrogen in human body at the surface. The
+result of the equation is pressure in tissue compartment :math:`P` after time
+of exposure :math:`t`. The inert gas pressure value is fed recursively to
+the equation from start till end of a dive - :math:`P_{i} = P` after each
+dive step lasting time :math:`t` minutes.
 
 The variables of the equation are
+
+:math:`P_{i}`
+    Initial inert gas pressure in a tissue compartment.
 
 :math:`P_{alv}`
     Pressure of inspired inert gas: :math:`P_{alv} = F_{gas} * (P_{abs} - P_{wvp})`
@@ -147,7 +150,7 @@ For the example, the following assumptions are made
 For the start of a dive and descent from 0m to 30m the Schreiner equation
 variables are
 
-    :math:`P = 0.7902 * (1 - 0.0627) = 0.74065446` (initial pressure of nitrogen in tissue compartment at the surface)
+    :math:`P_{i} = 0.7902 * (1 - 0.0627) = 0.74065446` (initial pressure of nitrogen in tissue compartment at the surface)
 
     :math:`P_{abs} = 1` (starting from 0m or 1 bar)
 
@@ -171,7 +174,7 @@ and pressure in the first tissue compartment is
 
 Next, continue dive at 30m for 20 minutes
 
-    :math:`P = 0.919397` (inert gas pressure in tissue compartment after descent to 30m)
+    :math:`P_{i} = 0.919397` (inert gas pressure in tissue compartment after descent to 30m)
 
     :math:`P_{abs} = 4` (30m or 4 bar)
 
@@ -189,7 +192,7 @@ and pressure in first tissue compartment is (note :math:`R` is zero and cancels 
 
 Finally, ascent from 30m to 10m
 
-    :math:`P = 2.567490`
+    :math:`P_{i} = 2.567490`
 
     :math:`R = 0.68 * (-1)` (10m/min is 1 bar per minute pressure change,
     negative as it is ascent)
@@ -561,9 +564,9 @@ class ZH_L16_GF(object):
 
         time
             Time of exposure [min] at depth (:math:`T_{time}`).
-        pressure
-            Current, initial partial pressure of inert gas in tissue
-            compartment [bar] (:math:`P`).
+        p_i
+            Initial (current) pressure of inert gas in tissue compartment
+            [bar] (:math:`P_{i}`).
         tissue_no
             Number of tissue compartment in the decompression model
             (starting with zero).
@@ -576,14 +579,14 @@ class ZH_L16_GF(object):
         :param k_const: Collection of gas decay constants for each tissue
             compartment (:math:`k`).
         """
-        palv = f_gas * (abs_p - self.water_vapour_pressure)
+        p_alv = f_gas * (abs_p - self.water_vapour_pressure)
         r = f_gas * rate
-        def f(time, pressure, tissue_no):
+        def f(time, p_i, tissue_no):
             assert time > 0
             k = k_const[tissue_no]
-            return palv + r * (time - 1 / k) - (palv - pressure - r / k) \
+            return p_alv + r * (time - 1 / k) - (p_alv - p_i - r / k) \
                 * self._exp(time, k)
-            #return palv + r * (t - 1 / k) - (palv - pressure - r / k) * math.exp(-k * t)
+            #return p_alv + r * (t - 1 / k) - (p_alv - p_i - r / k) * math.exp(-k * t)
         return f
 
 
