@@ -524,9 +524,12 @@ class Engine(object):
             if start is stop:
                 logger.debug('find first stop: at first deco stop already')
             else:
+                limit = self.model.ceiling_limit(stop.data)
                 logger.debug(
-                    'find first stop: found at {}m ({}bar), ascent time={}' \
-                    .format(depth, stop.abs_p, stop.time - start.time)
+                    'find first stop: found at {}m ({}bar), ascent time={},'
+                    ' limit={}'.format(
+                        depth, stop.abs_p, stop.time - start.time, limit
+                    )
                 )
 
 
