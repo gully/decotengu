@@ -730,21 +730,16 @@ class DecoModelValidator(object):
         """
         # FIXME: Phase circular import, so using 'deco_stop' below
         if not self._first_stop_checked and step.phase == 'deco_stop':
-            first_stop = prev
-            ts_3m = self.engine._pressure_to_time(
-                self.engine._p3m, self.engine.ascent_rate
-            )
-            stop = self.engine._step_next_ascent(
-                first_stop, ts_3m, first_stop.gas, gf=first_stop.data.gf
-            )
+            stop = prev
             limit = self.engine.model.ceiling_limit(stop.data)
             # if further ascent was possible, then first deco stop is at
-            # wrong depth
-            if stop.abs_p >= limit:
+            # wrong depth, i.e. stop at 21m and limit at 17.9 results in
+            # error
+            if stop.abs_p - self.engine._p3m >= limit:
                 raise EngineError(
                     'First decompression stop not at deco ceiling. Error for'
-                    ' {} (next step possible {}, its limit is {})'
-                    .format(first_stop, stop, limit)
+                    ' {} (next step possible to {}, its limit is {})'
+                    .format(stop, stop.abs_p - self.engine._p3m, limit)
                 )
             self._first_stop_checked = True
             logger.debug('first deco stop ok')

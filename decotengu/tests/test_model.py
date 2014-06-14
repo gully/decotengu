@@ -21,7 +21,7 @@
 DecoTengu calculator tests.
 """
 
-from decotengu.engine import Engine, Step, Phase
+from decotengu.engine import Engine, Phase
 from decotengu.error import EngineError
 from decotengu.model import eq_gf_limit, ZH_L16B_GF, Data, DecoModelValidator
 
@@ -269,20 +269,18 @@ class DecoModelValidatorTestCase(unittest.TestCase):
         Test first stop at deco ceiling
         """
         engine = _engine()
-
-        data = Data([(1.263320, 0), (2.157535, 0)], 0.3)
-        s1 = Step(Phase.ASCENT, 3.1, 1500, AIR, data)
-        s2 = Step(Phase.DECO_STOP, 3.1, 1560, AIR, data)
-        s3 = Step(Phase.DECO_STOP, 2.8, 26, AIR, [])
-
-        engine._step_next_ascent = mock.MagicMock(return_value=s3)
-        engine.model.ceiling_limit = mock.MagicMock(return_value=2.81)
-
+        model = engine.model
         validator = DecoModelValidator(engine)
+
+        s1 = _step(Phase.ASCENT, 3.1, 25)
+        s2 = _step(Phase.DECO_STOP, 3.1, 26)
+
+        model.ceiling_limit = mock.MagicMock(return_value=2.81)
+
         # ascent to 18m should not be possible
         validator._first_stop_at_ceiling(s1, s2) # no exception expected
         self.assertTrue(validator._first_stop_checked)
-        engine.model.ceiling_limit.assert_called_once_with([])
+        engine.model.ceiling_limit.assert_called_once_with(s1.data)
 
 
     def test_first_stop_at_ceiling_error(self):
@@ -291,21 +289,18 @@ class DecoModelValidatorTestCase(unittest.TestCase):
         """
         engine = _engine()
 
-        data = Data([(1.263320, 0), (2.157535, 0)], 0.3)
-        data_stop = Data([], 0.3)
-        s1 = Step(Phase.ASCENT, 3.1, 25, AIR, data)
-        s2 = Step(Phase.DECO_STOP, 3.1, 26, AIR, data)
-        s3 = Step(Phase.DECO_STOP, 2.8, 26, AIR, data_stop)
-
-        engine._step_next_ascent = mock.MagicMock(return_value=s3)
-        engine.model.ceiling_limit = mock.MagicMock(return_value=2.79)
-
+        s1 = _step(Phase.ASCENT, 3.1, 25)
+        s2 = _step(Phase.DECO_STOP, 3.1, 26)
         validator = DecoModelValidator(engine)
 
+        engine.model.ceiling_limit = mock.MagicMock(return_value=2.79)
+
         # ascent to 18m should not be possible, so error expected
-        self.assertRaises(EngineError, validator._first_stop_at_ceiling, s1, s2)
+        self.assertRaises(
+            EngineError, validator._first_stop_at_ceiling, s1, s2
+        )
         self.assertFalse(validator._first_stop_checked)
-        engine.model.ceiling_limit.assert_called_once_with(data_stop)
+        engine.model.ceiling_limit.assert_called_once_with(s1.data)
 
 
 # vim: sw=4:et:ai
