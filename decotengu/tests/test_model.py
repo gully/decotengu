@@ -25,7 +25,7 @@ from decotengu.engine import Engine, Step, Phase
 from decotengu.error import EngineError
 from decotengu.model import eq_gf_limit, ZH_L16B_GF, Data, DecoModelValidator
 
-from .tools import _engine, AIR
+from .tools import _engine, _step, AIR
 
 import unittest
 from unittest import mock
@@ -238,26 +238,30 @@ class DecoModelValidatorTestCase(unittest.TestCase):
         """
         Test ceiling limit validator
         """
-        engine = Engine()
-        data = Data([1.263320, 2.157535], 0.3)
-        s = Step(Phase.CONST, 2.2, 3, AIR, data)
+        engine = _engine()
+        model = engine.model
+        s = _step(Phase.CONST, 2.2, 3)
 
         validator = DecoModelValidator(engine)
-        engine.model.ceiling_limit = mock.MagicMock(return_value=2.19)
+        model.ceiling_limit = mock.MagicMock(return_value=2.19)
+
         validator._ceiling_limit(s) # no exception expected
+        model.ceiling_limit.assert_called_once_with(s.data, 0.3)
 
 
     def test_ceiling_limit_error(self):
         """
         Test ceiling limit validator error
         """
-        engine = Engine()
-        data = Data([2.263320, 2.957535], 0.9)
-        s = Step(Phase.CONST, 1.3127, 3, AIR, data)
+        engine = _engine()
+        model = engine.model
+        s = _step(Phase.CONST, 2.2, 3)
 
-        mod = DecoModelValidator(engine)()
-        engine.model.ceiling_limit = mock.MagicMock(return_value=2.21)
-        self.assertRaises(EngineError, mod.send, s)
+        validator = DecoModelValidator(engine)
+        model.ceiling_limit = mock.MagicMock(return_value=2.21)
+
+        self.assertRaises(EngineError, validator._ceiling_limit, s)
+        model.ceiling_limit.assert_called_once_with(s.data, 0.3)
 
 
     def test_first_stop_at_ceiling(self):
