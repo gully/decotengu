@@ -1,5 +1,9 @@
 Changelog
 =========
+DecoTengu 0.12.0
+----------------
+- first decompression stop validator improvements
+
 DecoTengu 0.11.0
 ----------------
 - use exponential function group homomorphism ``exp(x + y) = exp(x) * exp(y)``

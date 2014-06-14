@@ -122,7 +122,7 @@ from .model import ZH_L16B_GF, ZH_L16C_GF, DecoModelValidator
 from .flow import sender
 from .conveyor import Conveyor
 
-__version__ = '0.11.0'
+__version__ = '0.12.0'
 
 
 def create(time_delta=None, validate=True):
