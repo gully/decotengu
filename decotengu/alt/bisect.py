@@ -18,6 +18,8 @@
 #
 
 """
+.. _algo-bisect:
+
 First Decompression Stop Binary Search
 --------------------------------------
 In his :download:`Gradient Factor Decompression Program in Fortran <gfdeco.f>`,

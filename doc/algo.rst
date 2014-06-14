@@ -133,6 +133,20 @@ depth, which is outside dive decompression zone. The stop is at depth
 divisible by 3, it is measured in meters and its absolute pressure is
 measured in bars.
 
+We use ascent ceiling method of decompression model to calculate first
+decompression stop candidate and then ascend to the depth of the candidate.
+This is repeated while current depth is deeper than ascent ceiling. This
+works, because ascent ceiling limit is rounded up to be value divisble by 3.
+
+If we observe ascent ceiling to be within 3m, then we stop ascending. The
+consequence is that the algorithm calculates deeper first decompression
+stop comparing to :ref:`binary search algorithm <algo-bisect>`. For
+example, if current depth is at 21m and ascent ceiling is at 18.01m, then
+the stop is at 21m. But during ascent to 18.01m, depending on ascent rate
+and breathed gas mix configuration, the ceiling could change to be
+shallower than 18m, i.e.  17.9m.  The binary search algorithm calculates
+the stop at 18m in such situation.
+
 The algorithm finding first decompression stop is
 
 #. Let :math:`p` be current depth.
