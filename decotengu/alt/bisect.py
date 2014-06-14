@@ -141,7 +141,7 @@ class BisectFindFirstStop(object):
         # limit invariant is not violated; k * t(3m) + dt formula gives
         # first stop candidates as multiples of 3m
         f = lambda k, data: \
-            engine._can_ascend(start.abs_p, k * ts_3m + dt, gas, start.data)
+            engine._can_ascend(start.abs_p, k * ts_3m + dt, start.data)
 
         # find largest k for which ascent without decompression is possible
         k = bisect_find(n, f, start.data)
