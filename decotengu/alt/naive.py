@@ -144,7 +144,7 @@ class DecoStopStepper(object):
         minute = const.MINUTE
         data = engine._tissue_pressure_const(abs_p, minute, gas, start.data)
         deco_time = minute
-        while not engine._can_ascend(abs_p, time, gas, data, gf):
+        while not engine._can_ascend(abs_p, time, data, gf):
             data = engine._tissue_pressure_const(abs_p, minute, gas, data)
             deco_time += minute
             if __debug__:

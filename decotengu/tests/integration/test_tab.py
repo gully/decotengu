@@ -57,7 +57,7 @@ class EngineTestCase(EngineTest):
         for first decompression stop, could crash.
         """
         mix_depth = [21, 22, 24]
-        times = {21: 19, 22: 18, 24: 18}
+        times = {21: 20, 22: 18, 24: 19}
         stops = {21: 8, 22: 7, 24: 8}
         for depth in mix_depth:
             engine = self._engine()
@@ -90,7 +90,7 @@ class EngineTestCase(EngineTest):
         engine.add_gas(9, 80)
 
         data = list(engine.calculate(90, 20))
-        self.assertEquals(74, dt.total)
+        self.assertEquals(75, dt.total)
 
 
     def test_last_stop_6m_air(self):
@@ -114,7 +114,7 @@ class EngineTestCase(EngineTest):
         data = list(engine.calculate(45, 25))
         self.assertEquals(3, dt[-1].depth)
         t = dt[-1].time + dt[-2].time
-        self.assertEquals(23, t)
+        self.assertEquals(22, t)
 
 
     def test_last_stop_ean50(self):

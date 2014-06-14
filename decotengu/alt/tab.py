@@ -131,10 +131,10 @@ Perform calculations
     ...     print(stop)
     DecoStop(depth=18.0, time=1.0)
     DecoStop(depth=15.0, time=1.0)
-    DecoStop(depth=12.0, time=3.0)
+    DecoStop(depth=12.0, time=4.0)
     DecoStop(depth=9.0, time=6.0)
     DecoStop(depth=6.0, time=9.0)
-    DecoStop(depth=3.0, time=21.0)
+    DecoStop(depth=3.0, time=22.0)
 """
 
 import math

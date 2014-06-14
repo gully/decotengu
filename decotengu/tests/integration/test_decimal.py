@@ -75,7 +75,7 @@ class ProfileTestCase(EngineTest):
         # it seems the dive profile in Baker paper does not take into
         # account descent
         data = list(engine.calculate(Decimal(90), Decimal(20), descent=False))
-        self.assertEquals((57, 1), dt[0])
+        self.assertEquals((57, 1), dt[0]) # first stop deeper
         self.assertEquals((54, 1), dt[1])
         self.assertEquals((51, 1), dt[2])
         self.assertEquals((48, 1), dt[3])
@@ -83,16 +83,16 @@ class ProfileTestCase(EngineTest):
         self.assertEquals((42, 1), dt[5])
         self.assertEquals((39, 2), dt[6])
         self.assertEquals((36, 2), dt[7]) # 1 minute less
-        self.assertEquals((33, 1), dt[8])
-        self.assertEquals((30, 2), dt[9])
+        self.assertEquals((33, 2), dt[8]) # 1 minute more
+        self.assertEquals((30, 1), dt[9]) # 1 minute less
         self.assertEquals((27, 2), dt[10])
-        self.assertEquals((24, 2), dt[11])
+        self.assertEquals((24, 3), dt[11]) # 1 minute more
         self.assertEquals((21, 3), dt[12]) # 1 minute less
-        self.assertEquals((18, 5), dt[13]) # 2 minutes more
+        self.assertEquals((18, 4), dt[13]) # 1 minutes more
         self.assertEquals((15, 6), dt[14])
-        self.assertEquals((12, 8), dt[15])
-        self.assertEquals((9, 11), dt[16]) # 1 minute more
-        self.assertEquals((6, 18), dt[17]) # 2 minutes more
+        self.assertEquals((12, 9), dt[15]) # 1 minute more
+        self.assertEquals((9, 10), dt[16])
+        self.assertEquals((6, 19), dt[17]) # 3 minutes more
         self.assertEquals((3, 34), dt[18]) # 2 minutes more
 
 

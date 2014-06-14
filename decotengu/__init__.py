@@ -89,7 +89,7 @@ We can switch to ZH-L16C-GF decompression model easily::
     >>> list(profile)            # doctest:+ELLIPSIS
     [Step...]
     >>> engine.deco_table.total
-    51.0
+    52.0
     >>> engine.deco_table[0]
     DecoStop(depth=18.0, time=1.0)
     >>> engine.deco_table[-1]
@@ -109,7 +109,7 @@ attributes::
     >>> list(profile)            # doctest:+ELLIPSIS
     [Step...]
     >>> engine.deco_table.total
-    47.0
+    48.0
     >>> engine.deco_table[0]
     DecoStop(depth=21.0, time=1.0)
     >>> engine.deco_table[-1]

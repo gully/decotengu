@@ -76,16 +76,16 @@ and dive profile using decimal type with precision 9
 Check the total time of dive decompression phase
 
     >>> deco_table.total
-    102.0
+    103.0
     >>> deco_table_dec.total
-    Decimal('102.00000')
+    Decimal('103.00000')
 
 Calculate maximum absolute error of saturation of inert gas in a tissue at
 the surface
 
     >>> max_error = max(abs(v1[0] - float(v2[0]) + v1[1] - float(v2[1])) for v1, v2 in zip(last.data.tissues, last_dec.data.tissues))
     >>> round(max_error, 10)
-    1.00341e-05
+    1.06134e-05
 
 """
 

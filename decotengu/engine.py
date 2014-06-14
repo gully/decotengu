@@ -217,18 +217,16 @@ class Engine(object):
         return abs_p >= self.model.ceiling_limit(data)
 
 
-    def _can_ascend(self, abs_p, time, gas, data, gf=None):
+    def _can_ascend(self, abs_p, time, data, gf=None):
         """
-        Check if a diver can ascent from depth for specified amount of
-        time.
+        Check if a diver can ascend from current depth without violating
+        ascent ceiling limit.
 
-        :param abs_p: Starting pressure indicating the depth [bar].
+        :param abs_p: Absolute pressure of current depth [bar].
         :param time: Time of ascent [min].
-        :param gas: Gas mix configuration.
         :param data: Decompression model data.
         :param gf: Gradient factor to be used for ceiling check.
         """
-        data = self._tissue_pressure_ascent(abs_p, time, gas, data)
         p = abs_p - self._time_to_pressure(time, self.ascent_rate)
         return p >= self.model.ceiling_limit(data, gf=gf)
 
@@ -873,7 +871,7 @@ class Engine(object):
         data = self._tissue_pressure_const(
             step.abs_p, const.MINUTE, gas, step.data
         )
-        if self._can_ascend(step.abs_p, next_time, gas, data, gf):
+        if self._can_ascend(step.abs_p, next_time, data, gf):
             return Step(
                 Phase.DECO_STOP, step.abs_p, step.time + const.MINUTE, gas, data
             )
@@ -886,7 +884,7 @@ class Engine(object):
             self._tissue_pressure_const(step.abs_p, max_time, gas, data)
         )
         inv_f = lambda time, data: \
-            not self._can_ascend(step.abs_p, next_time, gas, data, gf)
+            not self._can_ascend(step.abs_p, next_time, data, gf)
 
         time, data = recurse_while(inv_f, next_f, const.MINUTE, data)
 
@@ -901,7 +899,7 @@ class Engine(object):
         next_f = lambda k: self._tissue_pressure_const(step.abs_p, k, gas, data)
         # should we stay at deco stop?
         exec_deco_stop = lambda k: \
-            not self._can_ascend(step.abs_p, next_time, gas, next_f(k), gf)
+            not self._can_ascend(step.abs_p, next_time, next_f(k), gf)
 
         # ascent is possible after self._deco_stop_search_time, so
         # check for self._deco_stop_search_time - 1

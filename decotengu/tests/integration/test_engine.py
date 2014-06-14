@@ -76,7 +76,7 @@ class EngineTestCase(EngineTest):
         """
         time_delta = [None, 60, 0.1, 0.5, 5]
         mix_depth = [21, 22, 24]
-        times = {21: 20, 22: 19, 24: 19}
+        times = {21: 20, 22: 20, 24: 19}
         stops = {21: 8, 22: 7, 24: 8}
         for delta, depth in itertools.product(time_delta, mix_depth):
             engine = self._engine(time_delta=delta)
@@ -110,7 +110,7 @@ class EngineTestCase(EngineTest):
         engine.add_gas(9, 80)
 
         data = list(engine.calculate(90, 20))
-        self.assertEquals(89, engine.deco_table.total)
+        self.assertEquals(90, engine.deco_table.total)
 
 
     def test_last_stop_6m_air(self):
@@ -127,7 +127,7 @@ class EngineTestCase(EngineTest):
 
         data = list(engine.calculate(45, 25))
         self.assertEquals(6, engine.deco_table[-1].depth)
-        self.assertEquals(32, engine.deco_table[-1].time)
+        self.assertEquals(33, engine.deco_table[-1].time)
 
         engine.last_stop_6m = False
         data = list(engine.calculate(45, 25))
@@ -151,13 +151,13 @@ class EngineTestCase(EngineTest):
 
         data = list(engine.calculate(45, 25))
         self.assertEquals(6, engine.deco_table[-1].depth)
-        self.assertEquals(15, engine.deco_table[-1].time)
+        self.assertEquals(16, engine.deco_table[-1].time)
 
         engine.last_stop_6m = False
         data = list(engine.calculate(45, 25))
         self.assertEquals(3, engine.deco_table[-1].depth)
         t = engine.deco_table[-1].time + engine.deco_table[-2].time
-        self.assertEquals(13, t)
+        self.assertEquals(14, t)
 
 
 
@@ -230,7 +230,7 @@ class ProfileTestCase(EngineTest):
         # it seems the dive profile in Baker paper does not take into
         # account descent
         data = list(engine.calculate(90, 20, descent=False))
-        self.assertEquals((57, 1), dt[0])
+        self.assertEquals((57, 1), dt[0]) # first stop deeper
         self.assertEquals((54, 1), dt[1])
         self.assertEquals((51, 1), dt[2])
         self.assertEquals((48, 1), dt[3])
@@ -238,16 +238,16 @@ class ProfileTestCase(EngineTest):
         self.assertEquals((42, 1), dt[5])
         self.assertEquals((39, 2), dt[6])
         self.assertEquals((36, 2), dt[7]) # 1 minute less
-        self.assertEquals((33, 1), dt[8])
-        self.assertEquals((30, 2), dt[9])
+        self.assertEquals((33, 2), dt[8]) # 1 minute more
+        self.assertEquals((30, 1), dt[9]) # 1 minute less
         self.assertEquals((27, 2), dt[10])
-        self.assertEquals((24, 2), dt[11])
+        self.assertEquals((24, 3), dt[11]) # 1 minute more
         self.assertEquals((21, 3), dt[12]) # 1 minute less
-        self.assertEquals((18, 5), dt[13]) # 2 minutes more
+        self.assertEquals((18, 4), dt[13]) # 1 minutes more
         self.assertEquals((15, 6), dt[14])
-        self.assertEquals((12, 8), dt[15])
-        self.assertEquals((9, 11), dt[16]) # 1 minute more
-        self.assertEquals((6, 18), dt[17]) # 2 minutes more
+        self.assertEquals((12, 9), dt[15]) # 1 minute more
+        self.assertEquals((9, 10), dt[16])
+        self.assertEquals((6, 19), dt[17]) # 3 minutes more
         self.assertEquals((3, 34), dt[18]) # 2 minutes more
 
 

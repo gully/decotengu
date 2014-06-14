@@ -256,9 +256,8 @@ class EngineTestCase(unittest.TestCase):
         Test function checking ascent possibility
         """
         data = [1.1, 2.1]
-        self.engine._tissue_pressure_ascent = mock.MagicMock()
         self.engine.model.ceiling_limit = mock.MagicMock(return_value=3.0)
-        v = self.engine._can_ascend(3.2, 0.2, AIR, data)
+        v = self.engine._can_ascend(3.2, 0.2, data)
         self.assertTrue(v)
 
 
@@ -267,9 +266,8 @@ class EngineTestCase(unittest.TestCase):
         Test function checking ascent possibility (at limit)
         """
         data = [1.1, 2.1]
-        self.engine._tissue_pressure_ascent = mock.MagicMock()
         self.engine.model.ceiling_limit = mock.MagicMock(return_value=3.101)
-        v = self.engine._can_ascend(3.4, 18, AIR, data)
+        v = self.engine._can_ascend(3.4, 18, data)
         self.assertFalse(v)
 
 
