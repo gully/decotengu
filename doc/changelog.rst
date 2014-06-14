@@ -1,5 +1,8 @@
 Changelog
 =========
+DecoTengu 0.13.0
+----------------
+
 DecoTengu 0.12.0
 ----------------
 - first decompression stop validator improvements
