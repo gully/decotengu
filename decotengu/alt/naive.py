@@ -20,10 +20,12 @@
 """
 Naive Algorithms
 ----------------
-Naive dive decompression calculations.
+There are various algorithms, which can be used for decompression
+calculations. The ``decotengu.alt.naive`` module implements some of them,
+i.e. calculation of decompression stop length using 1 minute intervals.
 
-The algorithms are quite inefficient, usually :math:`O(n)` while
-:math:`O(log(n))` algorithm could be used. They are implemented in
+The algorithms are quite inefficient, usually :math:`O(n)` while algorithm
+of complexity :math:`O(log(n))` could be used. They are implemented in
 DecoTengu for comparison purposes only.
 
 Decompression Stop Stepper
@@ -32,12 +34,16 @@ The decompression stop stepper is simple algorithm to calculate length of
 a decompression stop.
 
 Decompression stop length is calculated by increasing length of the stop
-by one minute until it is possible to ascent to next stop or to the
+by one minute until it is possible to ascend to next stop or to the
 surface.
 
 The algorithm is implemented by :py:class:`decotengu.alt.naive.DecoStopStepper`
 class.
+
+The complexity of the algorithm is :math:`O(n)`, where :math:`n` is length
+of decompression stop in minutes.
 """
+
 #- ascent jump - go to next depth, then calculate tissue saturation for
 #  time, which would take to get from previous to next depth (can be used
 #  when trying to avoid Schreiner equation)
