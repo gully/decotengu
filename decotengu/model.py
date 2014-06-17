@@ -81,10 +81,10 @@ The Schreiner equation is
 
 Pressure :math:`P_{i}` is initial pressure of inert gas in tissue
 compartment, i.e.  pressure of nitrogen in human body at the surface. The
-result of the equation is pressur :math:`P`e in tissue compartment after time
-of exposure :math:`t`. The inert gas pressure value is fed recursively to
-the equation from start till end of a dive, this is :math:`P_{i} = P` after
-each dive step lasting :math:`t` minutes.
+result of the equation is pressure :math:`P` in tissue compartment after
+time of exposure :math:`t`. The inert gas pressure value is fed recursively
+to the equation from start till end of a dive, this is :math:`P_{i} = P`
+after each dive step lasting :math:`t` minutes.
 
 The variables of the equation are
 
