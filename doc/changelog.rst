@@ -2,6 +2,12 @@ Changelog
 =========
 DecoTengu 0.13.0
 ----------------
+- change algorithm calculating length of decompression stop to check ascent
+  ceiling limit without ascending to next decompression stop; this makes
+  total decompression time of a dive longer by about 1 minute, but takes
+  the same approach towards close ascent ceiling limit as in case of default
+  first decompression stop search; it also boosts performance of the
+  algorithm
 
 DecoTengu 0.12.0
 ----------------
