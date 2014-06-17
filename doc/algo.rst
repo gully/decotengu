@@ -179,7 +179,7 @@ The check if ascent to next decompression stop is possible is performed
 with the following steps
 
 - simulate stay at depth of decompression stop for proposed time value
-- check if ascent ceiling is at or shallower than depth of next stop
+- check if ascent ceiling is at depth or shallower than depth of next stop
 
 The algorithm finding length of decompression stop is
 
