@@ -51,10 +51,13 @@ ndl_limit <- function(abs_p, f_gas, k, p_i, p_m) {
     floor((1 / -k) * log(v))
 }
 
-is_deco <- function(p_abs, p_i, a, b, k, gf) {
+p_ceiling_surface <- function(p_abs, p_i, a, b, k, gf) {
     t = (p_abs - 1.013) / 0.09985 / 10
     p = p_ascent(p_abs, t, p_i, -0.9985, 0.79, k)
-    p_ceiling(p, a, b, gf) > 1.013
+    p_ceiling(p, a, b, gf)
+}
+
+is_deco <- function(p_abs, p_i, a, b, k, gf) {
 }
 
 HALF_TIME = c(
@@ -97,8 +100,8 @@ data = (
 )
 
 data = left_join(data, k_const, by='tissue')
-data$is_deco = is_deco(data$depth, data$pressure, data$a, data$b, data$k, 0.85)
-data$ceiling = p_ceiling(data$pressure, data$a, data$b, 0.85)
+data$ceiling = p_ceiling_surface(data$depth, data$pressure, data$a, data$b, data$k, 0.85)
+data$is_deco = data$ceiling > 1.013
 data$m = m_limit(1.013, data$a, data$b, 0.85)
 data$recalc_ndl = ndl_limit(data$depth, 0.79, data$k, data$pressure, data$m)
 message(paste('samples in deco', nrow(data[data$is_deco,])))
@@ -136,6 +139,7 @@ p2 = (
 p3 = (
     ggplot(data, aes(time / 60))
     + geom_point(aes(y=ceiling, colour=tissue), alpha=0.2, size=1)
+    + geom_hline(yintercept=1.013, linetype='dotted')
     + scale_x_continuous(breaks=breaks)
     + xlab('Time [min]') 
     + ylab('Pressure [bar]')
