@@ -1,0 +1,164 @@
+#!/usr/bin/env Rscript
+#
+# DecoTengu - dive decompression library.
+#
+# Copyright (C) 2013 by Artur Wroblewski <wrobell@pld-linux.org>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+#
+# The script performs analysis of NDL calculations using data of existing
+# dive profile. It works for data produced by libdeco-ostc library at the
+# moment only and needs general overhaul.
+#
+
+library(gridExtra)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+
+
+m_limit <- function(abs_p, a, b, gf) {
+    abs_p * (gf / b + 1 - gf) + a * gf
+}
+
+p_ceiling <- function(p_i, a, b, gf) {
+    (p_i - a * gf) / (gf / b + 1.0 - gf)
+}
+
+p_ascent <- function(p_abs, t, p_i, rate, f_gas, k) {
+    p_alv = f_gas * (p_abs - 0.0627)
+    R = f_gas * rate
+    p_alv + R * (t - 1 / k) - (p_alv - p_i - R / k) * exp(-k * t)
+}
+
+ndl_limit <- function(abs_p, f_gas, k, p_i, p_m) {
+    p_alv = f_gas * (abs_p - 0.0627)
+    v = (p_alv - p_m) / (p_alv - p_i)
+    v = ifelse(v <= 1, v, NaN)
+    floor((1 / -k) * log(v))
+}
+
+is_deco <- function(p_abs, p_i, a, b, k, gf) {
+    t = (p_abs - 1.013) / 0.09985 / 10
+    p = p_ascent(p_abs, t, p_i, -0.9985, 0.79, k)
+    p_ceiling(p, a, b, gf) > 1.013
+}
+
+HALF_TIME = c(
+    4.0, 8.0, 12.5, 18.5, 27.0, 38.3, 54.3, 77.0,
+    109.0, 146.0, 187.0, 239.0, 305.0, 390.0, 498.0, 635.0
+)
+
+N2_A = c(
+    1.2599, 1.0000, 0.8618, 0.7562, 0.6200, 0.5043, 0.4410, 0.4000,
+    0.3750, 0.3500, 0.3295, 0.3065, 0.2835, 0.2610, 0.2480, 0.2327
+)
+N2_B = c(
+    0.5050, 0.6514, 0.7222, 0.7825, 0.8126, 0.8434, 0.8693, 0.8910,
+    0.9092, 0.9222, 0.9319, 0.9403, 0.9477, 0.9544, 0.9602, 0.9653
+)
+
+k_const = data.frame(
+    tissue=1:16,
+    k=log(2) / HALF_TIME,
+    a=N2_A,
+    b=N2_B
+)
+
+#
+# script start
+#
+
+args = commandArgs(trailingOnly=TRUE)
+fn_in = args[1]
+fn_out = args[2]
+
+data = read.csv(fn_in)
+data$depth = data$depth / 1000
+data = (
+    data
+    %>% filter(time > 2) # skip edge situation from the log data
+    %>% gather(tissue, pressure, t1:t16)
+    %>% mutate(tissue=as.numeric(substr(tissue, 2, 100)))
+    %>% arrange(time, tissue)
+)
+
+data = left_join(data, k_const, by='tissue')
+data$is_deco = is_deco(data$depth, data$pressure, data$a, data$b, data$k, 0.85)
+data$ceiling = p_ceiling(data$pressure, data$a, data$b, 0.85)
+data$m = m_limit(1.013, data$a, data$b, 0.85)
+data$recalc_ndl = ndl_limit(data$depth, 0.79, data$k, data$pressure, data$m)
+message(paste('samples in deco', nrow(data[data$is_deco,])))
+
+agg_data = (
+    data
+    %>% group_by(depth, time, ndl)
+    %>% summarise(recalc_ndl=min(recalc_ndl, na.rm=T), is_deco=any(is_deco))
+)
+
+pdf(fn_out, width=16, height=8)
+par(mfrow=c(2, 2))
+
+breaks = seq(0, max(data$time / 60), by=2)
+p1 = (
+    ggplot(agg_data, aes(time / 60))
+    + geom_line(aes(y=depth, colour='Pressure'), size=2, alpha=0.3)
+    + scale_x_continuous(breaks=breaks)
+    + xlab('Time [min]') 
+    + ylab('Pressure [bar]')
+    + ggtitle('Dive Profile')
+    + theme_bw()
+)
+
+p2 = (
+    ggplot(data, aes(time / 60))
+    + geom_point(aes(y=pressure, colour=tissue), alpha=0.2, size=1)
+    + scale_x_continuous(breaks=breaks)
+    + xlab('Time [min]') 
+    + ylab('Pressure [bar]')
+    + ggtitle('Pressure in Tissue Compartments')
+    + theme_bw()
+)
+
+p3 = (
+    ggplot(data, aes(time / 60))
+    + geom_point(aes(y=ceiling, colour=tissue), alpha=0.2, size=1)
+    + scale_x_continuous(breaks=breaks)
+    + xlab('Time [min]') 
+    + ylab('Pressure [bar]')
+    + ggtitle('Ceiling of Pressure in Tissue Compartments')
+    + theme_bw()
+)
+
+
+p4 = (
+    ggplot(agg_data, aes(time / 60))
+    + geom_line(aes(y=ndl, colour='OSTC'), size=2, alpha=0.3)
+    + geom_line(aes(y=recalc_ndl, colour='Recalculated'))
+    + scale_x_continuous(breaks=breaks)
+    + xlab('Time [min]') 
+    + ylab('NDL [min]')
+    + ylim(-1, 60)
+    + scale_colour_manual(values=c('red', 'blue'), guide_legend(title=''))
+    + ggtitle('NDL')
+    + theme_bw()
+)
+
+grid.arrange(p1, p2, p4, p3, ncol=2, nrow=2)
+
+dev.off()
+
+
