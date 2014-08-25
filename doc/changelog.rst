@@ -1,5 +1,9 @@
 Changelog
 =========
+DecoTengu 0.14.0
+----------------
+- fixed first stop decompression algorithm to not ignore ascent target
+
 DecoTengu 0.13.0
 ----------------
 - change algorithm calculating length of decompression stop to check ascent
