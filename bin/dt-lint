@@ -95,7 +95,8 @@ parser.add_argument(
 parser.add_argument(
     '--use', dest='alt',
     default=(), type=str, action=ValidateAlternative,
-    help='list of alternative implementations use'
+    help='list of alternative implementations to use: {}' \
+        .format(', '.join(ValidateAlternative.ALT))
 )
 parser.add_argument('depth', type=int, help='dive maximum depth [meter]')
 parser.add_argument('time', type=int, help='dive bottom time [minute]')
