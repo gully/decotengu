@@ -534,7 +534,7 @@ class Engine(object):
             else:
                 logger.debug('find first stop: no decompression stop found')
 
-        assert stop.abs_p >= abs_p
+        assert stop.abs_p - abs_p > -const.EPSILON, stop
 
         return stop
 
@@ -765,7 +765,7 @@ class Engine(object):
             else:
                 step = s
                 yield step
-                if abs(step.abs_p - depth) > 0: # deco stop found
+                if abs(step.abs_p - depth) > const.EPSILON: # deco stop found
                     break
                 # else: at target depth of ascent stage without deco stop,
                 #       so move to next stage
