@@ -151,7 +151,7 @@ class EngineTestCase(EngineTest):
 
         data = list(engine.calculate(45, 25))
         self.assertEquals(6, engine.deco_table[-1].depth)
-        self.assertEquals(16, engine.deco_table[-1].time)
+        self.assertEquals(15, engine.deco_table[-1].time)
 
         engine.last_stop_6m = False
         data = list(engine.calculate(45, 25))

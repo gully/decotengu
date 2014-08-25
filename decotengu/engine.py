@@ -491,6 +491,7 @@ class Engine(object):
         step = start
         limit = model.ceiling_limit(step.data, step.data.gf)
         limit = self._ceil_pressure_3m(limit)
+        limit = max(abs_p, limit)
         t = self._pressure_to_time(step.abs_p - limit, self.ascent_rate)
 
         if __debug__:
@@ -502,6 +503,7 @@ class Engine(object):
             step = self._step_next_ascent(step, t, gas)
             limit = model.ceiling_limit(step.data, step.data.gf)
             limit = self._ceil_pressure_3m(limit)
+            limit = max(abs_p, limit)
             t = self._pressure_to_time(step.abs_p - limit, self.ascent_rate)
 
             if __debug__:
@@ -521,7 +523,7 @@ class Engine(object):
 
             if start is stop:
                 logger.debug('find first stop: at first deco stop already')
-            else:
+            elif stop.abs_p > abs_p:
                 limit = self.model.ceiling_limit(stop.data)
                 logger.debug(
                     'find first stop: found at {}m ({}bar), ascent time={},'
@@ -529,7 +531,10 @@ class Engine(object):
                         depth, stop.abs_p, stop.time - start.time, limit
                     )
                 )
+            else:
+                logger.debug('find first stop: no decompression stop found')
 
+        assert stop.abs_p >= abs_p
 
         return stop
 

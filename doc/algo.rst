@@ -153,9 +153,12 @@ The algorithm finding first decompression stop is
 #. Let :math:`p_t` be target depth.
 #. Let :math:`p_l` be depth of current ceiling limit.
 #. Let :math:`p_l = ceil(p_l / 3) * 3`.
+#. Let :math:`p_l = max(p_t, p_l)`.
 #. If :math:`p > p_l` and :math:`p > p_t` then :math:`p = p_l` and jump to
    (3) above.
-#. Otherwise :math:`p_l` is the depth of first decompression stop.
+#. Else if :math:`p_l > p_t`, then :math:`p_l` is the depth of first
+   decompression stop.
+#. Else no decompression stop found.
 
 The algorithm is implemented by :func:`decotengu.Engine._find_first_stop`
 method.

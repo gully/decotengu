@@ -411,6 +411,21 @@ class FirstStopFinderTestCase(unittest.TestCase):
         self.assertAlmostEqual(1.0, step.abs_p)
 
 
+    def test_first_stop_finder_ceiling_below_target(self):
+        """
+        Test first deco stop finder when ceiling limit shallower than target depth
+        """
+        engine = self.engine
+
+        start = _step(Phase.ASCENT, 4.1, 20)
+
+        engine.model.ceiling_limit = mock.MagicMock(side_effect=[1.5, 0.99])
+
+        step = engine._find_first_stop(start, 2.2, AIR)
+        self.assertAlmostEqual(2.2, step.abs_p)
+        self.assertAlmostEqual(21.9, step.time)
+
+
 
 class EngineDiveDescentTestCase(unittest.TestCase):
     """
