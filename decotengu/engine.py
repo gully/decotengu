@@ -349,7 +349,8 @@ class Engine(object):
         The switch results in new dive step.
         """
         step = step._replace(phase=Phase.GAS_SWITCH, gas=gas)
-        logger.debug('switched to gas mix {} at {}'.format(gas, step))
+        if __debug__:
+            logger.debug('switched to gas mix {} at {}'.format(gas, step))
         return step
 
 
